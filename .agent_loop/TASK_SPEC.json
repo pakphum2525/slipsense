@@ -1,0 +1,58 @@
+{
+  "schema_version": "4.0.0",
+  "task_id": "TASK-SLIPSENSE-001",
+  "created_at": "2026-10-26T20:17:00+07:00",
+  "producer": "Antigravity",
+  "risk_level": "STANDARD",
+  "title": "SlipSense — Smart Receipt Expense Tracker (PWA + AI Receipt Analysis + Offline-First Sync)",
+  "objective": "พัฒนาแอปพลิเคชันบันทึกรายรับ-รายจ่ายจากใบเสร็จและสลิปโอนเงินด้วย AI (SlipSense) แบบ Production-Ready PWA รองรับ Offline-First IndexedDB, Supabase Auth/RLS/Realtime, และ Supabase Edge Function สำหรับเรียก Gemini API อย่างปลอดภัย",
+  "user_story": "ในฐานะผู้ใช้งานบน iPhone, Android Tablet และ PC ฉันต้องการถ่ายภาพหรืออัปโหลดใบเสร็จ/สลิปโอนเงินเพื่อให้ AI อ่านข้อมูลและวิเคราะห์วัตถุประสงค์ของการซื้อ ตรวจสอบและแก้ไขข้อมูลก่อนบันทึก ดูสรุป Dashboard รายเดือน และซิงก์ข้อมูลข้ามอุปกรณ์หรือใช้งานแบบ Local-only ได้อย่างปลอดภัย",
+  "acceptance_criteria": [
+    "มีไฟล์ index.html ไฟล์เดียวที่รวม HTML5, CSS3 และ Vanilla JS ครบทุกฟีเจอร์โดยไม่มีปุ่มหลอกหรือ Mockup",
+    "ไม่มีการเก็บ Gemini API Key หรือ service_role key ใน Frontend (index.html, sw.js, localStorage, IndexedDB)",
+    "เรียกใช้ Gemini ผ่าน Supabase Edge Function (supabase/functions/analyze-receipt/index.ts) พร้อมตรวจ JWT, Rate Limit และ Structured Output Schema",
+    "รองรับการย่อภาพด้วย Canvas (ประมาณ 1,600px), แสดงขนาดก่อน/หลังย่อ, ป้องกันไฟล์ HEIC ค้าง และไม่เก็บรูปต้นฉบับขึ้น Cloud อัตโนมัติ",
+    "มีฟอร์มตรวจสอบผลลัพธ์ (Verification Form) ที่แสดงฟิลด์ไม่มั่นใจชัดเจน บังคับตรวจวันที่ ยอดเงิน และประเภทรายการก่อนบันทึกทุกครั้ง",
+    "เก็บข้อมูลใน IndexedDB (slipsense_db) พร้อมสถานะ local_only, pending_sync, synced, sync_failed และการย้ายข้อมูล Local ไป Cloud แบบขอคำยืนยัน",
+    "คำนวณยอดรายรับ รายจ่าย เงินสุทธิ และสรุปหมวดหมู่ตามเขตเวลา Asia/Bangkok อย่างถูกต้อง แยกยอด Cloud Synced กับรายการในเครื่องชัดเจน",
+    "มีไฟล์ manifest.json, sw.js, ไอคอน PNG จริงครบทุกขนาด, supabase.sql พร้อม RLS และ README.md ครบ 21 หัวข้อ",
+    "รองรับ Section 17 (IP Protection & Source Code Security): มีโค้ดต้นฉบับ TypeScript ใน src/, สคริปต์ Build/Minify/Obfuscate (scripts/build_prod.js) สร้างโฟลเดอร์ dist/ โดยไม่มี Source Map หรือ Comment, และมี GitHub Pages Workflow ที่อัปโหลดเฉพาะ dist/",
+    "รองรับระบบแบ่งเงินเดือน 5 ส่วน (1. เงินลงทุนหุ้น Fix 6,500 / 2. เงินเก็บสร้างบ้าน Fix 13,000 / 3. ค่าใช้จ่ายคงที่ 12,700 หรือ 14,000 ประกอบด้วย ประกันพ่อ 1,300 จ่าย 2 เดือน เว้นจ่าย 2,600 1 เดือน, ประกันแดน 2,900, ให้น้องมายด์ 2,000, ค่าน้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500 / 4. ค่าใช้จ่ายฉุกเฉินส่วนตัวที่รับโอนเงินเหลือใช้สิ้นเดือน / 5. ค่าใช้จ่ายทั่วไป) พร้อมการเลือกถอนจาก 5 ส่วนนี้ และไม่เก็บรูปสลิปต้นฉบับ",
+    "ชุดทดสอบอัตโนมัติ (node scripts/run_tests.js) ตรวจสอบครบทั้ง 7 ชุดทดสอบ (25 รายการ) และผ่านด้วย exit code 0"
+  ],
+  "write_allowlist": [
+    "index.html",
+    "manifest.json",
+    "sw.js",
+    "src/**",
+    "dist/**",
+    "docs/**",
+    ".github/workflows/**",
+    "supabase.sql",
+    "supabase/functions/analyze-receipt/index.ts",
+    "icons/*.png",
+    "apple-touch-icon.png",
+    "vendor/*.js",
+    "scripts/*.js",
+    "README.md",
+    "STATUS.md",
+    "AGENTS.md",
+    "package.json",
+    ".env.example",
+    ".gitignore"
+  ],
+  "protected_denylist": [
+    "Production/**",
+    ".env",
+    ".agent_loop/STATE.json",
+    ".agent_loop/PLAN_APPROVAL.json",
+    ".agent_loop/QA_REPORT.json",
+    ".agent_loop/RELEASE_APPROVAL.json"
+  ],
+  "constraints": {
+    "max_planning_attempts": 3,
+    "max_repair_attempts": 3,
+    "timeout_seconds": 300,
+    "test_command": "node scripts/run_tests.js"
+  }
+}

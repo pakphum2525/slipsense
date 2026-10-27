@@ -1,0 +1,40 @@
+{
+  "name": "SlipSense — บันทึกใบเสร็จและรายจ่ายอัจฉริยะ",
+  "short_name": "SlipSense",
+  "description": "ระบบบันทึกรายรับและรายจ่ายจากภาพใบเสร็จและสลิปโอนเงินด้วย AI วิเคราะห์วัตถุประสงค์การซื้อ และซิงก์ข้อมูลข้ามอุปกรณ์อย่างปลอดภัย",
+  "lang": "th",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

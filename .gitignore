@@ -1,0 +1,21 @@
+# Environment & Secrets (NEVER COMMIT)
+.env
+.env.*
+!.env.example
+supabase/.env
+supabase/.temp/
+
+# Node, Source Maps & Local Cache
+node_modules/
+.npm-local-cache/
+*.map
+logs/
+*.log
+
+# Personal Financial Backups
+*backup*.json
+*backup*.csv
+
+# OS & Editor
+.DS_Store
+Thumbs.db

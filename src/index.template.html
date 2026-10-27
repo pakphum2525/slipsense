@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="th" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SlipSense — บันทึกใบเสร็จและรายจ่ายอัจฉริยะ</title>
+  <meta name="description" content="ระบบบันทึกรายรับและรายจ่ายจากภาพใบเสร็จและสลิปโอนเงินด้วย AI วิเคราะห์วัตถุประสงค์การซื้อ และซิงก์ข้อมูลข้ามอุปกรณ์อย่างปลอดภัย">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SlipSense">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+
+  <!-- โหลด Supabase JS SDK รุ่นที่ระบุแน่นอน (v2.49.1) จากไฟล์ในโปรเจกต์เพื่อรองรับ Offline Shell -->
+  <script src="./vendor/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --bg-app: #f1f5f9;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f8fafc;
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --brand-primary: #0f766e;
+      --brand-primary-hover: #115e59;
+      --brand-soft: #ccfbf1;
+      --income-color: #15803d;
+      --income-bg: #dcfce7;
+      --expense-color: #b91c1c;
+      --expense-bg: #fee2e2;
+      --warning-color: #b45309;
+      --warning-bg: #fef3c7;
+      --warning-border: #f59e0b;
+      --info-color: #1d4ed8;
+      --info-bg: #dbeafe;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.16);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", "Sarabun", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 1rem;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    button:disabled {
+      opacity: 0.58;
+      cursor: not-allowed;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* แถบแจ้งสถานะด้านบนสุด */
+    .system-banner {
+      background: var(--warning-bg);
+      color: #92400e;
+      border-bottom: 1px solid #fde68a;
+      padding: 0.55rem 1rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .system-banner.online-synced {
+      background: #ecfdf5;
+      color: #065f46;
+      border-bottom-color: #a7f3d0;
+    }
+
+    .system-banner.offline-mode {
+      background: #fef2f2;
+      color: #991b1b;
+      border-bottom-color: #fecaca;
+    }
+
+    /* ส่วนหัวของแอป */
+    .app-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: var(--shadow-sm);
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--brand-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+
+    .status-dot.green { background: #16a34a; }
+    .status-dot.amber { background: #d97706; }
+    .status-dot.red { background: #dc2626; }
+
+    /* ปุ่มมาตรฐาน */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 44px;
+      padding: 0.55rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: background-color 0.15s, border-color 0.15s, transform 0.08s;
+      user-select: none;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: var(--brand-primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--brand-primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-subtle);
+    }
+
+    .btn-accent {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-accent:hover:not(:disabled) {
+      background: #0369a1;
+    }
+
+    .btn-danger {
+      background: var(--expense-bg);
+      color: var(--expense-color);
+      border: 1px solid #fecaca;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #fecaca;
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.82rem;
+    }
+
+    /* โครงร่างหลัก (Mobile-First -> 2 คอลัมน์บน Tablet/Desktop) */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .app-container {
+        grid-template-columns: 5fr 7fr;
+        align-items: start;
+        padding: 1.25rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .app-container {
+        grid-template-columns: 440px 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    .col-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    /* ปุ่มด่วนด้านบนสำหรับสแกนใบเสร็จและเพิ่มรายการ */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 420px) {
+      .quick-actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* การ์ดสรุปยอดเงิน 3 ช่อง */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 480px) {
+      .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .kpi-box {
+      padding: 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-subtle);
+    }
+
+    .kpi-box.income {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .kpi-box.expense {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .kpi-box.net {
+      background: #f0fdfa;
+      border-color: #99f6e4;
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .kpi-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      word-break: break-word;
+    }
+
+    .kpi-box.income .kpi-value { color: var(--income-color); }
+    .kpi-box.expense .kpi-value { color: var(--expense-color); }
+    .kpi-box.net .kpi-value { color: var(--brand-primary); }
+
+    .kpi-sub {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* แถบแยกหมวดหมู่ */
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .category-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .category-row-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .progress-track {
+      height: 8px;
+      background: var(--bg-app);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--brand-primary);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    /* พื้นที่อัปโหลด/ถ่ายภาพใบเสร็จ */
+    .upload-zone {
+      border: 2px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      text-align: center;
+      background: var(--bg-subtle);
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--brand-primary);
+    }
+
+    .camera-btn-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+
+    .preview-container {
+      margin-top: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      background: #ffffff;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 280px;
+      display: block;
+      margin: 0 auto 0.65rem;
+      border-radius: 6px;
+      object-fit: contain;
+      background: #0f172a;
+    }
+
+    .compression-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      padding: 0.45rem 0.65rem;
+      border-radius: 6px;
+      margin-bottom: 0.65rem;
+    }
+
+    /* ฟอร์มและตัวกรอง */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+    }
+
+    @media (min-width: 540px) {
+      .form-grid.two-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .form-label {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+
+    .form-control {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+    }
+
+    /* ไฮไลต์ฟิลด์ที่ AI ไม่มั่นใจและต้องให้ผู้ใช้ตรวจสอบ */
+    .form-group.uncertain-field .form-control {
+      border-color: var(--warning-border);
+      background-color: #fffbeb;
+    }
+
+    .uncertain-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      background: var(--warning-bg);
+      color: var(--warning-color);
+      border: 1px solid var(--warning-border);
+    }
+
+    /* รายการธุรกรรมย้อนหลัง */
+    .tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .tx-item {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      transition: border-color 0.15s;
+    }
+
+    .tx-item:hover {
+      border-color: var(--border-strong);
+    }
+
+    .tx-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .tx-merchant {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .tx-amount {
+      font-weight: 800;
+      font-size: 1.08rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .tx-amount.income { color: var(--income-color); }
+    .tx-amount.expense { color: var(--expense-color); }
+
+    .tx-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+
+    .badge-income { background: var(--income-bg); color: var(--income-color); }
+    .badge-expense { background: var(--expense-bg); color: var(--expense-color); }
+    .badge-category { background: var(--bg-app); color: var(--text-secondary); }
+    .badge-synced { background: #dcfce7; color: #166534; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-local { background: #e2e8f0; color: #334155; }
+    .badge-failed { background: #fee2e2; color: #991b1b; }
+
+    .tx-purpose-box {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      border-left: 3px solid var(--brand-primary);
+      padding: 0.45rem 0.65rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .tx-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      border-top: 1px solid var(--bg-app);
+      padding-top: 0.5rem;
+    }
+
+    /* กล่องข้อความแจ้งเตือนและสถานะว่าง */
+    .alert-box {
+      padding: 0.8rem 0.95rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      margin-bottom: 0.85rem;
+      border: 1px solid transparent;
+    }
+
+    .alert-warning {
+      background: var(--warning-bg);
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+
+    .alert-error {
+      background: var(--expense-bg);
+      color: var(--expense-color);
+      border-color: #fecaca;
+    }
+
+    .alert-info {
+      background: var(--info-bg);
+      color: var(--info-color);
+      border-color: #bfdbfe;
+    }
+
+    .alert-success {
+      background: var(--income-bg);
+      color: var(--income-color);
+      border-color: #bbf7d0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    /* หน้าต่าง Modal (Verification Form, Settings, Auth, Confirm Dialog) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.62);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop[hidden] {
+      display: none !important;
+    }
+
+    .modal-panel {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 640px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg-surface);
+      z-index: 2;
+    }
+
+    .modal-body {
+      padding: 1.25rem;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      padding: 0.9rem 1.25rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      background: var(--bg-subtle);
+    }
+
+    /* Toast Notification */
+    .toast-stack {
+      position: fixed;
+      bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      right: 1rem;
+      left: 1rem;
+      max-width: 420px;
+      margin-left: auto;
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      padding: 0.8rem 1rem;
+      border-radius: var(--radius-sm);
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .toast.success { background: #15803d; }
+    .toast.error { background: #b91c1c; }
+    .toast.warning { background: #b45309; }
+
+    /* การ์ดกระปุกเงินเดือน 5 ส่วน และรายการ Fix รายเดือน */
+    .fund-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .fund-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.9rem;
+      background: var(--bg-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .fund-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .fund-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--text-main);
+    }
+
+    .fund-balance {
+      font-weight: 800;
+      font-size: 1.02rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .fund-balance.positive { color: var(--brand-primary); }
+    .fund-balance.negative { color: var(--expense-color); }
+
+    .fund-meta {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .badge-fund {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+
+    .fixed-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      margin-top: 0.65rem;
+      padding-top: 0.65rem;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .fixed-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      font-size: 0.82rem;
+    }
+
+    .fixed-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .fixed-item-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .fixed-item-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- แถบแจ้งสถานะโหมดการทำงานและการซิงก์ -->
+  <div id="systemModeBanner" class="system-banner" role="status" aria-live="polite">
+    <span id="systemModeText">โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์</span>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button type="button" id="btnTriggerSyncNow" class="btn btn-secondary btn-sm" hidden>ซิงก์ข้อมูลทันที</button>
+      <button type="button" id="btnMigrateLocalToCloud" class="btn btn-primary btn-sm" hidden>ย้ายข้อมูลในเครื่องขึ้น Cloud</button>
+    </div>
+  </div>
+
+  <!-- ส่วนหัวหลักของแอป -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <img src="./icons/icon-192.png" alt="โลโก้ SlipSense" class="brand-logo" width="40" height="40">
+        <div>
+          <h1 class="brand-title">SlipSense</h1>
+          <p class="brand-subtitle">บันทึกใบเสร็จและรายรับ-รายจ่ายด้วย AI</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill" id="aiStatusPill" title="สถานะการเชื่อมต่อบริการวิเคราะห์ใบเสร็จด้วย AI">
+          <span id="aiStatusDot" class="status-dot amber"></span>
+          <span id="aiStatusLabel">ยังไม่ได้ตั้งค่า AI</span>
+        </div>
+
+        <div class="status-pill" id="authStatusPill" title="สถานะบัญชีผู้ใช้และการซิงก์">
+          <span id="authStatusDot" class="status-dot"></span>
+          <span id="authStatusLabel">ใช้งานในเครื่อง</span>
+        </div>
+
+        <button type="button" id="btnOpenAuthModal" class="btn btn-secondary btn-sm">บัญชีผู้ใช้</button>
+        <button type="button" id="btnOpenSettingsModal" class="btn btn-secondary btn-sm" aria-label="ตั้งค่าระบบ">ตั้งค่า</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- พื้นที่ทำงานหลัก -->
+  <main class="app-container">
+    <!-- คอลัมน์ซ้าย: สแกนใบเสร็จด้วย AI + สรุปภาพรวมประจำเดือน -->
+    <div class="col-stack">
+      <!-- การ์ดที่ 1: ปุ่มด่วนและสแกนใบเสร็จ/สลิป -->
+      <section class="card" aria-labelledby="scanSectionTitle">
+        <div class="card-header">
+          <h2 id="scanSectionTitle" class="card-title">สแกนใบเสร็จ / สลิปโอนเงิน</h2>
+          <button type="button" id="btnOpenManualEntry" class="btn btn-primary btn-sm">+ เพิ่มรายการใหม่</button>
+        </div>
+
+        <div class="upload-zone" id="uploadDropZone">
+          <p style="font-weight:600;color:var(--text-main);margin-bottom:0.25rem;">
+            ถ่ายภาพใบเสร็จ หรือเลือกรูปสลิปจากอัลบั้ม
+          </p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">
+            รองรับไฟล์ JPEG, PNG, WebP (ย่อภาพในเครื่องอัตโนมัติที่ ~1,600px ก่อนวิเคราะห์ และไม่บันทึกรูปต้นฉบับขึ้น Cloud)
+          </p>
+
+          <!-- Input แยกสำหรับถ่ายภาพด้วยกล้องหลัง และเลือกไฟล์จากอัลบั้ม -->
+          <input type="file" id="inputCameraCapture" accept="image/*" capture="environment" class="sr-only">
+          <input type="file" id="inputGalleryFile" accept="image/jpeg,image/png,image/webp,image/*" class="sr-only">
+
+          <div class="camera-btn-pair">
+            <button type="button" id="btnStartScanCamera" class="btn btn-primary">
+              ถ่ายภาพใบเสร็จ
+            </button>
+            <button type="button" id="btnChooseGallery" class="btn btn-secondary">
+              เลือกรูปจากอัลบั้ม
+            </button>
+          </div>
+        </div>
+
+        <!-- พื้นที่แสดงภาพตัวอย่างและผลลัพธ์การบีบอัดก่อนส่งให้ AI -->
+        <div id="imagePreviewPanel" class="preview-container" hidden>
+          <img id="receiptPreviewImg" class="preview-img" alt="ตัวอย่างภาพใบเสร็จที่จะใช้ในการวิเคราะห์">
+          <div id="compressionInfoBox" class="compression-meta"></div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" id="btnAnalyzeWithAi" class="btn btn-primary" style="flex:1;">
+              วิเคราะห์ข้อมูลด้วย AI
+            </button>
+            <button type="button" id="btnUseImageForManual" class="btn btn-secondary">
+              กรอกเองจากภาพนี้
+            </button>
+            <button type="button" id="btnClearTempImage" class="btn btn-danger btn-sm">
+              ลบรูปชั่วคราว
+            </button>
+          </div>
+        </div>
+
+        <div id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
+          กำลังส่งภาพที่ย่อแล้วไปยัง Supabase Edge Function เพื่อวิเคราะห์ด้วย Gemini AI กรุณารอสักครู่...
+        </div>
+        <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
+      </section>
+
+      <!-- การ์ดที่ 2: สรุปยอดรายเดือนและสัดส่วนหมวดหมู่ (Dashboard) -->
+      <section class="card" aria-labelledby="dashboardSectionTitle">
+        <div class="card-header">
+          <h2 id="dashboardSectionTitle" class="card-title">สรุปการเงินประจำเดือน</h2>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <label for="dashboardMonthPicker" class="sr-only">เลือกเดือน</label>
+            <input type="month" id="dashboardMonthPicker" class="form-control" style="min-height:36px;padding:0.25rem 0.55rem;width:auto;">
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-box income">
+            <div class="kpi-label">รายรับรวมของเดือน</div>
+            <div id="kpiTotalIncome" class="kpi-value">฿0.00</div>
+            <div id="kpiIncomeSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
+          </div>
+          <div class="kpi-box expense">
+            <div class="kpi-label">รายจ่ายรวมของเดือน</div>
+            <div id="kpiTotalExpense" class="kpi-value">฿0.00</div>
+            <div id="kpiExpenseSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
+          </div>
+          <div class="kpi-box net">
+            <div class="kpi-label">เงินสุทธิของเดือน</div>
+            <div id="kpiNetBalance" class="kpi-value">฿0.00</div>
+            <div id="kpiSyncSummarySub" class="kpi-sub">0 รายการ</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:0.65rem;color:var(--text-secondary);">
+            สรุปยอดรายจ่ายตามหมวดหมู่
+          </h3>
+          <div id="categoryBreakdownContainer" class="category-list">
+            <p class="empty-state" style="padding:1rem 0;">ยังไม่มีรายการรายจ่ายในเดือนที่เลือก</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- การ์ดที่ 3: กระปุกเงินเดือน 5 ส่วน & รายการ Fix รายเดือน -->
+      <section class="card" aria-labelledby="fundBucketsSectionTitle">
+        <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
+          <div>
+            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 5 ส่วน & รายการ Fix</h2>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">
+              เลือกถอน/ตัดจ่ายจาก 5 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
+            </p>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <button type="button" id="btnOpenSalarySplitModal" class="btn btn-primary btn-sm">แบ่งเงินเดือนเข้า 5 ส่วน</button>
+            <button type="button" id="btnRolloverSurplusToEmergency" class="btn btn-secondary btn-sm" title="โอนเงินเหลือใช้ของเดือนนี้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)">เก็บเงินเหลือใช้เข้าข้อ 4</button>
+          </div>
+        </div>
+
+        <div id="fundBucketsContainer" class="fund-grid">
+          <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 5 ส่วน...</p>
+        </div>
+
+        <div style="margin-top:0.9rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.45rem;">
+            <h3 style="font-size:0.88rem;font-weight:700;color:var(--text-secondary);">
+              รายการจ่ายคงที่ประจำเดือน (ส่วนที่ 3: ค่าใช้จ่ายคงที่)
+            </h3>
+            <span id="fixedChecklistMonthLabel" style="font-size:0.76rem;color:var(--text-muted);"></span>
+          </div>
+          <div id="fixedMonthlyChecklistContainer" class="fixed-checklist"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- คอลัมน์ขวา: ตัวกรอง การค้นหา และรายการธุรกรรมย้อนหลัง -->
+    <div class="col-stack">
+      <section class="card" aria-labelledby="historySectionTitle">
+        <div class="card-header">
+          <div>
+            <h2 id="historySectionTitle" class="card-title">รายการธุรกรรมและวิเคราะห์วัตถุประสงค์</h2>
+            <p id="historyCountSummary" style="font-size:0.8rem;color:var(--text-muted);">กำลังโหลดข้อมูลธุรกรรม...</p>
+          </div>
+          <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <button type="button" id="btnResetFilters" class="btn btn-secondary btn-sm">ล้างตัวกรอง</button>
+          </div>
+        </div>
+
+        <!-- แผงตัวกรองและการค้นหา -->
+        <div class="form-grid two-col" style="margin-bottom:1rem;padding:0.85rem;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-color);">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="filterSearchInput" class="form-label">ค้นหาร้านค้า สินค้า หรือวัตถุประสงค์</label>
+            <input type="search" id="filterSearchInput" class="form-control" placeholder="พิมพ์ชื่อร้านค้า สรุปสินค้า หรือคำใน purpose_analysis...">
+          </div>
+
+          <div class="form-group">
+            <label for="filterTypeSelect" class="form-label">ประเภทรายการ</label>
+            <select id="filterTypeSelect" class="form-control">
+              <option value="all">ทั้งหมด (รายรับ + รายจ่าย)</option>
+              <option value="expense">เฉพาะรายจ่าย (Expense)</option>
+              <option value="income">เฉพาะรายรับ (Income)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filterCategorySelect" class="form-label">หมวดหมู่</label>
+            <select id="filterCategorySelect" class="form-control">
+              <option value="all">ทุกหมวดหมู่</option>
+              <option value="food_drink">อาหารและเครื่องดื่ม</option>
+              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
+              <option value="transport">เดินทางและยานพาหนะ</option>
+              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
+              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
+              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
+              <option value="health_medical">สุขภาพและการแพทย์</option>
+              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
+              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
+              <option value="transfer_other">โอนเงินและอื่นๆ</option>
+              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
+              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
+              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 5 ส่วน)</label>
+            <select id="filterFundSelect" class="form-control">
+              <option value="all">ทุกส่วนของเงิน (1–5)</option>
+              <option value="investment_stock">1. เงินลงทุน (หุ้น)</option>
+              <option value="home_building">2. เงินเก็บสร้างบ้าน</option>
+              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่</option>
+              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)</option>
+              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filterDateFrom" class="form-label">ตั้งแต่วันที่</label>
+            <input type="date" id="filterDateFrom" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="filterDateTo" class="form-label">ถึงวันที่</label>
+            <input type="date" id="filterDateTo" class="form-control">
+          </div>
+        </div>
+
+        <!-- รายการธุรกรรม -->
+        <div id="transactionListContainer" class="tx-list" aria-live="polite">
+          <div class="empty-state">ยังไม่มีรายการบันทึก เริ่มต้นด้วยการสแกนใบเสร็จหรือกดปุ่ม "+ เพิ่มรายการใหม่"</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 1: ฟอร์มตรวจสอบผลการวิเคราะห์ AI และเพิ่ม/แก้ไขธุรกรรม (Verification Form) -->
+  <!-- ======================================================================= -->
+  <div id="verificationModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="verificationModalTitle" hidden>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 id="verificationModalTitle" class="card-title">ตรวจสอบและยืนยันข้อมูลรายการ</h2>
+        <button type="button" id="btnCloseVerificationModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <form id="verificationForm" class="modal-body" novalidate>
+        <input type="hidden" id="txFormId" value="">
+
+        <!-- แจ้งเตือนจาก AI หรือคำเตือนข้อมูลไม่ครบ -->
+        <div id="aiVerificationWarningsBox" class="alert-box alert-warning" hidden></div>
+        <div id="txFormValidationErrorsBox" class="alert-box alert-error" hidden></div>
+
+        <div class="form-grid two-col">
+          <div class="form-group" id="groupTxDate">
+            <label for="txFormDate" class="form-label">
+              <span>วันที่รายการ *</span>
+              <span id="badgeUncertainDate" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="date" id="txFormDate" class="form-control" required>
+          </div>
+
+          <div class="form-group" id="groupTxType">
+            <label for="txFormType" class="form-label">
+              <span>ประเภท: รายรับ / รายจ่าย *</span>
+              <span id="badgeUncertainType" class="uncertain-badge" hidden>ต้องเลือกเอง</span>
+            </label>
+            <select id="txFormType" class="form-control" required>
+              <option value="unknown">-- กรุณาเลือกประเภทรายการ --</option>
+              <option value="expense">รายจ่าย (Expense)</option>
+              <option value="income">รายรับ (Income)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
+            <label for="txFormMerchant" class="form-label">
+              <span>ร้านค้า หรือ คู่รายการ *</span>
+              <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="text" id="txFormMerchant" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
+          </div>
+
+          <div class="form-group" id="groupTxAmount">
+            <label for="txFormAmount" class="form-label">
+              <span>ยอดเงิน (ค่าบวก) *</span>
+              <span id="badgeUncertainAmount" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="number" id="txFormAmount" class="form-control" step="0.01" min="0.01" max="9999999999.99" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group" id="groupTxCurrency">
+            <label for="txFormCurrency" class="form-label">
+              <span>สกุลเงิน *</span>
+            </label>
+            <input type="text" id="txFormCurrency" class="form-control" value="THB" maxlength="3" pattern="[A-Za-z]{3}" required>
+          </div>
+
+          <div class="form-group" id="groupTxCategory">
+            <label for="txFormCategory" class="form-label">
+              <span>หมวดหมู่ *</span>
+              <span id="badgeUncertainCategory" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <select id="txFormCategory" class="form-control" required>
+              <option value="unknown">-- กรุณาเลือกหมวดหมู่ --</option>
+              <option value="food_drink">อาหารและเครื่องดื่ม</option>
+              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
+              <option value="transport">เดินทางและยานพาหนะ</option>
+              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
+              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
+              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
+              <option value="health_medical">สุขภาพและการแพทย์</option>
+              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
+              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
+              <option value="transfer_other">โอนเงินและอื่นๆ</option>
+              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
+              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
+              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxSourceType">
+            <label for="txFormSourceType" class="form-label">
+              <span>แหล่งที่มาของข้อมูล</span>
+            </label>
+            <select id="txFormSourceType" class="form-control">
+              <option value="manual">กรอกด้วยตนเอง (Manual)</option>
+              <option value="receipt">ใบเสร็จรับเงิน (Receipt)</option>
+              <option value="transfer_slip">สลิปโอนเงิน (Transfer Slip)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
+            <label for="txFormFundBucket" class="form-label">
+              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 5 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
+            </label>
+            <select id="txFormFundBucket" class="form-control" required>
+              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
+              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ประกันแดน/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
+              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — เก็บสะสมเงินเหลือใช้)</option>
+              <option value="home_building">2. เงินเก็บสร้างบ้าน (Fix 13,000/เดือน)</option>
+              <option value="investment_stock">1. เงินลงทุน (หุ้น — Fix 6,500/เดือน)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="txFormItemsSummary" class="form-label">
+              <span>สรุปรายการสินค้า / บริการ</span>
+            </label>
+            <textarea id="txFormItemsSummary" class="form-control" rows="2" maxlength="2000" placeholder="สรุปรายการสินค้าหรือบริการที่ปรากฏในใบเสร็จ"></textarea>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="txFormPurposeAnalysis" class="form-label">
+              <span>วัตถุประสงค์ของการซื้อ (purpose_analysis)</span>
+            </label>
+            <textarea id="txFormPurposeAnalysis" class="form-control" rows="2" maxlength="2000" placeholder="เช่น ซื้ออุปกรณ์ฮาร์ดแวร์ คาดว่าใช้สำหรับซ่อมบำรุงภายในบ้าน"></textarea>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="txFormNote" class="form-label">
+              <span>หมายเหตุเพิ่มเติม</span>
+            </label>
+            <input type="text" id="txFormNote" class="form-control" maxlength="2000" placeholder="บันทึกช่วยจำเพิ่มเติม (ถ้ามี)">
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" id="btnReanalyzeCurrentImage" class="btn btn-secondary btn-sm" hidden>วิเคราะห์ใหม่</button>
+        <button type="button" id="btnRemoveImageFromModal" class="btn btn-danger btn-sm" hidden>ลบรูปชั่วคราว</button>
+        <button type="button" id="btnCancelVerification" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnConfirmSaveTx" class="btn btn-primary">ยืนยันการบันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 2: ตั้งค่าระบบ, สถานะ AI, และสำรอง/นำเข้าข้อมูล (Settings & Backup) -->
+  <!-- ======================================================================= -->
+  <div id="settingsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle" hidden>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 id="settingsModalTitle" class="card-title">ตั้งค่าระบบและสำรองข้อมูล</h2>
+        <button type="button" id="btnCloseSettingsModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+        <!-- 4.1 Supabase Configuration -->
+        <section style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:1rem;">
+          <h3 style="font-size:0.96rem;font-weight:700;margin-bottom:0.35rem;">1. การตั้งค่า Supabase Cloud</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.85rem;">
+            หมายเหตุความปลอดภัย: ค่า Anon/Publishable Key เป็นคีย์สาธารณะสำหรับระบุโปรเจกต์เท่านั้น การป้องกันข้อมูลจริงทำงานผ่าน Row Level Security (RLS) และ JWT ของบัญชีผู้ใช้ ห้ามใส่ <code>service_role</code> key ในหน้านี้เด็ดขาด
+          </p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="inputSupabaseUrl" class="form-label">Supabase Project URL</label>
+              <input type="url" id="inputSupabaseUrl" class="form-control" placeholder="https://your-project-id.supabase.co">
+            </div>
+
+            <div class="form-group">
+              <label for="inputSupabaseAnonKey" class="form-label">Supabase Anon / Publishable Key</label>
+              <input type="text" id="inputSupabaseAnonKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... หรือ sb_publishable_...">
+            </div>
+          </div>
+
+          <div id="supabaseConnStatusBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0.85rem;">
+            สถานะการเชื่อมต่อ: โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์
+          </div>
+
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" id="btnSaveSupabaseConfig" class="btn btn-primary btn-sm">บันทึกการตั้งค่า</button>
+            <button type="button" id="btnTestSupabaseConn" class="btn btn-secondary btn-sm">ทดสอบการเชื่อมต่อ</button>
+            <button type="button" id="btnClearSupabaseConfig" class="btn btn-danger btn-sm">สลับเป็นโหมดในเครื่อง</button>
+          </div>
+        </section>
+
+        <!-- 4.2 Gemini Configuration Status (No Secret Key Input on Frontend) -->
+        <section style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:1rem;">
+          <h3 style="font-size:0.96rem;font-weight:700;margin-bottom:0.35rem;">2. สถานะบริการวิเคราะห์ใบเสร็จด้วย AI (Gemini)</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">
+            เพื่อความปลอดภัยสูงสุด ระบบ<strong>ไม่อนุญาตให้กรอก Gemini API Key ในเบราว์เซอร์</strong> การตั้งค่า <code>GEMINI_API_KEY</code> และ <code>GEMINI_MODEL</code> ต้องตั้งผ่าน Supabase Edge Function Secrets เท่านั้น
+          </p>
+          <div id="geminiSettingsStatusBox" class="alert-box alert-warning" style="margin-bottom:0.75rem;">
+            สถานะ AI: ยังไม่ได้ตั้งค่า AI (ต้องเชื่อมต่อ Supabase และเข้าสู่ระบบเพื่อเรียกใช้งาน Edge Function: <code>analyze-receipt</code>)
+          </div>
+          <button type="button" id="btnCheckAiEdgeHealth" class="btn btn-secondary btn-sm">ตรวจสอบความพร้อมของ AI บน Server</button>
+        </section>
+
+        <!-- 4.3 & 9.5 Backup Export / Import -->
+        <section style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:1rem;">
+          <h3 style="font-size:0.96rem;font-weight:700;margin-bottom:0.35rem;">3. สำรองและนำเข้าข้อมูล (Export / Import Backup)</h3>
+          <p style="font-size:0.8rem;color:var(--warning-color);margin-bottom:0.75rem;">
+            คำเตือน: ไฟล์สำรองมีข้อมูลการเงินส่วนบุคคลของคุณ กรุณาจัดเก็บไว้ในที่ปลอดภัยและไม่เผยแพร่สู่สาธารณะ
+          </p>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+            <button type="button" id="btnExportJson" class="btn btn-primary btn-sm">ส่งออกไฟล์ JSON</button>
+            <button type="button" id="btnExportCsv" class="btn btn-secondary btn-sm">ส่งออกไฟล์ CSV (รองรับ Excel ภาษาไทย)</button>
+          </div>
+
+          <div class="form-group">
+            <label for="inputImportBackupFile" class="form-label">นำเข้าข้อมูลจากไฟล์สำรอง (.json หรือ .csv)</label>
+            <input type="file" id="inputImportBackupFile" accept=".json,.csv,application/json,text/csv" class="form-control">
+          </div>
+          <div id="importResultBox" class="alert-box alert-info" style="margin-top:0.65rem;margin-bottom:0;" hidden></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 3: ระบบบัญชีผู้ใช้ (สมัครสมาชิก / เข้าสู่ระบบ / กู้คืนรหัสผ่าน / ออกจากระบบ) -->
+  <!-- ======================================================================= -->
+  <div id="authModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" hidden>
+    <div class="modal-panel" style="max-width:480px;">
+      <div class="modal-header">
+        <h2 id="authModalTitle" class="card-title">บัญชีผู้ใช้และการซิงก์ข้ามอุปกรณ์</h2>
+        <button type="button" id="btnCloseAuthModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="authCurrentAccountBox" class="alert-box alert-info" style="margin-bottom:1rem;">
+          สถานะปัจจุบัน: ยังไม่ได้เข้าสู่ระบบ (ทำงานในโหมดบันทึกข้อมูลในเครื่อง)
+        </div>
+
+        <div id="authErrorBox" class="alert-box alert-error" hidden></div>
+        <div id="authSuccessBox" class="alert-box alert-success" hidden></div>
+
+        <!-- ส่วนแสดงเมื่อยังไม่ได้เข้าสู่ระบบ -->
+        <form id="authForm" class="form-grid" novalidate>
+          <div class="form-group">
+            <label for="authEmailInput" class="form-label">อีเมลบัญชีผู้ใช้</label>
+            <input type="email" id="authEmailInput" class="form-control" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="authPasswordInput" class="form-label">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+            <input type="password" id="authPasswordInput" class="form-control" placeholder="••••••••" autocomplete="current-password" minlength="6" required>
+          </div>
+
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.4rem;">
+            <button type="submit" id="btnSignIn" class="btn btn-primary" style="flex:1;">เข้าสู่ระบบ</button>
+            <button type="button" id="btnSignUp" class="btn btn-secondary" style="flex:1;">สมัครบัญชีใหม่</button>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;margin-top:0.35rem;">
+            <button type="button" id="btnResetPassword" class="btn btn-secondary btn-sm">ลืมรหัสผ่าน / กู้คืนรหัสผ่าน</button>
+            <button type="button" id="btnSwitchAccountFromAuth" class="btn btn-secondary btn-sm" hidden>สลับบัญชี</button>
+          </div>
+        </form>
+
+        <!-- ส่วนแสดงเมื่อเข้าสู่ระบบแล้ว -->
+        <div id="authLoggedInActions" style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;" hidden>
+          <button type="button" id="btnVerifySessionNow" class="btn btn-secondary btn-sm">ตรวจสอบสถานะเซสชัน</button>
+          <button type="button" id="btnSignOut" class="btn btn-danger btn-sm">ออกจากระบบ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 4: หน้าต่างยืนยันการลบ หรือยืนยันการย้ายข้อมูล Local ขึ้น Cloud -->
+  <!-- ======================================================================= -->
+  <div id="confirmDialogModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle" hidden>
+    <div class="modal-panel" style="max-width:460px;">
+      <div class="modal-header">
+        <h2 id="confirmDialogTitle" class="card-title">ยืนยันการดำเนินการ</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmDialogMessage" style="font-size:0.94rem;color:var(--text-main);white-space:pre-line;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnConfirmDialogCancel" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnConfirmDialogAccept" class="btn btn-primary">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 5: แบ่งเงินเดือนออกเป็น 5 ส่วนตามสูตร Fix ประจำเดือน -->
+  <!-- ======================================================================= -->
+  <div id="salarySplitModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="salarySplitModalTitle" hidden>
+    <div class="modal-panel" style="max-width:600px;">
+      <div class="modal-header">
+        <h2 id="salarySplitModalTitle" class="card-title">แบ่งเงินเดือนออกเป็น 5 ส่วน (Fix ประจำเดือน)</h2>
+        <button type="button" id="btnCloseSalarySplitModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <form id="salarySplitForm" class="modal-body" novalidate>
+        <div class="alert-box alert-info" style="font-size:0.82rem;">
+          ระบบตั้งค่ายอด Fix รายเดือนตามสูตรของคุณไว้ให้แล้ว (เก็บสร้างบ้าน 13,000 / ลงทุนหุ้น 6,500 / ประกันพ่อ 1,300 หรือ 2,600 / ประกันแดน 2,900 / ให้น้องมายด์ 2,000 / น้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500) สามารถปรับแก้ตัวเลขก่อนยืนยันได้
+        </div>
+
+        <div id="salarySplitErrorBox" class="alert-box alert-error" hidden></div>
+
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label for="salarySplitDate" class="form-label">วันที่เงินเดือนออก *</label>
+            <input type="date" id="salarySplitDate" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitTotalInput" class="form-label">ยอดเงินเดือนรวมที่ได้รับ (บาท) *</label>
+            <input type="number" id="salarySplitTotalInput" class="form-control" step="0.01" min="1" placeholder="เช่น 45000" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund1Input" class="form-label">1. เงินลงทุน (หุ้น) — Fix 6,500</label>
+            <input type="number" id="salarySplitFund1Input" class="form-control" step="0.01" min="0" value="6500" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund2Input" class="form-label">2. เงินเก็บสร้างบ้าน — Fix 13,000</label>
+            <input type="number" id="salarySplitFund2Input" class="form-control" step="0.01" min="0" value="13000" required>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:var(--bg-subtle);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+              <label for="salarySplitFund3Input" class="form-label" style="margin:0;">3. ค่าใช้จ่ายคงที่รวม (บาท)</label>
+              <select id="salarySplitFatherInsMode" class="form-control" style="width:auto;min-height:32px;padding:0.2rem 0.5rem;font-size:0.8rem;">
+                <option value="1300">รอบปกติ: ประกันพ่อ 1,300 บาท (รวมคงที่ 12,700)</option>
+                <option value="2600">รอบเดือนที่ 3: ประกันพ่อ 2,600 บาท (รวมคงที่ 14,000)</option>
+              </select>
+            </div>
+            <input type="number" id="salarySplitFund3Input" class="form-control" step="0.01" min="0" value="12700" required>
+            <p style="font-size:0.76rem;color:var(--text-muted);margin-top:0.35rem;">
+              ประกอบด้วย: ประกันพ่อ (<span id="labelFatherInsAmount">1,300</span>) + ประกันแดน (2,900) + ให้น้องมายด์ (2,000) + ค่าน้ำ/ค่าไฟ/ค่าโทรศัพท์/ค่าเรียนพิเศษลูก (6,500)
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund4Input" class="form-label">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — ตั้งต้นเดือนนี้)</label>
+            <input type="number" id="salarySplitFund4Input" class="form-control" step="0.01" min="0" value="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund5Input" class="form-label">5. ค่าใช้จ่ายทั่วไป (ส่วนที่เหลือใช้จ่าย)</label>
+            <input type="number" id="salarySplitFund5Input" class="form-control" step="0.01" min="0" value="0" required>
+          </div>
+        </div>
+
+        <div id="salarySplitSummaryPreview" class="alert-box alert-success" style="margin-top:0.85rem;margin-bottom:0;font-size:0.84rem;">
+          ยอดรวม Fix (ข้อ 1 + 2 + 3) = ฿32,200.00 | กรอกยอดเงินเดือนรวมเพื่อคำนวณข้อ 5 อัตโนมัติ
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" id="btnCancelSalarySplit" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnConfirmSalarySplit" class="btn btn-primary">ยืนยันแบ่งเงินเดือนทั้ง 5 ส่วน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- พื้นที่แสดง Toast แจ้งเตือน -->
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+  <!-- ======================================================================= -->
+  <!-- APPLICATION JAVASCRIPT (ES6+ Vanilla JS) -->
+  <!-- ======================================================================= -->
+  <script>
+    /* __SLIPSENSE_APP_BUNDLE_PLACEHOLDER__ */
+  </script>
+</body>
+</html>

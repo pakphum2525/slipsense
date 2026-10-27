@@ -1,0 +1,15 @@
+{
+  "name": "slipsense-expense-tracker",
+  "version": "1.0.0",
+  "description": "SlipSense — ระบบบันทึกรายรับและรายจ่ายจากภาพใบเสร็จและสลิปโอนเงินด้วย AI (PWA + Offline-First + Supabase)",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/dev_server.js",
+    "build": "node scripts/build_prod.js",
+    "icons": "node scripts/generate_icons.js",
+    "test": "node scripts/run_tests.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

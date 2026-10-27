@@ -1,0 +1,3449 @@
+<!DOCTYPE html>
+<html lang="th" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SlipSense — บันทึกใบเสร็จและรายจ่ายอัจฉริยะ</title>
+  <meta name="description" content="ระบบบันทึกรายรับและรายจ่ายจากภาพใบเสร็จและสลิปโอนเงินด้วย AI วิเคราะห์วัตถุประสงค์การซื้อ และซิงก์ข้อมูลข้ามอุปกรณ์อย่างปลอดภัย">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SlipSense">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+
+  
+  <script src="./vendor/supabase.min.js"></script>
+
+  <style>:root{--bg-app:#f1f5f9;--bg-surface:#ffffff;--bg-subtle:#f8fafc;--text-main:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border-color:#e2e8f0;--border-strong:#cbd5e1;--brand-primary:#0f766e;--brand-primary-hover:#115e59;--brand-soft:#ccfbf1;--income-color:#15803d;--income-bg:#dcfce7;--expense-color:#b91c1c;--expense-bg:#fee2e2;--warning-color:#b45309;--warning-bg:#fef3c7;--warning-border:#f59e0b;--info-color:#1d4ed8;--info-bg:#dbeafe;--shadow-sm:0 1px 3px rgba(15,23,42,0.06);--shadow-md:0 4px 12px rgba(15,23,42,0.08);--shadow-lg:0 12px 28px rgba(15,23,42,0.16);--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sarabun",Roboto,sans-serif}*{box-sizing:border-box;margin:0;padding:0}html,body{min-height:100%;background-color:var(--bg-app);color:var(--text-main);font-family:var(--font-sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}button,input,select,textarea{font-family:inherit;font-size:1rem;color:inherit}button{cursor:pointer;border:none;background:none}button:disabled{opacity:0.58;cursor:not-allowed}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.system-banner{background:var(--warning-bg);color:#92400e;border-bottom:1px solid #fde68a;padding:0.55rem 1rem;font-size:0.88rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.system-banner.online-synced{background:#ecfdf5;color:#065f46;border-bottom-color:#a7f3d0}.system-banner.offline-mode{background:#fef2f2;color:#991b1b;border-bottom-color:#fecaca}.app-header{background:var(--bg-surface);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:30;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px)}.header-inner{max-width:1200px;margin:0 auto;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.brand-group{display:flex;align-items:center;gap:0.7rem}.brand-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;border:1px solid var(--border-color)}.brand-title{font-size:1.15rem;font-weight:700;color:var(--brand-primary);letter-spacing:-0.01em}.brand-subtitle{font-size:0.78rem;color:var(--text-muted)}.header-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}.status-pill{display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:999px;font-size:0.78rem;font-weight:600;background:var(--bg-subtle);border:1px solid var(--border-color);color:var(--text-secondary)}.status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.green{background:#16a34a}.status-dot.amber{background:#d97706}.status-dot.red{background:#dc2626}.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;min-height:44px;padding:0.55rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.92rem;transition:background-color 0.15s,border-color 0.15s,transform 0.08s;user-select:none}.btn:active:not(:disabled){transform:translateY(1px)}.btn-primary{background:var(--brand-primary);color:#ffffff}.btn-primary:hover:not(:disabled){background:var(--brand-primary-hover)}.btn-secondary{background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border-strong)}.btn-secondary:hover:not(:disabled){background:var(--bg-subtle)}.btn-accent{background:#0284c7;color:#ffffff}.btn-accent:hover:not(:disabled){background:#0369a1}.btn-danger{background:var(--expense-bg);color:var(--expense-color);border:1px solid #fecaca}.btn-danger:hover:not(:disabled){background:#fecaca}.btn-sm{min-height:36px;padding:0.35rem 0.7rem;font-size:0.82rem}.app-container{max-width:1200px;margin:0 auto;padding:1rem;padding-bottom:calc(2.5rem + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr;gap:1.25rem}@media (min-width:768px){.app-container{grid-template-columns:5fr 7fr;align-items:start;padding:1.25rem}}@media (min-width:1024px){.app-container{grid-template-columns:440px 1fr;gap:1.5rem}}.col-stack{display:flex;flex-direction:column;gap:1.25rem}.card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.15rem;box-shadow:var(--shadow-sm)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap}.card-title{font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.45rem}.quick-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}@media (max-width:420px){.quick-actions-grid{grid-template-columns:1fr}}.kpi-grid{display:grid;grid-template-columns:1fr;gap:0.75rem;margin-bottom:1rem}@media (min-width:480px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}.kpi-box{padding:0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-subtle)}.kpi-box.income{background:#f0fdf4;border-color:#bbf7d0}.kpi-box.expense{background:#fef2f2;border-color:#fecaca}.kpi-box.net{background:#f0fdfa;border-color:#99f6e4}.kpi-label{font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem}.kpi-value{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}.kpi-box.income .kpi-value{color:var(--income-color)}.kpi-box.expense .kpi-value{color:var(--expense-color)}.kpi-box.net .kpi-value{color:var(--brand-primary)}.kpi-sub{font-size:0.73rem;color:var(--text-muted);margin-top:0.2rem}.category-list{display:flex;flex-direction:column;gap:0.65rem}.category-row{display:flex;flex-direction:column;gap:0.25rem}.category-row-top{display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600}.progress-track{height:8px;background:var(--bg-app);border-radius:999px;overflow:hidden}.progress-fill{height:100%;background:var(--brand-primary);border-radius:999px;transition:width 0.25s ease}.upload-zone{border:2px dashed var(--border-strong);border-radius:var(--radius-md);padding:1.15rem;text-align:center;background:var(--bg-subtle);transition:border-color 0.2s,background-color 0.2s}.upload-zone:hover{border-color:var(--brand-primary)}.camera-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-top:0.85rem}.preview-container{margin-top:1rem;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:#ffffff}.preview-img{max-width:100%;max-height:280px;display:block;margin:0 auto 0.65rem;border-radius:6px;object-fit:contain;background:#0f172a}.compression-meta{font-size:0.8rem;color:var(--text-secondary);background:var(--bg-subtle);padding:0.45rem 0.65rem;border-radius:6px;margin-bottom:0.65rem}.form-grid{display:grid;grid-template-columns:1fr;gap:0.85rem}@media (min-width:540px){.form-grid.two-col{grid-template-columns:1fr 1fr}}.form-group{display:flex;flex-direction:column;gap:0.3rem}.form-label{font-size:0.86rem;font-weight:600;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;gap:0.4rem}.form-control{width:100%;min-height:44px;padding:0.55rem 0.75rem;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:#ffffff;transition:border-color 0.15s,box-shadow 0.15s}.form-control:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(15,118,110,0.18)}.form-group.uncertain-field .form-control{border-color:var(--warning-border);background-color:#fffbeb}.uncertain-badge{display:inline-block;font-size:0.72rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:999px;background:var(--warning-bg);color:var(--warning-color);border:1px solid var(--warning-border)}.tx-list{display:flex;flex-direction:column;gap:0.75rem}.tx-item{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.9rem;background:#ffffff;display:flex;flex-direction:column;gap:0.55rem;transition:border-color 0.15s}.tx-item:hover{border-color:var(--border-strong)}.tx-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem}.tx-merchant{font-weight:700;font-size:1rem;color:var(--text-main);word-break:break-word}.tx-amount{font-weight:800;font-size:1.08rem;font-variant-numeric:tabular-nums;white-space:nowrap}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.tx-badges{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}.badge{display:inline-flex;align-items:center;gap:0.25rem;padding:0.18rem 0.55rem;border-radius:999px;font-size:0.74rem;font-weight:600}.badge-income{background:var(--income-bg);color:var(--income-color)}.badge-expense{background:var(--expense-bg);color:var(--expense-color)}.badge-category{background:var(--bg-app);color:var(--text-secondary)}.badge-synced{background:#dcfce7;color:#166534}.badge-pending{background:#fef3c7;color:#92400e}.badge-local{background:#e2e8f0;color:#334155}.badge-failed{background:#fee2e2;color:#991b1b}.tx-purpose-box{font-size:0.84rem;color:var(--text-secondary);background:var(--bg-subtle);border-left:3px solid var(--brand-primary);padding:0.45rem 0.65rem;border-radius:0 6px 6px 0}.tx-actions{display:flex;justify-content:flex-end;gap:0.5rem;border-top:1px solid var(--bg-app);padding-top:0.5rem}.alert-box{padding:0.8rem 0.95rem;border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:0.85rem;border:1px solid transparent}.alert-warning{background:var(--warning-bg);color:#92400e;border-color:#fcd34d}.alert-error{background:var(--expense-bg);color:var(--expense-color);border-color:#fecaca}.alert-info{background:var(--info-bg);color:var(--info-color);border-color:#bfdbfe}.alert-success{background:var(--income-bg);color:var(--income-color);border-color:#bbf7d0}.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.92rem}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}.modal-backdrop[hidden]{display:none !important}.modal-panel{background:var(--bg-surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border-color);display:flex;flex-direction:column}.modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-surface);z-index:2}.modal-body{padding:1.25rem;overflow-y:auto}.modal-footer{padding:0.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.65rem;flex-wrap:wrap;background:var(--bg-subtle)}.toast-stack{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));right:1rem;left:1rem;max-width:420px;margin-left:auto;z-index:90;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}.toast{pointer-events:auto;padding:0.8rem 1rem;border-radius:var(--radius-sm);background:#0f172a;color:#ffffff;font-size:0.88rem;font-weight:500;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:space-between;gap:0.75rem}.toast.success{background:#15803d}.toast.error{background:#b91c1c}.toast.warning{background:#b45309}.fund-grid{display:flex;flex-direction:column;gap:0.65rem}.fund-card{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem 0.9rem;background:var(--bg-subtle);display:flex;flex-direction:column;gap:0.4rem}.fund-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem}.fund-title{font-weight:700;font-size:0.92rem;color:var(--text-main)}.fund-balance{font-weight:800;font-size:1.02rem;font-variant-numeric:tabular-nums;white-space:nowrap}.fund-balance.positive{color:var(--brand-primary)}.fund-balance.negative{color:var(--expense-color)}.fund-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.78rem;color:var(--text-muted)}.badge-fund{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}.fixed-checklist{display:flex;flex-direction:column;gap:0.45rem;margin-top:0.65rem;padding-top:0.65rem;border-top:1px dashed var(--border-color)}.fixed-item-row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:6px;background:var(--bg-surface);border:1px solid var(--border-color);font-size:0.82rem}.fixed-item-info{display:flex;flex-direction:column;gap:0.1rem}.fixed-item-name{font-weight:600;color:var(--text-main)}.fixed-item-sub{font-size:0.75rem;color:var(--text-muted)}</style>
+</head>
+<body>
+  
+  <div id="systemModeBanner" class="system-banner" role="status" aria-live="polite">
+    <span id="systemModeText">โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์</span>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button type="button" id="btnTriggerSyncNow" class="btn btn-secondary btn-sm" hidden>ซิงก์ข้อมูลทันที</button>
+      <button type="button" id="btnMigrateLocalToCloud" class="btn btn-primary btn-sm" hidden>ย้ายข้อมูลในเครื่องขึ้น Cloud</button>
+    </div>
+  </div>
+
+  
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <img src="./icons/icon-192.png" alt="โลโก้ SlipSense" class="brand-logo" width="40" height="40">
+        <div>
+          <h1 class="brand-title">SlipSense</h1>
+          <p class="brand-subtitle">บันทึกใบเสร็จและรายรับ-รายจ่ายด้วย AI</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill" id="aiStatusPill" title="สถานะการเชื่อมต่อบริการวิเคราะห์ใบเสร็จด้วย AI">
+          <span id="aiStatusDot" class="status-dot amber"></span>
+          <span id="aiStatusLabel">ยังไม่ได้ตั้งค่า AI</span>
+        </div>
+
+        <div class="status-pill" id="authStatusPill" title="สถานะบัญชีผู้ใช้และการซิงก์">
+          <span id="authStatusDot" class="status-dot"></span>
+          <span id="authStatusLabel">ใช้งานในเครื่อง</span>
+        </div>
+
+        <button type="button" id="btnOpenAuthModal" class="btn btn-secondary btn-sm">บัญชีผู้ใช้</button>
+        <button type="button" id="btnOpenSettingsModal" class="btn btn-secondary btn-sm" aria-label="ตั้งค่าระบบ">ตั้งค่า</button>
+      </div>
+    </div>
+  </header>
+
+  
+  <main class="app-container">
+    
+    <div class="col-stack">
+      
+      <section class="card" aria-labelledby="scanSectionTitle">
+        <div class="card-header">
+          <h2 id="scanSectionTitle" class="card-title">สแกนใบเสร็จ / สลิปโอนเงิน</h2>
+          <button type="button" id="btnOpenManualEntry" class="btn btn-primary btn-sm">+ เพิ่มรายการใหม่</button>
+        </div>
+
+        <div class="upload-zone" id="uploadDropZone">
+          <p style="font-weight:600;color:var(--text-main);margin-bottom:0.25rem;">
+            ถ่ายภาพใบเสร็จ หรือเลือกรูปสลิปจากอัลบั้ม
+          </p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">
+            รองรับไฟล์ JPEG, PNG, WebP (ย่อภาพในเครื่องอัตโนมัติที่ ~1,600px ก่อนวิเคราะห์ และไม่บันทึกรูปต้นฉบับขึ้น Cloud)
+          </p>
+
+          
+          <input type="file" id="inputCameraCapture" accept="image/*" capture="environment" class="sr-only">
+          <input type="file" id="inputGalleryFile" accept="image/jpeg,image/png,image/webp,image/*" class="sr-only">
+
+          <div class="camera-btn-pair">
+            <button type="button" id="btnStartScanCamera" class="btn btn-primary">
+              ถ่ายภาพใบเสร็จ
+            </button>
+            <button type="button" id="btnChooseGallery" class="btn btn-secondary">
+              เลือกรูปจากอัลบั้ม
+            </button>
+          </div>
+        </div>
+
+        
+        <div id="imagePreviewPanel" class="preview-container" hidden>
+          <img id="receiptPreviewImg" class="preview-img" alt="ตัวอย่างภาพใบเสร็จที่จะใช้ในการวิเคราะห์">
+          <div id="compressionInfoBox" class="compression-meta"></div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" id="btnAnalyzeWithAi" class="btn btn-primary" style="flex:1;">
+              วิเคราะห์ข้อมูลด้วย AI
+            </button>
+            <button type="button" id="btnUseImageForManual" class="btn btn-secondary">
+              กรอกเองจากภาพนี้
+            </button>
+            <button type="button" id="btnClearTempImage" class="btn btn-danger btn-sm">
+              ลบรูปชั่วคราว
+            </button>
+          </div>
+        </div>
+
+        <div id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
+          กำลังส่งภาพที่ย่อแล้วไปยัง Supabase Edge Function เพื่อวิเคราะห์ด้วย Gemini AI กรุณารอสักครู่...
+        </div>
+        <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
+      </section>
+
+      
+      <section class="card" aria-labelledby="dashboardSectionTitle">
+        <div class="card-header">
+          <h2 id="dashboardSectionTitle" class="card-title">สรุปการเงินประจำเดือน</h2>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <label for="dashboardMonthPicker" class="sr-only">เลือกเดือน</label>
+            <input type="month" id="dashboardMonthPicker" class="form-control" style="min-height:36px;padding:0.25rem 0.55rem;width:auto;">
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-box income">
+            <div class="kpi-label">รายรับรวมของเดือน</div>
+            <div id="kpiTotalIncome" class="kpi-value">฿0.00</div>
+            <div id="kpiIncomeSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
+          </div>
+          <div class="kpi-box expense">
+            <div class="kpi-label">รายจ่ายรวมของเดือน</div>
+            <div id="kpiTotalExpense" class="kpi-value">฿0.00</div>
+            <div id="kpiExpenseSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
+          </div>
+          <div class="kpi-box net">
+            <div class="kpi-label">เงินสุทธิของเดือน</div>
+            <div id="kpiNetBalance" class="kpi-value">฿0.00</div>
+            <div id="kpiSyncSummarySub" class="kpi-sub">0 รายการ</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:0.65rem;color:var(--text-secondary);">
+            สรุปยอดรายจ่ายตามหมวดหมู่
+          </h3>
+          <div id="categoryBreakdownContainer" class="category-list">
+            <p class="empty-state" style="padding:1rem 0;">ยังไม่มีรายการรายจ่ายในเดือนที่เลือก</p>
+          </div>
+        </div>
+      </section>
+
+      
+      <section class="card" aria-labelledby="fundBucketsSectionTitle">
+        <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
+          <div>
+            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 5 ส่วน & รายการ Fix</h2>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">
+              เลือกถอน/ตัดจ่ายจาก 5 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
+            </p>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <button type="button" id="btnOpenSalarySplitModal" class="btn btn-primary btn-sm">แบ่งเงินเดือนเข้า 5 ส่วน</button>
+            <button type="button" id="btnRolloverSurplusToEmergency" class="btn btn-secondary btn-sm" title="โอนเงินเหลือใช้ของเดือนนี้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)">เก็บเงินเหลือใช้เข้าข้อ 4</button>
+          </div>
+        </div>
+
+        <div id="fundBucketsContainer" class="fund-grid">
+          <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 5 ส่วน...</p>
+        </div>
+
+        <div style="margin-top:0.9rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.45rem;">
+            <h3 style="font-size:0.88rem;font-weight:700;color:var(--text-secondary);">
+              รายการจ่ายคงที่ประจำเดือน (ส่วนที่ 3: ค่าใช้จ่ายคงที่)
+            </h3>
+            <span id="fixedChecklistMonthLabel" style="font-size:0.76rem;color:var(--text-muted);"></span>
+          </div>
+          <div id="fixedMonthlyChecklistContainer" class="fixed-checklist"></div>
+        </div>
+      </section>
+    </div>
+
+    
+    <div class="col-stack">
+      <section class="card" aria-labelledby="historySectionTitle">
+        <div class="card-header">
+          <div>
+            <h2 id="historySectionTitle" class="card-title">รายการธุรกรรมและวิเคราะห์วัตถุประสงค์</h2>
+            <p id="historyCountSummary" style="font-size:0.8rem;color:var(--text-muted);">กำลังโหลดข้อมูลธุรกรรม...</p>
+          </div>
+          <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <button type="button" id="btnResetFilters" class="btn btn-secondary btn-sm">ล้างตัวกรอง</button>
+          </div>
+        </div>
+
+        
+        <div class="form-grid two-col" style="margin-bottom:1rem;padding:0.85rem;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-color);">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="filterSearchInput" class="form-label">ค้นหาร้านค้า สินค้า หรือวัตถุประสงค์</label>
+            <input type="search" id="filterSearchInput" class="form-control" placeholder="พิมพ์ชื่อร้านค้า สรุปสินค้า หรือคำใน purpose_analysis...">
+          </div>
+
+          <div class="form-group">
+            <label for="filterTypeSelect" class="form-label">ประเภทรายการ</label>
+            <select id="filterTypeSelect" class="form-control">
+              <option value="all">ทั้งหมด (รายรับ + รายจ่าย)</option>
+              <option value="expense">เฉพาะรายจ่าย (Expense)</option>
+              <option value="income">เฉพาะรายรับ (Income)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filterCategorySelect" class="form-label">หมวดหมู่</label>
+            <select id="filterCategorySelect" class="form-control">
+              <option value="all">ทุกหมวดหมู่</option>
+              <option value="food_drink">อาหารและเครื่องดื่ม</option>
+              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
+              <option value="transport">เดินทางและยานพาหนะ</option>
+              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
+              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
+              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
+              <option value="health_medical">สุขภาพและการแพทย์</option>
+              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
+              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
+              <option value="transfer_other">โอนเงินและอื่นๆ</option>
+              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
+              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
+              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 5 ส่วน)</label>
+            <select id="filterFundSelect" class="form-control">
+              <option value="all">ทุกส่วนของเงิน (1–5)</option>
+              <option value="investment_stock">1. เงินลงทุน (หุ้น)</option>
+              <option value="home_building">2. เงินเก็บสร้างบ้าน</option>
+              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่</option>
+              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)</option>
+              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filterDateFrom" class="form-label">ตั้งแต่วันที่</label>
+            <input type="date" id="filterDateFrom" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="filterDateTo" class="form-label">ถึงวันที่</label>
+            <input type="date" id="filterDateTo" class="form-control">
+          </div>
+        </div>
+
+        
+        <div id="transactionListContainer" class="tx-list" aria-live="polite">
+          <div class="empty-state">ยังไม่มีรายการบันทึก เริ่มต้นด้วยการสแกนใบเสร็จหรือกดปุ่ม "+ เพิ่มรายการใหม่"</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  
+  
+  
+  <div id="verificationModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="verificationModalTitle" hidden>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 id="verificationModalTitle" class="card-title">ตรวจสอบและยืนยันข้อมูลรายการ</h2>
+        <button type="button" id="btnCloseVerificationModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <form id="verificationForm" class="modal-body" novalidate>
+        <input type="hidden" id="txFormId" value="">
+
+        
+        <div id="aiVerificationWarningsBox" class="alert-box alert-warning" hidden></div>
+        <div id="txFormValidationErrorsBox" class="alert-box alert-error" hidden></div>
+
+        <div class="form-grid two-col">
+          <div class="form-group" id="groupTxDate">
+            <label for="txFormDate" class="form-label">
+              <span>วันที่รายการ *</span>
+              <span id="badgeUncertainDate" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="date" id="txFormDate" class="form-control" required>
+          </div>
+
+          <div class="form-group" id="groupTxType">
+            <label for="txFormType" class="form-label">
+              <span>ประเภท: รายรับ / รายจ่าย *</span>
+              <span id="badgeUncertainType" class="uncertain-badge" hidden>ต้องเลือกเอง</span>
+            </label>
+            <select id="txFormType" class="form-control" required>
+              <option value="unknown">-- กรุณาเลือกประเภทรายการ --</option>
+              <option value="expense">รายจ่าย (Expense)</option>
+              <option value="income">รายรับ (Income)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
+            <label for="txFormMerchant" class="form-label">
+              <span>ร้านค้า หรือ คู่รายการ *</span>
+              <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="text" id="txFormMerchant" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
+          </div>
+
+          <div class="form-group" id="groupTxAmount">
+            <label for="txFormAmount" class="form-label">
+              <span>ยอดเงิน (ค่าบวก) *</span>
+              <span id="badgeUncertainAmount" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="number" id="txFormAmount" class="form-control" step="0.01" min="0.01" max="9999999999.99" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group" id="groupTxCurrency">
+            <label for="txFormCurrency" class="form-label">
+              <span>สกุลเงิน *</span>
+            </label>
+            <input type="text" id="txFormCurrency" class="form-control" value="THB" maxlength="3" pattern="[A-Za-z]{3}" required>
+          </div>
+
+          <div class="form-group" id="groupTxCategory">
+            <label for="txFormCategory" class="form-label">
+              <span>หมวดหมู่ *</span>
+              <span id="badgeUncertainCategory" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <select id="txFormCategory" class="form-control" required>
+              <option value="unknown">-- กรุณาเลือกหมวดหมู่ --</option>
+              <option value="food_drink">อาหารและเครื่องดื่ม</option>
+              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
+              <option value="transport">เดินทางและยานพาหนะ</option>
+              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
+              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
+              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
+              <option value="health_medical">สุขภาพและการแพทย์</option>
+              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
+              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
+              <option value="transfer_other">โอนเงินและอื่นๆ</option>
+              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
+              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
+              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxSourceType">
+            <label for="txFormSourceType" class="form-label">
+              <span>แหล่งที่มาของข้อมูล</span>
+            </label>
+            <select id="txFormSourceType" class="form-control">
+              <option value="manual">กรอกด้วยตนเอง (Manual)</option>
+              <option value="receipt">ใบเสร็จรับเงิน (Receipt)</option>
+              <option value="transfer_slip">สลิปโอนเงิน (Transfer Slip)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
+            <label for="txFormFundBucket" class="form-label">
+              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 5 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
+            </label>
+            <select id="txFormFundBucket" class="form-control" required>
+              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
+              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ประกันแดน/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
+              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — เก็บสะสมเงินเหลือใช้)</option>
+              <option value="home_building">2. เงินเก็บสร้างบ้าน (Fix 13,000/เดือน)</option>
+              <option value="investment_stock">1. เงินลงทุน (หุ้น — Fix 6,500/เดือน)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="txFormItemsSummary" class="form-label">
+              <span>สรุปรายการสินค้า / บริการ</span>
+            </label>
+            <textarea id="txFormItemsSummary" class="form-control" rows="2" maxlength="2000" placeholder="สรุปรายการสินค้าหรือบริการที่ปรากฏในใบเสร็จ"></textarea>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="txFormPurposeAnalysis" class="form-label">
+              <span>วัตถุประสงค์ของการซื้อ (purpose_analysis)</span>
+            </label>
+            <textarea id="txFormPurposeAnalysis" class="form-control" rows="2" maxlength="2000" placeholder="เช่น ซื้ออุปกรณ์ฮาร์ดแวร์ คาดว่าใช้สำหรับซ่อมบำรุงภายในบ้าน"></textarea>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="txFormNote" class="form-label">
+              <span>หมายเหตุเพิ่มเติม</span>
+            </label>
+            <input type="text" id="txFormNote" class="form-control" maxlength="2000" placeholder="บันทึกช่วยจำเพิ่มเติม (ถ้ามี)">
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" id="btnReanalyzeCurrentImage" class="btn btn-secondary btn-sm" hidden>วิเคราะห์ใหม่</button>
+        <button type="button" id="btnRemoveImageFromModal" class="btn btn-danger btn-sm" hidden>ลบรูปชั่วคราว</button>
+        <button type="button" id="btnCancelVerification" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnConfirmSaveTx" class="btn btn-primary">ยืนยันการบันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  
+  
+  
+  <div id="settingsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle" hidden>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 id="settingsModalTitle" class="card-title">ตั้งค่าระบบและสำรองข้อมูล</h2>
+        <button type="button" id="btnCloseSettingsModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+        
+        <section style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:1rem;">
+          <h3 style="font-size:0.96rem;font-weight:700;margin-bottom:0.35rem;">1. การตั้งค่า Supabase Cloud</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.85rem;">
+            หมายเหตุความปลอดภัย: ค่า Anon/Publishable Key เป็นคีย์สาธารณะสำหรับระบุโปรเจกต์เท่านั้น การป้องกันข้อมูลจริงทำงานผ่าน Row Level Security (RLS) และ JWT ของบัญชีผู้ใช้ ห้ามใส่ <code>service_role</code> key ในหน้านี้เด็ดขาด
+          </p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="inputSupabaseUrl" class="form-label">Supabase Project URL</label>
+              <input type="url" id="inputSupabaseUrl" class="form-control" placeholder="https://your-project-id.supabase.co">
+            </div>
+
+            <div class="form-group">
+              <label for="inputSupabaseAnonKey" class="form-label">Supabase Anon / Publishable Key</label>
+              <input type="text" id="inputSupabaseAnonKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... หรือ sb_publishable_...">
+            </div>
+          </div>
+
+          <div id="supabaseConnStatusBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0.85rem;">
+            สถานะการเชื่อมต่อ: โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์
+          </div>
+
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" id="btnSaveSupabaseConfig" class="btn btn-primary btn-sm">บันทึกการตั้งค่า</button>
+            <button type="button" id="btnTestSupabaseConn" class="btn btn-secondary btn-sm">ทดสอบการเชื่อมต่อ</button>
+            <button type="button" id="btnClearSupabaseConfig" class="btn btn-danger btn-sm">สลับเป็นโหมดในเครื่อง</button>
+          </div>
+        </section>
+
+        
+        <section style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:1rem;">
+          <h3 style="font-size:0.96rem;font-weight:700;margin-bottom:0.35rem;">2. สถานะบริการวิเคราะห์ใบเสร็จด้วย AI (Gemini)</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">
+            เพื่อความปลอดภัยสูงสุด ระบบ<strong>ไม่อนุญาตให้กรอก Gemini API Key ในเบราว์เซอร์</strong> การตั้งค่า <code>GEMINI_API_KEY</code> และ <code>GEMINI_MODEL</code> ต้องตั้งผ่าน Supabase Edge Function Secrets เท่านั้น
+          </p>
+          <div id="geminiSettingsStatusBox" class="alert-box alert-warning" style="margin-bottom:0.75rem;">
+            สถานะ AI: ยังไม่ได้ตั้งค่า AI (ต้องเชื่อมต่อ Supabase และเข้าสู่ระบบเพื่อเรียกใช้งาน Edge Function: <code>analyze-receipt</code>)
+          </div>
+          <button type="button" id="btnCheckAiEdgeHealth" class="btn btn-secondary btn-sm">ตรวจสอบความพร้อมของ AI บน Server</button>
+        </section>
+
+        
+        <section style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:1rem;">
+          <h3 style="font-size:0.96rem;font-weight:700;margin-bottom:0.35rem;">3. สำรองและนำเข้าข้อมูล (Export / Import Backup)</h3>
+          <p style="font-size:0.8rem;color:var(--warning-color);margin-bottom:0.75rem;">
+            คำเตือน: ไฟล์สำรองมีข้อมูลการเงินส่วนบุคคลของคุณ กรุณาจัดเก็บไว้ในที่ปลอดภัยและไม่เผยแพร่สู่สาธารณะ
+          </p>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+            <button type="button" id="btnExportJson" class="btn btn-primary btn-sm">ส่งออกไฟล์ JSON</button>
+            <button type="button" id="btnExportCsv" class="btn btn-secondary btn-sm">ส่งออกไฟล์ CSV (รองรับ Excel ภาษาไทย)</button>
+          </div>
+
+          <div class="form-group">
+            <label for="inputImportBackupFile" class="form-label">นำเข้าข้อมูลจากไฟล์สำรอง (.json หรือ .csv)</label>
+            <input type="file" id="inputImportBackupFile" accept=".json,.csv,application/json,text/csv" class="form-control">
+          </div>
+          <div id="importResultBox" class="alert-box alert-info" style="margin-top:0.65rem;margin-bottom:0;" hidden></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  
+  
+  
+  <div id="authModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" hidden>
+    <div class="modal-panel" style="max-width:480px;">
+      <div class="modal-header">
+        <h2 id="authModalTitle" class="card-title">บัญชีผู้ใช้และการซิงก์ข้ามอุปกรณ์</h2>
+        <button type="button" id="btnCloseAuthModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="authCurrentAccountBox" class="alert-box alert-info" style="margin-bottom:1rem;">
+          สถานะปัจจุบัน: ยังไม่ได้เข้าสู่ระบบ (ทำงานในโหมดบันทึกข้อมูลในเครื่อง)
+        </div>
+
+        <div id="authErrorBox" class="alert-box alert-error" hidden></div>
+        <div id="authSuccessBox" class="alert-box alert-success" hidden></div>
+
+        
+        <form id="authForm" class="form-grid" novalidate>
+          <div class="form-group">
+            <label for="authEmailInput" class="form-label">อีเมลบัญชีผู้ใช้</label>
+            <input type="email" id="authEmailInput" class="form-control" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="authPasswordInput" class="form-label">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+            <input type="password" id="authPasswordInput" class="form-control" placeholder="••••••••" autocomplete="current-password" minlength="6" required>
+          </div>
+
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.4rem;">
+            <button type="submit" id="btnSignIn" class="btn btn-primary" style="flex:1;">เข้าสู่ระบบ</button>
+            <button type="button" id="btnSignUp" class="btn btn-secondary" style="flex:1;">สมัครบัญชีใหม่</button>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;margin-top:0.35rem;">
+            <button type="button" id="btnResetPassword" class="btn btn-secondary btn-sm">ลืมรหัสผ่าน / กู้คืนรหัสผ่าน</button>
+            <button type="button" id="btnSwitchAccountFromAuth" class="btn btn-secondary btn-sm" hidden>สลับบัญชี</button>
+          </div>
+        </form>
+
+        
+        <div id="authLoggedInActions" style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;" hidden>
+          <button type="button" id="btnVerifySessionNow" class="btn btn-secondary btn-sm">ตรวจสอบสถานะเซสชัน</button>
+          <button type="button" id="btnSignOut" class="btn btn-danger btn-sm">ออกจากระบบ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  
+  
+  <div id="confirmDialogModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle" hidden>
+    <div class="modal-panel" style="max-width:460px;">
+      <div class="modal-header">
+        <h2 id="confirmDialogTitle" class="card-title">ยืนยันการดำเนินการ</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmDialogMessage" style="font-size:0.94rem;color:var(--text-main);white-space:pre-line;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnConfirmDialogCancel" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnConfirmDialogAccept" class="btn btn-primary">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  
+  
+  
+  <div id="salarySplitModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="salarySplitModalTitle" hidden>
+    <div class="modal-panel" style="max-width:600px;">
+      <div class="modal-header">
+        <h2 id="salarySplitModalTitle" class="card-title">แบ่งเงินเดือนออกเป็น 5 ส่วน (Fix ประจำเดือน)</h2>
+        <button type="button" id="btnCloseSalarySplitModal" class="btn btn-secondary btn-sm">ปิด</button>
+      </div>
+
+      <form id="salarySplitForm" class="modal-body" novalidate>
+        <div class="alert-box alert-info" style="font-size:0.82rem;">
+          ระบบตั้งค่ายอด Fix รายเดือนตามสูตรของคุณไว้ให้แล้ว (เก็บสร้างบ้าน 13,000 / ลงทุนหุ้น 6,500 / ประกันพ่อ 1,300 หรือ 2,600 / ประกันแดน 2,900 / ให้น้องมายด์ 2,000 / น้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500) สามารถปรับแก้ตัวเลขก่อนยืนยันได้
+        </div>
+
+        <div id="salarySplitErrorBox" class="alert-box alert-error" hidden></div>
+
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label for="salarySplitDate" class="form-label">วันที่เงินเดือนออก *</label>
+            <input type="date" id="salarySplitDate" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitTotalInput" class="form-label">ยอดเงินเดือนรวมที่ได้รับ (บาท) *</label>
+            <input type="number" id="salarySplitTotalInput" class="form-control" step="0.01" min="1" placeholder="เช่น 45000" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund1Input" class="form-label">1. เงินลงทุน (หุ้น) — Fix 6,500</label>
+            <input type="number" id="salarySplitFund1Input" class="form-control" step="0.01" min="0" value="6500" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund2Input" class="form-label">2. เงินเก็บสร้างบ้าน — Fix 13,000</label>
+            <input type="number" id="salarySplitFund2Input" class="form-control" step="0.01" min="0" value="13000" required>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:var(--bg-subtle);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+              <label for="salarySplitFund3Input" class="form-label" style="margin:0;">3. ค่าใช้จ่ายคงที่รวม (บาท)</label>
+              <select id="salarySplitFatherInsMode" class="form-control" style="width:auto;min-height:32px;padding:0.2rem 0.5rem;font-size:0.8rem;">
+                <option value="1300">รอบปกติ: ประกันพ่อ 1,300 บาท (รวมคงที่ 12,700)</option>
+                <option value="2600">รอบเดือนที่ 3: ประกันพ่อ 2,600 บาท (รวมคงที่ 14,000)</option>
+              </select>
+            </div>
+            <input type="number" id="salarySplitFund3Input" class="form-control" step="0.01" min="0" value="12700" required>
+            <p style="font-size:0.76rem;color:var(--text-muted);margin-top:0.35rem;">
+              ประกอบด้วย: ประกันพ่อ (<span id="labelFatherInsAmount">1,300</span>) + ประกันแดน (2,900) + ให้น้องมายด์ (2,000) + ค่าน้ำ/ค่าไฟ/ค่าโทรศัพท์/ค่าเรียนพิเศษลูก (6,500)
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund4Input" class="form-label">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — ตั้งต้นเดือนนี้)</label>
+            <input type="number" id="salarySplitFund4Input" class="form-control" step="0.01" min="0" value="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="salarySplitFund5Input" class="form-label">5. ค่าใช้จ่ายทั่วไป (ส่วนที่เหลือใช้จ่าย)</label>
+            <input type="number" id="salarySplitFund5Input" class="form-control" step="0.01" min="0" value="0" required>
+          </div>
+        </div>
+
+        <div id="salarySplitSummaryPreview" class="alert-box alert-success" style="margin-top:0.85rem;margin-bottom:0;font-size:0.84rem;">
+          ยอดรวม Fix (ข้อ 1 + 2 + 3) = ฿32,200.00 | กรอกยอดเงินเดือนรวมเพื่อคำนวณข้อ 5 อัตโนมัติ
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" id="btnCancelSalarySplit" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnConfirmSalarySplit" class="btn btn-primary">ยืนยันแบ่งเงินเดือนทั้ง 5 ส่วน</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+  
+  
+  
+  <script>
+    ;
+(function(globalScope){
+'use strict';
+const _0x1a0='slipsense_db';
+const _0x1a1=1;
+const _0x1a2='transactions';
+const _0x1a3='slipsense_settings_v1';
+const _0x1a4={
+food_drink:'อาหารและเครื่องดื่ม',
+groceries:'ของใช้และซูเปอร์มาร์เก็ต',
+transport:'เดินทางและยานพาหนะ',
+utilities_bills:'ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค',
+shopping_general:'ช้อปปิ้งและเสื้อผ้า',
+home_repair:'ซ่อมบำรุงและอุปกรณ์บ้าน',
+health_medical:'สุขภาพและการแพทย์',
+education_work:'การศึกษาและอุปกรณ์ทำงาน',
+entertainment:'บันเทิงและไลฟ์สไตล์',
+transfer_other:'โอนเงินและอื่นๆ',
+salary_income:'เงินเดือนและค่าจ้าง',
+business_income:'รายได้ธุรกิจ/ค้าขาย',
+refund_other_income:'เงินคืนและรายรับอื่นๆ',
+unknown:'ยังไม่ระบุหมวดหมู่'
+};
+const _0x1a5={
+receipt:'ใบเสร็จรับเงิน',
+transfer_slip:'สลิปโอนเงิน',
+manual:'กรอกด้วยตนเอง'
+};
+const _0x1a6={
+local_only:'บันทึกในเครื่อง',
+pending_sync:'รอซิงก์ขึ้น Cloud',
+synced:'ซิงก์ Cloud แล้ว',
+sync_failed:'ซิงก์ไม่สำเร็จ'
+};
+const FUND_BUCKET_LABELS={
+investment_stock:'1. เงินลงทุน (หุ้น)',
+home_building:'2. เงินเก็บสร้างบ้าน',
+fixed_expense:'3. ค่าใช้จ่ายคงที่',
+emergency_personal:'4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+general_expense:'5. ค่าใช้จ่ายทั่วไป'
+};
+const FUND_BUCKET_ORDER=[
+'investment_stock',
+'home_building',
+'fixed_expense',
+'emergency_personal',
+'general_expense'
+];
+const FIXED_MONTHLY_PRESETS={
+HOME_BUILDING:13000,
+INVESTMENT_STOCK:6500,
+FATHER_INSURANCE_NORMAL:1300,
+FATHER_INSURANCE_EVERY_3RD:2600,
+DAN_INSURANCE:2900,
+SISTER_MIND:2000,
+UTILITIES_TUITION_BUDGET:6500,
+FIXED_EXPENSE_TOTAL_NORMAL:12700,
+FIXED_EXPENSE_TOTAL_EVERY_3RD:14000
+};
+const _0x1a7={
+settings:{
+supabaseUrl:'',
+supabaseAnonKey:'',
+defaultCurrency:'THB'
+},
+supabaseClient:null,
+supabaseConnected:false,
+currentUser:null,
+realtimeChannel:null,
+aiStatus:'unconfigured',
+aiStatusMessage:'ยังไม่ได้ตั้งค่า AI',
+transactions:[],
+usingMemoryFallback:false,
+memoryStore:new Map(),
+currentCompressedImage:null,
+isAnalyzingAi:false,
+isSavingTx:false,
+isSyncing:false
+};
+function generateUuid(){
+if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){
+return crypto.randomUUID();
+}
+return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){
+const r=(Math.random()*16)|0;
+const v=c==='x'?r:(r&0x3)|0x8;
+return v.toString(16);
+});
+}
+function getBangkokTodayIso(dateObj=new Date()){
+try{
+const parts=new Intl.DateTimeFormat('en-CA',{
+timeZone:'Asia/Bangkok',
+year:'numeric',
+month:'2-digit',
+day:'2-digit'
+}).formatToParts(dateObj);
+const y=parts.find((p)=>p.type==='year')?.value;
+const m=parts.find((p)=>p.type==='month')?.value;
+const d=parts.find((p)=>p.type==='day')?.value;
+if(y&&m&&d)return`${y}-${m}-${d}`;
+}catch(_e){
+}
+const bkkMs=dateObj.getTime()+7*3600*1000;
+return new Date(bkkMs).toISOString().slice(0,10);
+}
+function normalizeIsoDate(rawDate){
+if(typeof rawDate!=='string')return{date:null,convertedFromBE:false};
+const trimmed=rawDate.trim();
+const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+if(!match)return{date:null,convertedFromBE:false};
+let year=Number(match[1]);
+const month=Number(match[2]);
+const day=Number(match[3]);
+let convertedFromBE=false;
+if(year>=2480&&year<=2650){
+year-=543;
+convertedFromBE=true;
+}
+if(year<1990||year>2100||month<1||month>12||day<1||day>31){
+return{date:null,convertedFromBE:false};
+}
+const iso=`${String(year).padStart(4,'0')}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+const dt=new Date(`${iso}T00:00:00Z`);
+if(
+Number.isNaN(dt.getTime())||
+dt.getUTCFullYear()!==year||
+dt.getUTCMonth()+1!==month||
+dt.getUTCDate()!==day
+){
+return{date:null,convertedFromBE:false};
+}
+return{date:iso,convertedFromBE};
+}
+function formatCurrency(amount,currency='THB'){
+const num=Number(amount);
+const safeNum=Number.isFinite(num)?num:0;
+const curr=typeof currency==='string'&&/^[A-Za-z]{3}$/.test(currency.trim())
+?currency.trim().toUpperCase()
+:'THB';
+const formattedNumber=safeNum.toLocaleString('en-US',{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+});
+if(curr==='THB'){
+return`฿${formattedNumber}`;
+}
+return`${curr} ${formattedNumber}`;
+}
+function inferDefaultFundBucket(
+category='',
+merchant='',
+itemsSummary='',
+purposeAnalysis='',
+note=''
+){
+const text=`${merchant} ${itemsSummary} ${purposeAnalysis} ${note}`.toLowerCase();
+if(/(หุ้น|กองทุน|ปันผล|หลักทรัพย์|พอร์ต|dime|innovestx|streaming|settrade|stock)/.test(text)){
+return'investment_stock';
+}
+if(/(สร้างบ้าน|วัสดุก่อสร้าง|ปูน|เหล็ก|ผู้รับเหมา|ต่อเติมบ้าน|ไทวัสดุ|โฮมโปร|ดูโฮม|homepro|dohome)/.test(text)){
+return'home_building';
+}
+if(/(ประกันพ่อ|ประกันแดน|ให้น้อง|มายด์|ค่าน้ำ|ค่าไฟ|การไฟฟ้า|การประปา|ค่าโทรศัพท์|ค่าเน็ต|เรียนพิเศษ|กวดวิชา|ค่าเทอม)/.test(text)){
+return'fixed_expense';
+}
+if(/(ฉุกเฉิน|โรงพยาบาล|คลินิก|ค่ารักษา|ค่ายา|ซ่อมรถด่วน|อุบัติเหตุ)/.test(text)){
+return'emergency_personal';
+}
+if(category==='utilities_bills'||category==='education_work'){
+return'fixed_expense';
+}
+if(category==='home_repair'){
+return'home_building';
+}
+if(category==='health_medical'){
+return'emergency_personal';
+}
+return'general_expense';
+}
+function validateTransactionInput(input={}){
+const errors=[];
+const rawDate=input.transaction_date!==undefined?input.transaction_date:input.date;
+const{date}=normalizeIsoDate(String(rawDate||''));
+if(!date){
+errors.push('กรุณาระบุวันที่ทำรายการให้ถูกต้อง (รูปแบบ YYYY-MM-DD)');
+}
+const merchant=typeof input.merchant==='string'?input.merchant.trim():'';
+if(!merchant||merchant.length<1||merchant.length>255){
+errors.push('กรุณาระบุชื่อร้านค้าหรือคู่รายการ (1-255 ตัวอักษร)');
+}
+const amount=Number(input.amount);
+if(!Number.isFinite(amount)||amount<=0||amount>9999999999.99){
+errors.push('กรุณาระบุยอดเงินที่เป็นค่าบวกมากกว่า 0.00');
+}
+const type=typeof input.type==='string'?input.type.trim().toLowerCase():'';
+if(type!=='income'&&type!=='expense'){
+errors.push('กรุณาเลือกประเภทรายการ (รายรับ หรือ รายจ่าย) ให้ชัดเจนก่อนบันทึก');
+}
+const category=typeof input.category==='string'?input.category.trim():'';
+if(!category||category==='unknown'||!_0x1a4[category]){
+errors.push('กรุณาเลือกหมวดหมู่ของรายการ');
+}
+const rawCurrency=typeof input.currency==='string'?input.currency.trim().toUpperCase():'THB';
+const currency=/^[A-Z]{3}$/.test(rawCurrency)?rawCurrency:null;
+if(!currency){
+errors.push('รหัสสกุลเงินต้องเป็นตัวอักษรภาษาอังกฤษ 3 ตัว เช่น THB, USD');
+}
+const rawSource=typeof input.source_type==='string'?input.source_type.trim():'manual';
+const source_type=['receipt','transfer_slip','manual'].includes(rawSource)?rawSource:'manual';
+const itemsSummaryClean=typeof input.items_summary==='string'?input.items_summary.trim().slice(0,2000):'';
+const purposeAnalysisClean=typeof input.purpose_analysis==='string'?input.purpose_analysis.trim().slice(0,2000):'';
+const noteClean=typeof input.note==='string'?input.note.trim().slice(0,2000):'';
+const rawFundBucket=typeof input.fund_bucket==='string'?input.fund_bucket.trim():'';
+const fund_bucket=(FUND_BUCKET_LABELS)[rawFundBucket]
+?(rawFundBucket)
+:inferDefaultFundBucket(category,merchant,itemsSummaryClean,purposeAnalysisClean,noteClean);
+return{
+valid:errors.length===0,
+errors,
+normalized:errors.length===0?{
+transaction_date:date,
+merchant:merchant.slice(0,255),
+amount:Math.round(amount*100)/100,
+currency:currency||'THB',
+type,
+category,
+fund_bucket,
+source_type,
+items_summary:itemsSummaryClean,
+purpose_analysis:purposeAnalysisClean,
+note:noteClean
+}:null
+};
+}
+function normalizeAiAnalysisResult(raw={}){
+const warnings=Array.isArray(raw.warnings)
+?raw.warnings.filter((w)=>typeof w==='string'&&w.trim()).map((w)=>w.trim())
+:[];
+const uncertainSet=new Set(
+Array.isArray(raw.uncertain_fields)
+?raw.uncertain_fields.filter((f)=>typeof f==='string').map((f)=>f.trim())
+:[]
+);
+const{date,convertedFromBE}=normalizeIsoDate(raw.date);
+if(convertedFromBE){
+warnings.push('ระบบแปลงปี พ.ศ. ในใบเสร็จเป็นปี ค.ศ. อัตโนมัติ กรุณาตรวจสอบความถูกต้องของวันที่');
+}
+if(!date){
+uncertainSet.add('date');
+if(!warnings.some((w)=>w.includes('วันที่'))){
+warnings.push('ไม่พบวันที่ทำรายการในภาพ กรุณาระบุวันที่ด้วยตนเอง (ระบบไม่ใส่วันที่ปัจจุบันให้อัตโนมัติ)');
+}
+}
+const merchant=
+typeof raw.merchant==='string'&&raw.merchant.trim().length>0
+?raw.merchant.trim().slice(0,255)
+:null;
+if(!merchant){
+uncertainSet.add('merchant');
+if(!warnings.some((w)=>w.includes('ร้านค้า'))){
+warnings.push('อ่านชื่อร้านค้าหรือคู่รายการไม่ชัดเจน กรุณาตรวจสอบและกรอกเพิ่มเติม');
+}
+}
+let amount=null;
+if(typeof raw.amount==='number'&&Number.isFinite(raw.amount)&&raw.amount>0){
+amount=Math.round(raw.amount*100)/100;
+}else if(typeof raw.amount==='string'&&raw.amount.trim()!==''){
+const parsed=Number(raw.amount.replace(/,/g,'').trim());
+if(Number.isFinite(parsed)&&parsed>0){
+amount=Math.round(parsed*100)/100;
+}
+}
+if(amount===null){
+uncertainSet.add('amount');
+if(!warnings.some((w)=>w.includes('ยอดเงิน'))){
+warnings.push('ไม่พบยอดเงินที่ชัดเจนในภาพ กรุณาระบุจำนวนเงินด้วยตนเอง');
+}
+}
+const rawType=typeof raw.type==='string'?raw.type.trim().toLowerCase():'unknown';
+const type=['income','expense','unknown'].includes(rawType)?rawType:'unknown';
+if(type==='unknown'){
+uncertainSet.add('type');
+if(!warnings.some((w)=>w.includes('รายรับ')||w.includes('รายจ่าย')||w.includes('ทิศทาง'))){
+warnings.push('ไม่สามารถสรุปทิศทางเงินเข้า/ออกได้ชัดเจนจากภาพ กรุณาเลือกประเภทรายรับหรือรายจ่ายก่อนบันทึก');
+}
+}
+const rawCategory=typeof raw.category==='string'?raw.category.trim().toLowerCase():'unknown';
+const category=_0x1a4[rawCategory]?rawCategory:'unknown';
+if(category==='unknown'){
+uncertainSet.add('category');
+}
+const rawCurrency=typeof raw.currency==='string'?raw.currency.trim().toUpperCase():'THB';
+const currency=/^[A-Z]{3}$/.test(rawCurrency)?rawCurrency:'THB';
+const source_type=raw.source_type==='transfer_slip'?'transfer_slip':'receipt';
+const items_summary=
+typeof raw.items_summary==='string'&&raw.items_summary.trim()
+?raw.items_summary.trim()
+:'ไม่พบรายละเอียดรายการสินค้าแยกย่อยในภาพ';
+const purpose_analysis=
+typeof raw.purpose_analysis==='string'&&raw.purpose_analysis.trim()
+?raw.purpose_analysis.trim()
+:'ไม่สามารถระบุวัตถุประสงค์ที่ชัดเจนจากหลักฐานในภาพเพียงอย่างเดียว';
+const rawFundBucket=typeof raw.fund_bucket==='string'?raw.fund_bucket.trim():'';
+const fund_bucket=(FUND_BUCKET_LABELS)[rawFundBucket]
+?(rawFundBucket)
+:inferDefaultFundBucket(category,merchant||'',items_summary,purpose_analysis);
+const uncertain_fields=Array.from(uncertainSet);
+const requires_review=
+Boolean(raw.requires_review)||
+uncertain_fields.length>0||
+warnings.length>0||
+date===null||
+amount===null||
+type==='unknown';
+return{
+date,
+merchant,
+amount,
+currency,
+type,
+category,
+fund_bucket,
+source_type,
+items_summary,
+purpose_analysis,
+warnings,
+uncertain_fields,
+requires_review
+};
+}
+function calculateDashboardMetrics(transactions=[],targetYearMonth=''){
+let totalIncomeCents=0;
+let totalExpenseCents=0;
+let syncedIncomeCents=0;
+let syncedExpenseCents=0;
+let syncedCount=0;
+let localOrPendingCount=0;
+let failedCount=0;
+const categoryTotalsCents={};
+const fundStatsCents
+={
+investment_stock:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
+home_building:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
+fixed_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
+emergency_personal:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
+general_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0}
+};
+let fatherInsPaidCents=0;
+let danInsPaidCents=0;
+let sisterMindPaidCents=0;
+let utilitiesTuitionPaidCents=0;
+let detectedFatherInsTarget=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL;
+const seenIds=new Set();
+const filtered=[];
+for(const tx of transactions){
+if(!tx||tx.deleted_at)continue;
+const id=String(tx.id||'');
+if(id&&seenIds.has(id))continue;
+if(id)seenIds.add(id);
+const d=String(tx.transaction_date||tx.date||'');
+const cents=Math.round(Number(tx.amount||0)*100);
+if(!Number.isFinite(cents)||cents<=0)continue;
+const rawBucket=typeof tx.fund_bucket==='string'?tx.fund_bucket.trim():'';
+const bucket=(FUND_BUCKET_LABELS)[rawBucket]
+?(rawBucket)
+:inferDefaultFundBucket(tx.category,tx.merchant,tx.items_summary,tx.purpose_analysis,tx.note);
+const isUpToTargetMonth=!targetYearMonth||!d||d.slice(0,7)<=targetYearMonth;
+if(isUpToTargetMonth){
+if(tx.type==='income'){
+fundStatsCents[bucket].allTimeIncomeCents+=cents;
+}else if(tx.type==='expense'){
+fundStatsCents[bucket].allTimeExpenseCents+=cents;
+}
+}
+if(targetYearMonth&&!d.startsWith(targetYearMonth))continue;
+filtered.push(tx);
+if(tx.type==='income'){
+fundStatsCents[bucket].monthIncomeCents+=cents;
+if(bucket==='fixed_expense'&&Math.round(cents/100)>=FIXED_MONTHLY_PRESETS.FIXED_EXPENSE_TOTAL_EVERY_3RD){
+detectedFatherInsTarget=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD;
+}
+}else if(tx.type==='expense'){
+fundStatsCents[bucket].monthExpenseCents+=cents;
+const hay=`${tx.merchant||''} ${tx.items_summary||''} ${tx.purpose_analysis||''} ${tx.note||''}`.toLowerCase();
+if(hay.includes('ประกันพ่อ')||hay.includes('[fixed_item:father_insurance]')){
+fatherInsPaidCents+=cents;
+if(Math.round(cents/100)>=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD){
+detectedFatherInsTarget=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD;
+}
+}else if(hay.includes('ประกันแดน')||hay.includes('[fixed_item:dan_insurance]')){
+danInsPaidCents+=cents;
+}else if(hay.includes('ให้น้อง')||hay.includes('มายด์')||hay.includes('[fixed_item:sister_mind]')){
+sisterMindPaidCents+=cents;
+}else if(
+bucket==='fixed_expense'||
+tx.category==='utilities_bills'||
+tx.category==='education_work'||
+/(ค่าน้ำ|ค่าไฟ|การไฟฟ้า|การประปา|ค่าโทรศัพท์|ค่าเน็ต|เรียนพิเศษ|กวดวิชา|ค่าเทอม|\[fixed_item:utilities_tuition\])/.test(hay)
+){
+utilitiesTuitionPaidCents+=cents;
+}
+}
+}
+for(const tx of filtered){
+const cents=Math.round(Number(tx.amount||0)*100);
+if(!Number.isFinite(cents)||cents<=0)continue;
+const status=tx.sync_status||'local_only';
+if(tx.type==='income'){
+totalIncomeCents+=cents;
+if(status==='synced')syncedIncomeCents+=cents;
+}else if(tx.type==='expense'){
+totalExpenseCents+=cents;
+if(status==='synced')syncedExpenseCents+=cents;
+const cat=tx.category||'shopping_general';
+categoryTotalsCents[cat]=(categoryTotalsCents[cat]||0)+cents;
+}
+if(status==='synced'){
+syncedCount+=1;
+}else if(status==='sync_failed'){
+failedCount+=1;
+localOrPendingCount+=1;
+}else{
+localOrPendingCount+=1;
+}
+}
+const totalIncome=totalIncomeCents/100;
+const totalExpense=totalExpenseCents/100;
+const netBalance=(totalIncomeCents-totalExpenseCents)/100;
+const categoryBreakdown=Object.entries(categoryTotalsCents)
+.map(([category,cents])=>({
+category,
+label:_0x1a4[category]||category,
+amount:cents/100,
+percentage:totalExpenseCents>0?Math.round((cents/totalExpenseCents)*10000)/100:0
+}))
+.sort((a,b)=>b.amount-a.amount);
+const cumulativeBuckets=new Set(['investment_stock','home_building','emergency_personal']);
+const fundBalances=FUND_BUCKET_ORDER.map((bucket)=>{
+const st=fundStatsCents[bucket];
+const isCumulative=cumulativeBuckets.has(bucket);
+const monthIncome=st.monthIncomeCents/100;
+const monthExpense=st.monthExpenseCents/100;
+const monthNet=(st.monthIncomeCents-st.monthExpenseCents)/100;
+const allTimeIncome=st.allTimeIncomeCents/100;
+const allTimeExpense=st.allTimeExpenseCents/100;
+const availableBalance=isCumulative
+?(st.allTimeIncomeCents-st.allTimeExpenseCents)/100
+:monthNet;
+return{
+bucket,
+label:FUND_BUCKET_LABELS[bucket],
+isCumulative,
+monthIncome,
+monthExpense,
+monthNet,
+allTimeIncome,
+allTimeExpense,
+availableBalance
+};
+});
+const fixedChecklistStatus={
+father_insurance:{
+key:'father_insurance',
+label:'ประกันพ่อ (1,300 จ่าย 2 เดือน / เว้นจ่าย 2,600 1 เดือน)',
+paidAmount:fatherInsPaidCents/100,
+targetAmount:detectedFatherInsTarget,
+isPaid:fatherInsPaidCents>=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL*100
+},
+dan_insurance:{
+key:'dan_insurance',
+label:'ประกันแดน (Fix 2,900/เดือน)',
+paidAmount:danInsPaidCents/100,
+targetAmount:FIXED_MONTHLY_PRESETS.DAN_INSURANCE,
+isPaid:danInsPaidCents>=FIXED_MONTHLY_PRESETS.DAN_INSURANCE*100
+},
+sister_mind:{
+key:'sister_mind',
+label:'ให้น้อง (มายด์) (Fix 2,000/เดือน)',
+paidAmount:sisterMindPaidCents/100,
+targetAmount:FIXED_MONTHLY_PRESETS.SISTER_MIND,
+isPaid:sisterMindPaidCents>=FIXED_MONTHLY_PRESETS.SISTER_MIND*100
+},
+utilities_tuition:{
+key:'utilities_tuition',
+label:'ค่าน้ำ, ค่าไฟ, ค่าโทรศัพท์, ค่าเรียนพิเศษลูก (งบ 6,500/เดือน)',
+paidAmount:utilitiesTuitionPaidCents/100,
+targetAmount:FIXED_MONTHLY_PRESETS.UTILITIES_TUITION_BUDGET,
+remainingBudget:Math.max(0,(FIXED_MONTHLY_PRESETS.UTILITIES_TUITION_BUDGET*100-utilitiesTuitionPaidCents)/100),
+isPaid:utilitiesTuitionPaidCents>0
+}
+};
+return{
+totalIncome,
+totalExpense,
+netBalance,
+syncedIncome:syncedIncomeCents/100,
+syncedExpense:syncedExpenseCents/100,
+totalCount:filtered.length,
+syncedCount,
+localOrPendingCount,
+failedCount,
+categoryBreakdown,
+fundBalances,
+fixedChecklistStatus
+};
+}
+function _0x1a8(){
+return new Promise((resolve,reject)=>{
+if(typeof indexedDB==='undefined'||!indexedDB){
+_0x1a7.usingMemoryFallback=true;
+resolve(null);
+return;
+}
+try{
+const req=indexedDB.open(_0x1a0,_0x1a1);
+req.onupgradeneeded=function(event){
+const db=event.target.result;
+if(!db.objectStoreNames.contains(_0x1a2)){
+const store=db.createObjectStore(_0x1a2,{keyPath:'id'});
+store.createIndex('by_date','transaction_date',{unique:false});
+store.createIndex('by_sync_status','sync_status',{unique:false});
+store.createIndex('by_user_id','user_id',{unique:false});
+}
+};
+req.onsuccess=function(event){
+resolve(event.target.result);
+};
+req.onerror=function(){
+_0x1a7.usingMemoryFallback=true;
+resolve(null);
+};
+}catch(_err){
+_0x1a7.usingMemoryFallback=true;
+resolve(null);
+}
+});
+}
+async function _0x1a9(){
+const db=await _0x1a8();
+if(!db||_0x1a7.usingMemoryFallback){
+return Array.from(_0x1a7.memoryStore.values());
+}
+return new Promise((resolve)=>{
+try{
+const tx=db.transaction(_0x1a2,'readonly');
+const store=tx.objectStore(_0x1a2);
+const req=store.getAll();
+req.onsuccess=()=>resolve(Array.isArray(req.result)?req.result:[]);
+req.onerror=()=>resolve(Array.from(_0x1a7.memoryStore.values()));
+}catch(_e){
+resolve(Array.from(_0x1a7.memoryStore.values()));
+}
+});
+}
+async function _0x1aa(record){
+_0x1a7.memoryStore.set(record.id,record);
+const db=await _0x1a8();
+if(!db||_0x1a7.usingMemoryFallback){
+return record;
+}
+return new Promise((resolve,reject)=>{
+try{
+const tx=db.transaction(_0x1a2,'readwrite');
+const store=tx.objectStore(_0x1a2);
+store.put(record);
+tx.oncomplete=()=>resolve(record);
+tx.onerror=()=>reject(new Error('ไม่สามารถบันทึกข้อมูลลง IndexedDB ได้ (พื้นที่จัดเก็บอาจเต็ม)'));
+}catch(err){
+reject(err);
+}
+});
+}
+async function _0x1ab(id){
+_0x1a7.memoryStore.delete(id);
+const db=await _0x1a8();
+if(!db||_0x1a7.usingMemoryFallback)return true;
+return new Promise((resolve)=>{
+try{
+const tx=db.transaction(_0x1a2,'readwrite');
+tx.objectStore(_0x1a2).delete(id);
+tx.oncomplete=()=>resolve(true);
+tx.onerror=()=>resolve(false);
+}catch(_e){
+resolve(false);
+}
+});
+}
+async function compressReceiptImage(file,maxDimension=1600,quality=0.82){
+if(!file){
+throw new Error('ไม่พบไฟล์รูปภาพ กรุณาเลือกรูปใหม่อีกครั้ง');
+}
+const fileName=String(file.name||'').toLowerCase();
+const fileType=String(file.type||'').toLowerCase();
+if(fileName.endsWith('.heic')||fileName.endsWith('.heif')||fileType.includes('heic')||fileType.includes('heif')){
+throw new Error('ไม่รองรับไฟล์ภาพรูปแบบ HEIC/HEIF โดยตรง กรุณาตั้งค่ากล้อง iPhone ให้บันทึกเป็น JPEG (Most Compatible) หรือแปลงไฟล์เป็น JPEG/PNG ก่อนอัปโหลด');
+}
+if(!fileType.startsWith('image/')){
+throw new Error('ไฟล์ที่เลือกไม่ใช่รูปภาพ กรุณาเลือกไฟล์รูปภาพชนิด JPEG, PNG หรือ WebP');
+}
+if(file.size>20*1024*1024){
+throw new Error('ไฟล์รูปภาพต้นฉบับมีขนาดใหญ่เกิน 20 MB กรุณาเลือกรูปที่มีขนาดเล็กลง');
+}
+const dataUrl=await new Promise((resolve,reject)=>{
+const reader=new FileReader();
+reader.onload=()=>resolve(String(reader.result||''));
+reader.onerror=()=>reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพได้ ไฟล์อาจเสียหาย'));
+reader.readAsDataURL(file);
+});
+const img=await new Promise((resolve,reject)=>{
+const imageEl=new Image();
+imageEl.onload=()=>resolve(imageEl);
+imageEl.onerror=()=>reject(new Error('ไม่สามารถเปิดไฟล์รูปภาพนี้ได้ กรุณาใช้ไฟล์ JPEG หรือ PNG ที่ไม่เสียหาย'));
+imageEl.src=dataUrl;
+});
+const origW=img.naturalWidth||img.width||1;
+const origH=img.naturalHeight||img.height||1;
+let targetW=origW;
+let targetH=origH;
+const longestSide=Math.max(origW,origH);
+if(longestSide>maxDimension){
+const ratio=maxDimension/longestSide;
+targetW=Math.max(1,Math.round(origW*ratio));
+targetH=Math.max(1,Math.round(origH*ratio));
+}
+const canvas=document.createElement('canvas');
+canvas.width=targetW;
+canvas.height=targetH;
+const ctx=canvas.getContext('2d');
+if(!ctx){
+throw new Error('เบราว์เซอร์ไม่รองรับการประมวลผลภาพด้วย Canvas');
+}
+ctx.fillStyle='#FFFFFF';
+ctx.fillRect(0,0,targetW,targetH);
+ctx.drawImage(img,0,0,targetW,targetH);
+const compressedDataUrl=canvas.toDataURL('image/jpeg',quality);
+if(!compressedDataUrl||!compressedDataUrl.startsWith('data:image/jpeg;base64,')){
+throw new Error('การบีบอัดรูปภาพล้มเหลว กรุณาลองใช้รูปภาพอื่น');
+}
+const base64Data=compressedDataUrl.split(',')[1]||'';
+const compressedSize=Math.floor((base64Data.length*3)/4);
+return{
+dataUrl:compressedDataUrl,
+base64:base64Data,
+mimeType:'image/jpeg',
+originalSize:file.size,
+compressedSize,
+width:targetW,
+height:targetH
+};
+}
+function _0x1c1(message,type='info'){
+const stack=document.getElementById('toastStack');
+if(!stack)return;
+const item=document.createElement('div');
+item.className=`toast ${type}`;
+const span=document.createElement('span');
+span.textContent=String(message||'');
+const closeBtn=document.createElement('button');
+closeBtn.type='button';
+closeBtn.textContent='✕';
+closeBtn.style.color='#ffffff';
+closeBtn.style.fontWeight='700';
+closeBtn.onclick=()=>item.remove();
+item.appendChild(span);
+item.appendChild(closeBtn);
+stack.appendChild(item);
+setTimeout(()=>{
+if(item.parentNode)item.remove();
+},4500);
+}
+function askUserConfirmation(title,message){
+return new Promise((resolve)=>{
+const modal=document.getElementById('confirmDialogModal');
+const titleEl=document.getElementById('confirmDialogTitle');
+const msgEl=document.getElementById('confirmDialogMessage');
+const btnCancel=document.getElementById('btnConfirmDialogCancel');
+const btnAccept=document.getElementById('btnConfirmDialogAccept');
+if(!modal||!titleEl||!msgEl||!btnCancel||!btnAccept){
+resolve(false);
+return;
+}
+titleEl.textContent=title;
+msgEl.textContent=message;
+modal.hidden=false;
+function cleanup(result){
+modal.hidden=true;
+btnCancel.onclick=null;
+btnAccept.onclick=null;
+resolve(result);
+}
+btnCancel.onclick=()=>cleanup(false);
+btnAccept.onclick=()=>cleanup(true);
+});
+}
+function _0x1ac(){
+try{
+const raw=localStorage.getItem(_0x1a3);
+if(!raw)return;
+const parsed=JSON.parse(raw);
+if(parsed&&typeof parsed==='object'){
+_0x1a7.settings.supabaseUrl=typeof parsed.supabaseUrl==='string'?parsed.supabaseUrl.trim().replace(/\/+$/,''):'';
+_0x1a7.settings.supabaseAnonKey=typeof parsed.supabaseAnonKey==='string'?parsed.supabaseAnonKey.trim():'';
+_0x1a7.settings.defaultCurrency=typeof parsed.defaultCurrency==='string'?parsed.defaultCurrency.trim().toUpperCase():'THB';
+}
+}catch(_e){
+}
+}
+function _0x1ad(supabaseUrl,supabaseAnonKey){
+const cleanUrl=String(supabaseUrl||'').trim().replace(/\/+$/,'');
+const cleanKey=String(supabaseAnonKey||'').trim();
+if(cleanKey.includes('service_role')||cleanKey.startsWith('sb_'+'secret_')){
+throw new Error('ห้ามใช้ service_role หรือ Secret Key ในฝั่ง Frontend เด็ดขาด กรุณาใช้เฉพาะ Anon / Publishable Key');
+}
+_0x1a7.settings.supabaseUrl=cleanUrl;
+_0x1a7.settings.supabaseAnonKey=cleanKey;
+try{
+localStorage.setItem(
+_0x1a3,
+JSON.stringify({
+supabaseUrl:cleanUrl,
+supabaseAnonKey:cleanKey,
+defaultCurrency:_0x1a7.settings.defaultCurrency
+})
+);
+}catch(_e){
+}
+}
+async function _0x1af(){
+if(_0x1a7.realtimeChannel&&_0x1a7.supabaseClient){
+try{
+await _0x1a7.supabaseClient.removeChannel(_0x1a7.realtimeChannel);
+}catch(_e){}
+}
+_0x1a7.realtimeChannel=null;
+}
+async function _0x1b0(){
+await _0x1af();
+if(!_0x1a7.supabaseClient||!_0x1a7.currentUser)return;
+try{
+const userId=_0x1a7.currentUser.id;
+const channel=_0x1a7.supabaseClient
+.channel(`transactions_sync_${userId}`)
+.on(
+'postgres_changes',
+{
+event:'*',
+schema:'public',
+table:'transactions',
+filter:`user_id=eq.${userId}`
+},
+async()=>{
+await pullCloudTransactionsAndMerge();
+}
+)
+.subscribe();
+_0x1a7.realtimeChannel=channel;
+}catch(_e){
+}
+}
+async function _0x1b1(showFeedback=false){
+await _0x1af();
+const{supabaseUrl,supabaseAnonKey}=_0x1a7.settings;
+if(!supabaseUrl||!supabaseAnonKey){
+_0x1a7.supabaseClient=null;
+_0x1a7.supabaseConnected=false;
+_0x1a7.currentUser=null;
+_0x1a7.aiStatus='unconfigured';
+_0x1a7.aiStatusMessage='ยังไม่ได้ตั้งค่า AI';
+_0x1b8();
+return{connected:false,reason:'missing_config'};
+}
+if(!globalScope.supabase||typeof globalScope.supabase.createClient!=='function'){
+_0x1a7.supabaseClient=null;
+_0x1a7.supabaseConnected=false;
+_0x1a7.aiStatus='unreachable';
+_0x1a7.aiStatusMessage='ไม่สามารถเชื่อมต่อ AI ได้ (SDK ออฟไลน์)';
+_0x1b8();
+return{connected:false,reason:'sdk_unavailable'};
+}
+try{
+const client=globalScope.supabase.createClient(supabaseUrl,supabaseAnonKey,{
+auth:{
+persistSession:true,
+autoRefreshToken:true,
+detectSessionInUrl:true
+}
+});
+_0x1a7.supabaseClient=client;
+const{data:sessionData,error:sessionErr}=await client.auth.getSession();
+if(sessionErr){
+throw sessionErr;
+}
+_0x1a7.supabaseConnected=true;
+_0x1a7.currentUser=sessionData?.session?.user||null;
+client.auth.onAuthStateChange(async(_event,session)=>{
+const prevUserId=_0x1a7.currentUser?.id||null;
+const nextUser=session?.user||null;
+_0x1a7.currentUser=nextUser;
+if(nextUser&&nextUser.id!==prevUserId){
+await _0x1b0();
+await pullCloudTransactionsAndMerge();
+await checkAiEdgeHealthSilent();
+}else if(!nextUser){
+await _0x1af();
+_0x1a7.aiStatus='unconfigured';
+_0x1a7.aiStatusMessage='เข้าสู่ระบบเพื่อใช้งาน AI';
+}
+await _0x1b5();
+_0x1b8();
+});
+if(_0x1a7.currentUser){
+await _0x1b0();
+await pullCloudTransactionsAndMerge();
+await checkAiEdgeHealthSilent();
+}else{
+_0x1a7.aiStatus='unconfigured';
+_0x1a7.aiStatusMessage='เข้าสู่ระบบเพื่อใช้งาน AI';
+}
+_0x1b8();
+if(showFeedback){
+_0x1c1('เชื่อมต่อ Supabase สำเร็จแล้ว','success');
+}
+return{connected:true};
+}catch(err){
+_0x1a7.supabaseConnected=false;
+_0x1a7.currentUser=null;
+_0x1a7.aiStatus='unreachable';
+_0x1a7.aiStatusMessage='ไม่สามารถเชื่อมต่อ AI ได้';
+_0x1b8();
+if(showFeedback){
+_0x1c1(`เชื่อมต่อ Supabase ไม่สำเร็จ: ${err.message||'ตรวจสอบ URL และ Key'}`,'error');
+}
+return{connected:false,reason:err.message||'connection_error'};
+}
+}
+async function _0x1b2(payload,timeoutMs=28000){
+if(!_0x1a7.supabaseClient||!_0x1a7.settings.supabaseUrl||!_0x1a7.settings.supabaseAnonKey){
+throw new Error('กรุณาตั้งค่า Supabase URL และ Publishable Key ในหน้าตั้งค่าก่อนใช้งาน AI');
+}
+if(!navigator.onLine){
+_0x1a7.aiStatus='unreachable';
+_0x1a7.aiStatusMessage='ไม่สามารถเชื่อมต่อ AI ได้ (ออฟไลน์)';
+_0x1b8();
+throw new Error('ไม่สามารถวิเคราะห์ด้วย AI ขณะออฟไลน์ได้ กรุณาเชื่อมต่ออินเทอร์เน็ตหรือกรอกรายการด้วยตนเอง');
+}
+const{data:sessionData}=await _0x1a7.supabaseClient.auth.getSession();
+const accessToken=sessionData?.session?.access_token;
+if(!accessToken){
+throw new Error('กรุณาเข้าสู่ระบบบัญชีผู้ใช้ก่อนเรียกใช้งานการวิเคราะห์ใบเสร็จด้วย AI');
+}
+const endpoint=`${_0x1a7.settings.supabaseUrl}/functions/v1/analyze-receipt`;
+const controller=new AbortController();
+const timer=setTimeout(()=>controller.abort(),timeoutMs);
+try{
+const response=await fetch(endpoint,{
+method:'POST',
+headers:{
+'Content-Type':'application/json',
+'Authorization':`Bearer ${accessToken}`,
+'apikey':_0x1a7.settings.supabaseAnonKey
+},
+body:JSON.stringify(payload),
+signal:controller.signal
+});
+clearTimeout(timer);
+let jsonBody={};
+try{
+jsonBody=await response.json();
+}catch(_e){
+throw new Error('ผลลัพธ์จาก Edge Function ไม่ใช่รูปแบบ JSON ที่ถูกต้อง');
+}
+if(!response.ok){
+if(response.status===429){
+_0x1a7.aiStatus='rate_limited';
+_0x1a7.aiStatusMessage='ถึงขีดจำกัดการใช้งาน';
+}else if(response.status===503||jsonBody.code==='AI_NOT_CONFIGURED'){
+_0x1a7.aiStatus='unconfigured';
+_0x1a7.aiStatusMessage='ยังไม่ได้ตั้งค่า AI';
+}else{
+_0x1a7.aiStatus='error';
+_0x1a7.aiStatusMessage='เกิดข้อผิดพลาดจาก AI';
+}
+_0x1b8();
+throw new Error(jsonBody.error||`ไม่สามารถวิเคราะห์ใบเสร็จได้ (HTTP ${response.status})`);
+}
+_0x1a7.aiStatus='ready';
+_0x1a7.aiStatusMessage='AI พร้อมใช้งาน';
+_0x1b8();
+return jsonBody;
+}catch(err){
+clearTimeout(timer);
+if(err&&err.name==='AbortError'){
+_0x1a7.aiStatus='unreachable';
+_0x1a7.aiStatusMessage='ไม่สามารถเชื่อมต่อ AI ได้ (Timeout)';
+_0x1b8();
+throw new Error('การเชื่อมต่อ AI ใช้เวลานานเกินกำหนด (Timeout) กรุณาลองใหม่หรือกรอกข้อมูลด้วยตนเอง');
+}
+throw err;
+}
+}
+async function checkAiEdgeHealthSilent(){
+try{
+const res=await _0x1b2({action:'health'},10000);
+if(res&&res.ready){
+_0x1a7.aiStatus='ready';
+_0x1a7.aiStatusMessage='AI พร้อมใช้งาน';
+}else{
+_0x1a7.aiStatus='unconfigured';
+_0x1a7.aiStatusMessage='ยังไม่ได้ตั้งค่า AI';
+}
+}catch(_e){
+}
+_0x1b8();
+}
+async function _0x1b5(){
+const allRecords=await _0x1a9();
+const activeUserId=_0x1a7.currentUser?.id||null;
+const visible=allRecords.filter((tx)=>{
+if(!tx||tx.deleted_at)return false;
+if(activeUserId){
+return tx.user_id===activeUserId||!tx.user_id;
+}
+return!tx.user_id;
+});
+visible.sort((a,b)=>{
+const dateCmp=String(b.transaction_date||'').localeCompare(String(a.transaction_date||''));
+if(dateCmp!==0)return dateCmp;
+return String(b.updated_at||'').localeCompare(String(a.updated_at||''));
+});
+_0x1a7.transactions=visible;
+_0x1b6();
+_0x1b8();
+return visible;
+}
+async function saveTransaction(txInput){
+const validation=validateTransactionInput(txInput);
+if(!validation.valid){
+throw new Error(validation.errors.join('\n'));
+}
+const nowIso=new Date().toISOString();
+const existingId=typeof txInput.id==='string'&&txInput.id.trim()?txInput.id.trim():null;
+const id=existingId||generateUuid();
+const allExisting=await _0x1a9();
+const oldRecord=allExisting.find((item)=>item.id===id)||null;
+const isCloudReady=Boolean(_0x1a7.supabaseClient&&_0x1a7.supabaseConnected&&_0x1a7.currentUser);
+const record={
+id,
+user_id:isCloudReady?_0x1a7.currentUser.id:(oldRecord?.user_id||null),
+...validation.normalized,
+sync_status:isCloudReady?'pending_sync':'local_only',
+sync_error:null,
+created_at:oldRecord?.created_at||nowIso,
+updated_at:nowIso
+};
+await _0x1aa(record);
+await _0x1b5();
+if(isCloudReady&&navigator.onLine){
+await syncSingleTransactionToCloud(record);
+await _0x1b5();
+}
+return record;
+}
+async function syncSingleTransactionToCloud(localRecord){
+if(!_0x1a7.supabaseClient||!_0x1a7.currentUser||!navigator.onLine){
+return{synced:false,reason:'offline_or_unauthenticated'};
+}
+try{
+const userId=_0x1a7.currentUser.id;
+if(localRecord.deleted_at){
+const{error:delErr}=await _0x1a7.supabaseClient
+.from('transactions')
+.delete()
+.eq('id',localRecord.id)
+.eq('user_id',userId);
+if(delErr){
+throw delErr;
+}
+await _0x1ab(localRecord.id);
+return{synced:true,deletedOnCloud:true};
+}
+const{data:remoteExisting}=await _0x1a7.supabaseClient
+.from('transactions')
+.select('id, updated_at, user_id')
+.eq('id',localRecord.id)
+.maybeSingle();
+if(remoteExisting&&remoteExisting.updated_at){
+const remoteTime=new Date(remoteExisting.updated_at).getTime();
+const localTime=new Date(localRecord.updated_at).getTime();
+if(Number.isFinite(remoteTime)&&Number.isFinite(localTime)&&remoteTime>localTime){
+await pullCloudTransactionsAndMerge();
+return{synced:true,conflictResolved:'remote_newer'};
+}
+}
+const cloudPayload={
+id:localRecord.id,
+user_id:userId,
+transaction_date:localRecord.transaction_date,
+merchant:localRecord.merchant,
+amount:localRecord.amount,
+currency:localRecord.currency,
+type:localRecord.type,
+category:localRecord.category,
+fund_bucket:localRecord.fund_bucket||inferDefaultFundBucket(localRecord.category,localRecord.merchant,localRecord.items_summary,localRecord.purpose_analysis,localRecord.note),
+items_summary:localRecord.items_summary||'',
+purpose_analysis:localRecord.purpose_analysis||'',
+source_type:localRecord.source_type||'manual',
+note:localRecord.note||'',
+created_at:localRecord.created_at,
+updated_at:localRecord.updated_at
+};
+const{data:upserted,error:upsertErr}=await _0x1a7.supabaseClient
+.from('transactions')
+.upsert(cloudPayload,{onConflict:'id'})
+.select()
+.single();
+if(upsertErr){
+throw upsertErr;
+}
+const updatedLocal={
+...localRecord,
+user_id:userId,
+sync_status:'synced',
+sync_error:null,
+updated_at:upserted?.updated_at||localRecord.updated_at
+};
+await _0x1aa(updatedLocal);
+return{synced:true};
+}catch(err){
+const failedLocal={
+...localRecord,
+sync_status:'sync_failed',
+sync_error:err.message||'ซิงก์ข้อมูลไม่สำเร็จ'
+};
+await _0x1aa(failedLocal);
+return{synced:false,error:err.message};
+}
+}
+async function syncPendingTransactions(){
+if(_0x1a7.isSyncing)return{syncedCount:0,failedCount:0};
+if(!_0x1a7.supabaseClient||!_0x1a7.currentUser||!navigator.onLine){
+return{syncedCount:0,failedCount:0};
+}
+_0x1a7.isSyncing=true;
+let syncedCount=0;
+let failedCount=0;
+try{
+const allLocal=await _0x1a9();
+const activeUserId=_0x1a7.currentUser.id;
+const queue=allLocal.filter(
+(tx)=>
+tx&&
+tx.user_id===activeUserId&&
+(tx.sync_status==='pending_sync'||tx.sync_status==='sync_failed')
+);
+for(const item of queue){
+const res=await syncSingleTransactionToCloud(item);
+if(res.synced){
+syncedCount+=1;
+}else{
+failedCount+=1;
+}
+}
+await pullCloudTransactionsAndMerge();
+await _0x1b5();
+return{syncedCount,failedCount};
+}finally{
+_0x1a7.isSyncing=false;
+}
+}
+async function pullCloudTransactionsAndMerge(options={}){
+if(!_0x1a7.supabaseClient||!_0x1a7.currentUser||!navigator.onLine)return;
+try{
+const userId=_0x1a7.currentUser.id;
+const PAGE_SIZE=500;
+const remoteRows=[];
+let offset=0;
+let isCompleteSnapshot=false;
+while(true){
+const baseQuery=_0x1a7.supabaseClient
+.from('transactions')
+.select('*',{count:'exact'})
+.eq('user_id',userId)
+.order('transaction_date',{ascending:false});
+if(typeof baseQuery.range==='function'){
+const{data:pageData,error:pageErr,count:totalExactCount}=await baseQuery.range(
+offset,
+offset+PAGE_SIZE-1
+);
+if(pageErr||!Array.isArray(pageData)){
+isCompleteSnapshot=false;
+break;
+}
+remoteRows.push(...pageData);
+if(pageData.length<PAGE_SIZE){
+isCompleteSnapshot=
+typeof totalExactCount==='number'&&remoteRows.length===totalExactCount;
+break;
+}
+offset+=PAGE_SIZE;
+}else{
+const{data:singleData,error:singleErr,count:singleCount}=await baseQuery;
+if(singleErr||!Array.isArray(singleData)){
+isCompleteSnapshot=false;
+break;
+}
+remoteRows.push(...singleData);
+isCompleteSnapshot=
+typeof singleCount==='number'&&singleCount===singleData.length;
+break;
+}
+}
+if(remoteRows.length===0&&!isCompleteSnapshot)return;
+const allLocal=await _0x1a9();
+const localMap=new Map(allLocal.map((item)=>[item.id,item]));
+const remoteIdSet=new Set(remoteRows.map((r)=>r.id));
+if(isCompleteSnapshot){
+for(const localItem of allLocal){
+if(
+localItem&&
+localItem.user_id===userId&&
+localItem.sync_status==='synced'&&
+!localItem.deleted_at&&
+!remoteIdSet.has(localItem.id)
+){
+await _0x1ab(localItem.id);
+}
+}
+}
+for(const remote of remoteRows){
+const localItem=localMap.get(remote.id);
+if(localItem&&localItem.deleted_at){
+continue;
+}
+if(!localItem){
+await _0x1aa({
+...remote,
+amount:Number(remote.amount),
+sync_status:'synced',
+sync_error:null
+});
+}else if(localItem.sync_status==='pending_sync'||localItem.sync_status==='sync_failed'){
+const rTime=new Date(remote.updated_at||0).getTime();
+const lTime=new Date(localItem.updated_at||0).getTime();
+if(rTime>lTime){
+await _0x1aa({
+...remote,
+amount:Number(remote.amount),
+sync_status:'synced',
+sync_error:null
+});
+}
+}else{
+await _0x1aa({
+...remote,
+amount:Number(remote.amount),
+sync_status:'synced',
+sync_error:null
+});
+}
+}
+await _0x1b5();
+}catch(_err){
+}
+}
+async function migrateLocalOnlyRecordsToCloudInteractive(){
+if(!_0x1a7.supabaseClient||!_0x1a7.currentUser){
+_0x1c1('กรุณาเข้าสู่ระบบบัญชีผู้ใช้ก่อนย้ายข้อมูลขึ้น Cloud','warning');
+return;
+}
+const allLocal=await _0x1a9();
+const localOnlyItems=allLocal.filter((tx)=>tx&&!tx.user_id&&tx.sync_status==='local_only');
+if(localOnlyItems.length===0){
+_0x1c1('ไม่มีรายการแบบบันทึกเฉพาะในเครื่องที่รอการย้าย','info');
+return;
+}
+const sampleNames=localOnlyItems
+.slice(0,3)
+.map((tx)=>`• ${tx.transaction_date}: ${tx.merchant} (${formatCurrency(tx.amount,tx.currency)})`)
+.join('\n');
+const confirmed=await askUserConfirmation(
+'ยืนยันการย้ายข้อมูลในเครื่องขึ้น Cloud',
+`พบรายการที่บันทึกไว้ในเครื่องจำนวน ${localOnlyItems.length} รายการ\nตัวอย่างรายการ:\n${sampleNames}\n\nต้องการซิงก์รายการเหล่านี้เข้าสู่บัญชี ${_0x1a7.currentUser.email} หรือไม่?`
+);
+if(!confirmed)return;
+let successCount=0;
+let failCount=0;
+for(const item of localOnlyItems){
+const updatedItem={
+...item,
+user_id:_0x1a7.currentUser.id,
+sync_status:'pending_sync',
+updated_at:new Date().toISOString()
+};
+await _0x1aa(updatedItem);
+const res=await syncSingleTransactionToCloud(updatedItem);
+if(res.synced)successCount+=1;
+else failCount+=1;
+}
+await _0x1b5();
+_0x1c1(
+`ย้ายข้อมูลขึ้น Cloud สำเร็จ ${successCount} รายการ`+(failCount>0?` (รอซิงก์ซ้ำ ${failCount} รายการ)`:''),
+failCount===0?'success':'warning'
+);
+}
+async function deleteTransaction(txId){
+const allLocal=await _0x1a9();
+const target=allLocal.find((t)=>t&&t.id===txId);
+if(!target)return{deleted:false};
+const belongsToCloudUser=Boolean(target.user_id&&_0x1a7.currentUser&&target.user_id===_0x1a7.currentUser.id);
+if(belongsToCloudUser&&_0x1a7.supabaseClient&&navigator.onLine){
+const{error}=await _0x1a7.supabaseClient
+.from('transactions')
+.delete()
+.eq('id',txId)
+.eq('user_id',_0x1a7.currentUser.id);
+if(!error){
+await _0x1ab(txId);
+await _0x1b5();
+return{deleted:true,mode:'cloud_immediate'};
+}
+}
+if(target.user_id){
+const tombstone={
+...target,
+deleted_at:new Date().toISOString(),
+sync_status:'pending_sync',
+updated_at:new Date().toISOString()
+};
+await _0x1aa(tombstone);
+await _0x1b5();
+return{deleted:true,mode:'tombstone_queued'};
+}
+await _0x1ab(txId);
+await _0x1b5();
+return{deleted:true,mode:'local_immediate'};
+}
+async function deleteTransactionInteractive(txId){
+const target=_0x1a7.transactions.find((t)=>t.id===txId);
+if(!target)return;
+const confirmed=await askUserConfirmation(
+'ยืนยันการลบรายการ',
+`คุณต้องการลบรายการ "${target.merchant}" ยอดเงิน ${formatCurrency(target.amount,target.currency)} วันที่ ${target.transaction_date} ใช่หรือไม่?`
+);
+if(!confirmed)return;
+const res=await deleteTransaction(txId);
+if(res.deleted){
+_0x1c1(
+res.mode==='tombstone_queued'
+?'ลบรายการในเครื่องแล้ว และจะซิงก์การลบขึ้น Cloud เมื่อออนไลน์'
+:'ลบรายการเรียบร้อยแล้ว',
+'success'
+);
+}
+}
+function exportBackupJson(){
+const payload={
+app:'SlipSense',
+schema_version:'1.0.0',
+exported_at:new Date().toISOString(),
+count:_0x1a7.transactions.length,
+transactions:_0x1a7.transactions
+};
+const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;
+a.download=`slipsense-backup-${getBangkokTodayIso()}.json`;
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
+_0x1c1(`ส่งออกข้อมูลสำรอง JSON จำนวน ${_0x1a7.transactions.length} รายการสำเร็จ`,'success');
+}
+function escapeCsvCell(val){
+const str=String(val??'').replace(/\r?\n/g,' ');
+const safeStr=/^[=+\-@]/.test(str)?`'${str}`:str;
+if(safeStr.includes(',')||safeStr.includes('"')){
+return`"${safeStr.replace(/"/g,'""')}"`;
+}
+return safeStr;
+}
+function exportBackupCsv(){
+const headers=[
+'id',
+'transaction_date',
+'merchant',
+'amount',
+'currency',
+'type',
+'category',
+'fund_bucket',
+'source_type',
+'items_summary',
+'purpose_analysis',
+'note',
+'sync_status',
+'created_at',
+'updated_at'
+];
+const rows=[headers.join(',')];
+for(const tx of _0x1a7.transactions){
+rows.push(headers.map((h)=>escapeCsvCell(tx[h])).join(','));
+}
+const csvContent='\uFEFF'+rows.join('\r\n');
+const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;
+a.download=`slipsense-backup-${getBangkokTodayIso()}.csv`;
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
+_0x1c1(`ส่งออกไฟล์ CSV จำนวน ${_0x1a7.transactions.length} รายการสำเร็จ`,'success');
+}
+function _0x1c3(line){
+const cells=[];
+let cur='';
+let inQuotes=false;
+for(let i=0;i<line.length;i++){
+const ch=line[i];
+if(inQuotes){
+if(ch==='"'&&line[i+1]==='"'){
+cur+='"';
+i+=1;
+}else if(ch==='"'){
+inQuotes=false;
+}else{
+cur+=ch;
+}
+}else if(ch==='"'){
+inQuotes=true;
+}else if(ch===','){
+cells.push(cur.trim());
+cur='';
+}else{
+cur+=ch;
+}
+}
+cells.push(cur.trim());
+return cells;
+}
+async function validateAndImportBackup(rawContent,fileName='backup.json'){
+const cleanText=String(rawContent||'').replace(/^\uFEFF/,'').trim();
+if(!cleanText){
+throw new Error('ไฟล์สำรองว่างเปล่า');
+}
+let candidateRows=[];
+if(fileName.toLowerCase().endsWith('.csv')||(!cleanText.startsWith('{')&&!cleanText.startsWith('['))){
+const lines=cleanText.split(/\r?\n/).filter((ln)=>ln.trim().length>0);
+if(lines.length<2){
+throw new Error('ไฟล์ CSV ไม่มีข้อมูลรายการ');
+}
+const headers=_0x1c3(lines[0]);
+for(let i=1;i<lines.length;i++){
+const values=_0x1c3(lines[i]);
+const obj={};
+headers.forEach((h,idx)=>{
+obj[h]=values[idx]!==undefined?values[idx]:'';
+});
+candidateRows.push(obj);
+}
+}else{
+const parsed=JSON.parse(cleanText);
+candidateRows=Array.isArray(parsed)
+?parsed
+:Array.isArray(parsed.transactions)
+?parsed.transactions
+:[];
+}
+const existingRecords=await _0x1a9();
+const existingIds=new Set(existingRecords.map((r)=>r.id));
+let imported=0;
+let rejected=0;
+let duplicateCount=0;
+for(const item of candidateRows){
+if(!item||typeof item!=='object'){
+rejected+=1;
+continue;
+}
+const candidateId=typeof item.id==='string'&&/^[0-9a-fA-F-]{36}$/.test(item.id.trim())
+?item.id.trim()
+:generateUuid();
+if(existingIds.has(candidateId)){
+duplicateCount+=1;
+continue;
+}
+const val=validateTransactionInput(item);
+if(!val.valid){
+rejected+=1;
+continue;
+}
+const nowIso=new Date().toISOString();
+const newRecord={
+id:candidateId,
+user_id:_0x1a7.currentUser?.id||null,
+...val.normalized,
+sync_status:_0x1a7.currentUser?'pending_sync':'local_only',
+sync_error:null,
+created_at:item.created_at||nowIso,
+updated_at:nowIso
+};
+await _0x1aa(newRecord);
+existingIds.add(candidateId);
+imported+=1;
+}
+await _0x1b5();
+if(_0x1a7.currentUser&&navigator.onLine&&imported>0){
+await syncPendingTransactions();
+}
+return{imported,rejected,duplicateCount};
+}
+async function allocateMonthlySalary(options={}){
+const rawDate=options.transaction_date||options.date||getBangkokTodayIso();
+const{date}=normalizeIsoDate(String(rawDate));
+if(!date){
+throw new Error('กรุณาระบุวันที่เงินเดือนออกให้ถูกต้อง (YYYY-MM-DD)');
+}
+const yearMonth=date.slice(0,7);
+const totalSalary=Math.round(Number(options.total_salary||0)*100)/100;
+if(!Number.isFinite(totalSalary)||totalSalary<=0){
+throw new Error('กรุณาระบุยอดเงินเดือนรวมที่มากกว่า 0 บาท');
+}
+const fatherInsAmount=
+Number(options.father_insurance_mode)===FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD
+?FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD
+:FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL;
+const defaultFixedTotal=
+fatherInsAmount===FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD
+?FIXED_MONTHLY_PRESETS.FIXED_EXPENSE_TOTAL_EVERY_3RD
+:FIXED_MONTHLY_PRESETS.FIXED_EXPENSE_TOTAL_NORMAL;
+const fund1=options.investment_stock!==undefined
+?Math.round(Number(options.investment_stock)*100)/100
+:FIXED_MONTHLY_PRESETS.INVESTMENT_STOCK;
+const fund2=options.home_building!==undefined
+?Math.round(Number(options.home_building)*100)/100
+:FIXED_MONTHLY_PRESETS.HOME_BUILDING;
+const fund3=options.fixed_expense!==undefined
+?Math.round(Number(options.fixed_expense)*100)/100
+:defaultFixedTotal;
+const fund4=options.emergency_personal!==undefined
+?Math.round(Number(options.emergency_personal)*100)/100
+:0;
+const fixedFourSumCents=Math.round((fund1+fund2+fund3+fund4)*100);
+const totalSalaryCents=Math.round(totalSalary*100);
+const fund5=options.general_expense!==undefined&&Number(options.general_expense)>0
+?Math.round(Number(options.general_expense)*100)/100
+:Math.max(0,(totalSalaryCents-fixedFourSumCents)/100);
+if(fund1<0||fund2<0||fund3<0||fund4<0||fund5<0){
+throw new Error('ยอดแบ่งเงินในแต่ละส่วนต้องไม่ติดลบ');
+}
+const totalAllocatedCents=Math.round((fund1+fund2+fund3+fund4+fund5)*100);
+if(totalAllocatedCents<=0){
+throw new Error('ยอดแบ่งเงินรวมทั้ง 5 ส่วนต้องมากกว่า 0 บาท');
+}
+if(fixedFourSumCents>totalSalaryCents&&options.general_expense===undefined){
+throw new Error(
+`ยอดเงินเดือนรวม (${formatCurrency(totalSalary,'THB')}) น้อยกว่ายอด Fix รวมข้อ 1–4 (${formatCurrency(fixedFourSumCents/100,'THB')}) กรุณาปรับยอดก่อนบันทึก`
+);
+}
+const splitEntries
+=[
+{
+bucket:'investment_stock',
+amount:fund1,
+merchant:'แบ่งเงินเดือน: 1. เงินลงทุน (หุ้น)',
+items_summary:`จัดสรรเงินเดือนประจำเดือน ${yearMonth} เข้าพอร์ตลงทุนหุ้น`,
+purpose_analysis:'เงินออมและลงทุนในหุ้นระยะยาวตามแผน Fix รายเดือน (6,500 บาท/เดือน)'
+},
+{
+bucket:'home_building',
+amount:fund2,
+merchant:'แบ่งเงินเดือน: 2. เงินเก็บสร้างบ้าน',
+items_summary:`จัดสรรเงินเดือนประจำเดือน ${yearMonth} เข้ากองทุนสร้างบ้าน`,
+purpose_analysis:'เงินออมสะสมเพื่อสร้างบ้านตามแผน Fix รายเดือน (13,000 บาท/เดือน)'
+},
+{
+bucket:'fixed_expense',
+amount:fund3,
+merchant:'แบ่งเงินเดือน: 3. ค่าใช้จ่ายคงที่',
+items_summary:`ประกันพ่อ ${fatherInsAmount.toLocaleString('en-US')}, ประกันแดน 2,900, ให้น้อง (มายด์) 2,000, ค่าน้ำ/ไฟ/โทรศัพท์/เรียนพิเศษลูก 6,500`,
+purpose_analysis:`กันงบค่าใช้จ่ายคงที่รายเดือน (${yearMonth}) รวม ${formatCurrency(fund3,'THB')}`
+},
+{
+bucket:'emergency_personal',
+amount:fund4,
+merchant:'แบ่งเงินเดือน: 4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+items_summary:`จัดสรรเงินสำรองฉุกเฉินส่วนตัวตั้งต้นประจำเดือน ${yearMonth}`,
+purpose_analysis:'สำรองค่าใช้จ่ายฉุกเฉินส่วนตัว (และรับเงินเหลือใช้ปลายเดือนมาเก็บสะสมในส่วนนี้)'
+},
+{
+bucket:'general_expense',
+amount:fund5,
+merchant:'แบ่งเงินเดือน: 5. ค่าใช้จ่ายทั่วไป',
+items_summary:`งบใช้จ่ายทั่วไปประจำเดือน ${yearMonth} หลังหักยอด Fix`,
+purpose_analysis:'งบสำหรับใช้จ่ายในชีวิตประจำวันทั่วไปตลอดเดือน'
+}
+];
+const allExisting=await _0x1a9();
+const savedRecords=[];
+for(const entry of splitEntries){
+const splitTag=`[SALARY_SPLIT:${yearMonth}:${entry.bucket}]`;
+const existingMatch=allExisting.find(
+(tx)=>tx&&!tx.deleted_at&&typeof tx.note==='string'&&tx.note.includes(splitTag)
+);
+if(entry.amount<=0){
+if(existingMatch){
+await deleteTransaction(existingMatch.id);
+}
+continue;
+}
+const saved=await saveTransaction({
+id:existingMatch?existingMatch.id:undefined,
+transaction_date:date,
+type:'income',
+merchant:entry.merchant,
+amount:entry.amount,
+currency:'THB',
+category:'salary_income',
+fund_bucket:entry.bucket,
+source_type:'manual',
+items_summary:entry.items_summary,
+purpose_analysis:entry.purpose_analysis,
+note:`จัดสรรเงินเดือน ${yearMonth} (${FUND_BUCKET_LABELS[entry.bucket]}) ${splitTag}`
+});
+savedRecords.push(saved);
+}
+return{
+yearMonth,
+totalAllocated:totalAllocatedCents/100,
+records:savedRecords
+};
+}
+async function recordFixedExpenseItem(itemKey,options={}){
+const rawDate=options.transaction_date||options.date||getBangkokTodayIso();
+const{date}=normalizeIsoDate(String(rawDate));
+const txDate=date||getBangkokTodayIso();
+const yearMonth=txDate.slice(0,7);
+const presetsMap
+={
+father_insurance_1300:{
+merchant:'จ่ายค่าประกันพ่อ (รอบปกติ 1,300)',
+amount:FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL,
+category:'health_medical',
+items_summary:'ค่าเบี้ยประกันพ่อประจำเดือน (รอบจ่าย 1,300 บาท 2 เดือน)',
+purpose_analysis:'ตัดจ่ายจากส่วนที่ 3 ค่าใช้จ่ายคงที่ — ประกันพ่อ 1,300 บาท',
+tag:'[fixed_item:father_insurance]'
+},
+father_insurance_2600:{
+merchant:'จ่ายค่าประกันพ่อ (รอบเดือนที่ 3 ยอด 2,600)',
+amount:FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD,
+category:'health_medical',
+items_summary:'ค่าเบี้ยประกันพ่อประจำเดือน (รอบเว้นจ่าย 2,600 บาท 1 เดือน)',
+purpose_analysis:'ตัดจ่ายจากส่วนที่ 3 ค่าใช้จ่ายคงที่ — ประกันพ่อ 2,600 บาท',
+tag:'[fixed_item:father_insurance]'
+},
+dan_insurance:{
+merchant:'จ่ายค่าประกันแดน',
+amount:FIXED_MONTHLY_PRESETS.DAN_INSURANCE,
+category:'health_medical',
+items_summary:'ค่าเบี้ยประกันแดนประจำเดือน (Fix 2,900 บาท)',
+purpose_analysis:'ตัดจ่ายจากส่วนที่ 3 ค่าใช้จ่ายคงที่ — ประกันแดน 2,900 บาท',
+tag:'[fixed_item:dan_insurance]'
+},
+sister_mind:{
+merchant:'โอนเงินให้น้อง (มายด์)',
+amount:FIXED_MONTHLY_PRESETS.SISTER_MIND,
+category:'transfer_other',
+items_summary:'เงินรายเดือนให้น้อง (มายด์) Fix 2,000 บาท',
+purpose_analysis:'ตัดจ่ายจากส่วนที่ 3 ค่าใช้จ่ายคงที่ — ให้น้อง (มายด์) 2,000 บาท',
+tag:'[fixed_item:sister_mind]'
+}
+};
+const preset=presetsMap[itemKey];
+if(!preset){
+throw new Error(`ไม่พบรายการคงที่รหัส ${itemKey}`);
+}
+const customAmount=options.amount!==undefined?Number(options.amount):preset.amount;
+const saved=await saveTransaction({
+transaction_date:txDate,
+type:'expense',
+merchant:preset.merchant,
+amount:customAmount,
+currency:'THB',
+category:preset.category,
+fund_bucket:'fixed_expense',
+source_type:'manual',
+items_summary:preset.items_summary,
+purpose_analysis:preset.purpose_analysis,
+note:`รายการ Fix ประจำเดือน ${yearMonth} ${preset.tag}`
+});
+return saved;
+}
+async function rolloverMonthlySurplusToEmergency(targetYearMonth=''){
+const ym=targetYearMonth||getBangkokTodayIso().slice(0,7);
+const metrics=calculateDashboardMetrics(_0x1a7.transactions,ym);
+const generalBucket=metrics.fundBalances.find((b)=>b.bucket==='general_expense');
+const fixedBucket=metrics.fundBalances.find((b)=>b.bucket==='fixed_expense');
+const generalSurplus=generalBucket&&generalBucket.availableBalance>0?generalBucket.availableBalance:0;
+const fixedSurplus=fixedBucket&&fixedBucket.availableBalance>0?fixedBucket.availableBalance:0;
+const totalSurplus=Math.round((generalSurplus+fixedSurplus)*100)/100;
+if(totalSurplus<=0){
+return{rolledOver:false,amount:0,message:`ไม่มีเงินเหลือใช้ในงบรายเดือนของเดือน ${ym} ให้โอนเข้าข้อ 4`};
+}
+const txDate=ym===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${ym}-28`;
+const records=[];
+if(generalSurplus>0){
+const outGeneral=await saveTransaction({
+transaction_date:txDate,
+type:'expense',
+merchant:'โอนเงินเหลือใช้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+amount:generalSurplus,
+currency:'THB',
+category:'transfer_other',
+fund_bucket:'general_expense',
+source_type:'manual',
+items_summary:`ปิดยอดเงินเหลือใช้จากข้อ 5 ค่าใช้จ่ายทั่วไป (${ym})`,
+purpose_analysis:'โอนเงินที่เหลือใช้ของเดือนเข้าสะสมในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+note:`[SURPLUS_ROLLOVER_OUT:${ym}:general_expense]`
+});
+records.push(outGeneral);
+}
+if(fixedSurplus>0){
+const outFixed=await saveTransaction({
+transaction_date:txDate,
+type:'expense',
+merchant:'โอนงบคงที่เหลือใช้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+amount:fixedSurplus,
+currency:'THB',
+category:'transfer_other',
+fund_bucket:'fixed_expense',
+source_type:'manual',
+items_summary:`ปิดยอดเงินเหลือใช้จากข้อ 3 ค่าใช้จ่ายคงที่ (${ym})`,
+purpose_analysis:'โอนเงินที่เหลือใช้ของเดือนเข้าสะสมในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+note:`[SURPLUS_ROLLOVER_OUT:${ym}:fixed_expense]`
+});
+records.push(outFixed);
+}
+const inEmergency=await saveTransaction({
+transaction_date:txDate,
+type:'income',
+merchant:`รับเงินเหลือใช้ประจำเดือน ${ym} เข้ากระปุกฉุกเฉิน (ส่วนตัว)`,
+amount:totalSurplus,
+currency:'THB',
+category:'refund_other_income',
+fund_bucket:'emergency_personal',
+source_type:'manual',
+items_summary:`เงินเหลือใช้สะสมจากงบรายเดือน (${ym})`,
+purpose_analysis:'เก็บสะสมเงินที่เหลือใช้ในเดือนนั้นเข้าข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว) ตามกติกาที่ตั้งไว้',
+note:`[SURPLUS_ROLLOVER_IN:${ym}:emergency_personal]`
+});
+records.push(inEmergency);
+return{
+rolledOver:true,
+amount:totalSurplus,
+generalSurplus,
+fixedSurplus,
+records
+};
+}
+function _0x1b8(){
+const banner=document.getElementById('systemModeBanner');
+const bannerText=document.getElementById('systemModeText');
+const btnSyncNow=document.getElementById('btnTriggerSyncNow');
+const btnMigrate=document.getElementById('btnMigrateLocalToCloud');
+const aiDot=document.getElementById('aiStatusDot');
+const aiLabel=document.getElementById('aiStatusLabel');
+const geminiBox=document.getElementById('geminiSettingsStatusBox');
+const authDot=document.getElementById('authStatusDot');
+const authLabel=document.getElementById('authStatusLabel');
+const supabaseBox=document.getElementById('supabaseConnStatusBox');
+const localOnlyCount=_0x1a7.transactions.filter((t)=>!t.user_id&&t.sync_status==='local_only').length;
+const unsyncedCount=_0x1a7.transactions.filter(
+(t)=>t.sync_status==='pending_sync'||t.sync_status==='sync_failed'
+).length;
+if(!navigator.onLine){
+banner.className='system-banner offline-mode';
+bannerText.textContent='คุณกำลังออฟไลน์ — รายการที่บันทึกใหม่จะถูกเก็บในเครื่องและเข้าคิวซิงก์อัตโนมัติเมื่อกลับมาออนไลน์';
+btnSyncNow.hidden=true;
+btnMigrate.hidden=true;
+}else if(_0x1a7.supabaseConnected&&_0x1a7.currentUser){
+banner.className='system-banner online-synced';
+bannerText.textContent=`เชื่อมต่อ Cloud แล้ว (${_0x1a7.currentUser.email})`+
+(unsyncedCount>0?` — มีรายการรอซิงก์ ${unsyncedCount} รายการ`:' — ข้อมูลซิงก์เป็นปัจจุบัน');
+btnSyncNow.hidden=unsyncedCount===0;
+btnMigrate.hidden=localOnlyCount===0;
+}else{
+banner.className='system-banner';
+bannerText.textContent='โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์';
+btnSyncNow.hidden=true;
+btnMigrate.hidden=true;
+}
+if(aiLabel&&aiDot){
+aiLabel.textContent=_0x1a7.aiStatusMessage;
+aiDot.className='status-dot '+(
+_0x1a7.aiStatus==='ready'?'green':
+_0x1a7.aiStatus==='unconfigured'?'amber':'red'
+);
+}
+if(geminiBox){
+geminiBox.textContent=`สถานะ AI: ${_0x1a7.aiStatusMessage}`;
+}
+if(authLabel&&authDot){
+if(_0x1a7.supabaseConnected&&_0x1a7.currentUser){
+authDot.className='status-dot green';
+authLabel.textContent=_0x1a7.currentUser.email;
+}else if(_0x1a7.supabaseConnected){
+authDot.className='status-dot amber';
+authLabel.textContent='รอเข้าสู่ระบบ';
+}else{
+authDot.className='status-dot';
+authLabel.textContent='โหมดในเครื่อง';
+}
+}
+if(supabaseBox){
+supabaseBox.textContent=_0x1a7.supabaseConnected
+?`สถานะการเชื่อมต่อ: เชื่อมต่อ Supabase สำเร็จ (${_0x1a7.settings.supabaseUrl})`
+:'สถานะการเชื่อมต่อ: โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์';
+}
+}
+function _0x1b6(){
+const monthPicker=document.getElementById('dashboardMonthPicker');
+if(monthPicker&&!monthPicker.value){
+monthPicker.value=getBangkokTodayIso().slice(0,7);
+}
+const selectedMonth=monthPicker?monthPicker.value:getBangkokTodayIso().slice(0,7);
+const metrics=calculateDashboardMetrics(_0x1a7.transactions,selectedMonth);
+const elIncome=document.getElementById('kpiTotalIncome');
+const elExpense=document.getElementById('kpiTotalExpense');
+const elNet=document.getElementById('kpiNetBalance');
+const elIncomeSub=document.getElementById('kpiIncomeSub');
+const elExpenseSub=document.getElementById('kpiExpenseSub');
+const elSyncSub=document.getElementById('kpiSyncSummarySub');
+if(elIncome)elIncome.textContent=formatCurrency(metrics.totalIncome,'THB');
+if(elExpense)elExpense.textContent=formatCurrency(metrics.totalExpense,'THB');
+if(elNet){
+const sign=metrics.netBalance<0?'-':'';
+elNet.textContent=`${sign}${formatCurrency(Math.abs(metrics.netBalance),'THB')}`;
+}
+if(elIncomeSub){
+elIncomeSub.textContent=`ซิงก์ Cloud แล้ว ${formatCurrency(metrics.syncedIncome,'THB')}`;
+}
+if(elExpenseSub){
+elExpenseSub.textContent=`ซิงก์ Cloud แล้ว ${formatCurrency(metrics.syncedExpense,'THB')}`;
+}
+if(elSyncSub){
+elSyncSub.textContent=`ทั้งหมด ${metrics.totalCount} รายการ (ซิงก์แล้ว ${metrics.syncedCount} / ในเครื่อง ${metrics.localOrPendingCount})`;
+}
+const catContainer=document.getElementById('categoryBreakdownContainer');
+if(catContainer){
+catContainer.innerHTML='';
+if(metrics.categoryBreakdown.length===0){
+const emptyP=document.createElement('p');
+emptyP.className='empty-state';
+emptyP.style.padding='0.85rem 0';
+emptyP.textContent='ยังไม่มีรายการรายจ่ายในเดือนที่เลือก';
+catContainer.appendChild(emptyP);
+}else{
+for(const item of metrics.categoryBreakdown){
+const row=document.createElement('div');
+row.className='category-row';
+const top=document.createElement('div');
+top.className='category-row-top';
+const nameSpan=document.createElement('span');
+nameSpan.textContent=item.label;
+const valSpan=document.createElement('span');
+valSpan.textContent=`${formatCurrency(item.amount,'THB')} (${item.percentage}%)`;
+top.appendChild(nameSpan);
+top.appendChild(valSpan);
+const track=document.createElement('div');
+track.className='progress-track';
+const fill=document.createElement('div');
+fill.className='progress-fill';
+fill.style.width=`${Math.min(100,Math.max(2,item.percentage))}%`;
+track.appendChild(fill);
+row.appendChild(top);
+row.appendChild(track);
+catContainer.appendChild(row);
+}
+}
+}
+renderFundBucketsAndChecklist(metrics,selectedMonth);
+_0x1b7();
+}
+function renderFundBucketsAndChecklist(metrics,selectedMonth){
+const fundContainer=document.getElementById('fundBucketsContainer');
+if(fundContainer&&Array.isArray(metrics.fundBalances)){
+fundContainer.innerHTML='';
+for(const f of metrics.fundBalances){
+const card=document.createElement('div');
+card.className='fund-card';
+const hdr=document.createElement('div');
+hdr.className='fund-card-header';
+const titleWrap=document.createElement('div');
+const titleEl=document.createElement('div');
+titleEl.className='fund-title';
+titleEl.textContent=f.label;
+const modeSub=document.createElement('div');
+modeSub.style.fontSize='0.73rem';
+modeSub.style.color='var(--text-muted)';
+modeSub.textContent=f.isCumulative
+?'ยอดสะสมต่อเนื่องข้ามเดือน'
+:`งบใช้จ่ายเฉพาะเดือน ${selectedMonth}`;
+titleWrap.appendChild(titleEl);
+titleWrap.appendChild(modeSub);
+const rightWrap=document.createElement('div');
+rightWrap.style.display='flex';
+rightWrap.style.flexDirection='column';
+rightWrap.style.alignItems='flex-end';
+rightWrap.style.gap='0.25rem';
+const balEl=document.createElement('div');
+balEl.className=`fund-balance ${f.availableBalance<0?'negative':'positive'}`;
+const sign=f.availableBalance<0?'-':'';
+balEl.textContent=`คงเหลือ ${sign}${formatCurrency(Math.abs(f.availableBalance),'THB')}`;
+const btnWithdraw=document.createElement('button');
+btnWithdraw.type='button';
+btnWithdraw.className='btn btn-secondary btn-sm';
+btnWithdraw.style.minHeight='26px';
+btnWithdraw.style.padding='0.15rem 0.55rem';
+btnWithdraw.style.fontSize='0.74rem';
+btnWithdraw.textContent='ถอน/ใช้จากส่วนนี้';
+btnWithdraw.onclick=()=>{
+openVerificationModalForManual('manual',f.bucket);
+};
+rightWrap.appendChild(balEl);
+rightWrap.appendChild(btnWithdraw);
+hdr.appendChild(titleWrap);
+hdr.appendChild(rightWrap);
+card.appendChild(hdr);
+const meta=document.createElement('div');
+meta.className='fund-meta';
+const inSpan=document.createElement('span');
+inSpan.textContent=`เติมเข้าเดือนนี้: +${formatCurrency(f.monthIncome,'THB')}`;
+const outSpan=document.createElement('span');
+outSpan.textContent=`ถอนออกเดือนนี้: -${formatCurrency(f.monthExpense,'THB')}`;
+meta.appendChild(inSpan);
+meta.appendChild(outSpan);
+card.appendChild(meta);
+fundContainer.appendChild(card);
+}
+}
+const monthLabel=document.getElementById('fixedChecklistMonthLabel');
+if(monthLabel){
+monthLabel.textContent=`เดือน ${selectedMonth}`;
+}
+const checklistContainer=document.getElementById('fixedMonthlyChecklistContainer');
+if(checklistContainer&&metrics.fixedChecklistStatus){
+checklistContainer.innerHTML='';
+const st=metrics.fixedChecklistStatus;
+const rowFather=document.createElement('div');
+rowFather.className='fixed-item-row';
+const infoFather=document.createElement('div');
+infoFather.className='fixed-item-info';
+const nameFather=document.createElement('div');
+nameFather.className='fixed-item-name';
+nameFather.textContent=st.father_insurance.label;
+const subFather=document.createElement('div');
+subFather.className='fixed-item-sub';
+subFather.textContent=st.father_insurance.isPaid
+?`จ่ายแล้วเดือนนี้ ${formatCurrency(st.father_insurance.paidAmount,'THB')}`
+:'ยังไม่ได้บันทึกจ่ายในเดือนนี้';
+infoFather.appendChild(nameFather);
+infoFather.appendChild(subFather);
+const actFather=document.createElement('div');
+actFather.style.display='flex';
+actFather.style.gap='0.35rem';
+actFather.style.flexWrap='wrap';
+if(st.father_insurance.isPaid){
+const bdg=document.createElement('span');
+bdg.className='badge badge-synced';
+bdg.textContent='จ่ายแล้ว';
+actFather.appendChild(bdg);
+}else{
+const btn1300=document.createElement('button');
+btn1300.type='button';
+btn1300.className='btn btn-primary btn-sm';
+btn1300.style.minHeight='28px';
+btn1300.style.padding='0.2rem 0.55rem';
+btn1300.style.fontSize='0.75rem';
+btn1300.textContent='จ่าย 1,300';
+btn1300.onclick=async()=>{
+const txDate=selectedMonth===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${selectedMonth}-01`;
+await recordFixedExpenseItem('father_insurance_1300',{transaction_date:txDate});
+_0x1c1('บันทึกจ่ายค่าประกันพ่อ 1,300 บาท (ตัดจากข้อ 3 ค่าใช้จ่ายคงที่) แล้ว','success');
+};
+const btn2600=document.createElement('button');
+btn2600.type='button';
+btn2600.className='btn btn-secondary btn-sm';
+btn2600.style.minHeight='28px';
+btn2600.style.padding='0.2rem 0.55rem';
+btn2600.style.fontSize='0.75rem';
+btn2600.textContent='จ่าย 2,600';
+btn2600.onclick=async()=>{
+const txDate=selectedMonth===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${selectedMonth}-01`;
+await recordFixedExpenseItem('father_insurance_2600',{transaction_date:txDate});
+_0x1c1('บันทึกจ่ายค่าประกันพ่อ 2,600 บาท (ตัดจากข้อ 3 ค่าใช้จ่ายคงที่) แล้ว','success');
+};
+actFather.appendChild(btn1300);
+actFather.appendChild(btn2600);
+}
+rowFather.appendChild(infoFather);
+rowFather.appendChild(actFather);
+checklistContainer.appendChild(rowFather);
+const rowDan=document.createElement('div');
+rowDan.className='fixed-item-row';
+const infoDan=document.createElement('div');
+infoDan.className='fixed-item-info';
+const nameDan=document.createElement('div');
+nameDan.className='fixed-item-name';
+nameDan.textContent=st.dan_insurance.label;
+const subDan=document.createElement('div');
+subDan.className='fixed-item-sub';
+subDan.textContent=st.dan_insurance.isPaid
+?`จ่ายแล้วเดือนนี้ ${formatCurrency(st.dan_insurance.paidAmount,'THB')}`
+:'ยังไม่ได้บันทึกจ่ายในเดือนนี้';
+infoDan.appendChild(nameDan);
+infoDan.appendChild(subDan);
+const actDan=document.createElement('div');
+if(st.dan_insurance.isPaid){
+const bdg=document.createElement('span');
+bdg.className='badge badge-synced';
+bdg.textContent='จ่ายแล้ว';
+actDan.appendChild(bdg);
+}else{
+const btnDan=document.createElement('button');
+btnDan.type='button';
+btnDan.className='btn btn-primary btn-sm';
+btnDan.style.minHeight='28px';
+btnDan.style.padding='0.2rem 0.55rem';
+btnDan.style.fontSize='0.75rem';
+btnDan.textContent='จ่าย 2,900';
+btnDan.onclick=async()=>{
+const txDate=selectedMonth===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${selectedMonth}-01`;
+await recordFixedExpenseItem('dan_insurance',{transaction_date:txDate});
+_0x1c1('บันทึกจ่ายค่าประกันแดน 2,900 บาท (ตัดจากข้อ 3 ค่าใช้จ่ายคงที่) แล้ว','success');
+};
+actDan.appendChild(btnDan);
+}
+rowDan.appendChild(infoDan);
+rowDan.appendChild(actDan);
+checklistContainer.appendChild(rowDan);
+const rowMind=document.createElement('div');
+rowMind.className='fixed-item-row';
+const infoMind=document.createElement('div');
+infoMind.className='fixed-item-info';
+const nameMind=document.createElement('div');
+nameMind.className='fixed-item-name';
+nameMind.textContent=st.sister_mind.label;
+const subMind=document.createElement('div');
+subMind.className='fixed-item-sub';
+subMind.textContent=st.sister_mind.isPaid
+?`จ่ายแล้วเดือนนี้ ${formatCurrency(st.sister_mind.paidAmount,'THB')}`
+:'ยังไม่ได้บันทึกจ่ายในเดือนนี้';
+infoMind.appendChild(nameMind);
+infoMind.appendChild(subMind);
+const actMind=document.createElement('div');
+if(st.sister_mind.isPaid){
+const bdg=document.createElement('span');
+bdg.className='badge badge-synced';
+bdg.textContent='จ่ายแล้ว';
+actMind.appendChild(bdg);
+}else{
+const btnMind=document.createElement('button');
+btnMind.type='button';
+btnMind.className='btn btn-primary btn-sm';
+btnMind.style.minHeight='28px';
+btnMind.style.padding='0.2rem 0.55rem';
+btnMind.style.fontSize='0.75rem';
+btnMind.textContent='จ่าย 2,000';
+btnMind.onclick=async()=>{
+const txDate=selectedMonth===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${selectedMonth}-01`;
+await recordFixedExpenseItem('sister_mind',{transaction_date:txDate});
+_0x1c1('บันทึกโอนให้น้อง (มายด์) 2,000 บาท (ตัดจากข้อ 3 ค่าใช้จ่ายคงที่) แล้ว','success');
+};
+actMind.appendChild(btnMind);
+}
+rowMind.appendChild(infoMind);
+rowMind.appendChild(actMind);
+checklistContainer.appendChild(rowMind);
+const rowUtil=document.createElement('div');
+rowUtil.className='fixed-item-row';
+const infoUtil=document.createElement('div');
+infoUtil.className='fixed-item-info';
+const nameUtil=document.createElement('div');
+nameUtil.className='fixed-item-name';
+nameUtil.textContent=st.utilities_tuition.label;
+const subUtil=document.createElement('div');
+subUtil.className='fixed-item-sub';
+subUtil.textContent=`ใช้ไปแล้ว ${formatCurrency(st.utilities_tuition.paidAmount,'THB')} / งบ ฿6,500.00 (คงเหลือ ${formatCurrency(st.utilities_tuition.remainingBudget,'THB')})`;
+infoUtil.appendChild(nameUtil);
+infoUtil.appendChild(subUtil);
+const actUtil=document.createElement('div');
+const btnUtil=document.createElement('button');
+btnUtil.type='button';
+btnUtil.className='btn btn-secondary btn-sm';
+btnUtil.style.minHeight='28px';
+btnUtil.style.padding='0.2rem 0.55rem';
+btnUtil.style.fontSize='0.75rem';
+btnUtil.textContent='+ บันทึกบิล/เรียนลูก';
+btnUtil.onclick=()=>{
+openVerificationModalForManual('manual','fixed_expense','utilities_bills');
+};
+actUtil.appendChild(btnUtil);
+rowUtil.appendChild(infoUtil);
+rowUtil.appendChild(actUtil);
+checklistContainer.appendChild(rowUtil);
+}
+}
+function _0x1b7(){
+const listContainer=document.getElementById('transactionListContainer');
+const summaryEl=document.getElementById('historyCountSummary');
+if(!listContainer)return;
+const q=(document.getElementById('filterSearchInput')?.value||'').trim().toLowerCase();
+const typeFilter=document.getElementById('filterTypeSelect')?.value||'all';
+const catFilter=document.getElementById('filterCategorySelect')?.value||'all';
+const fundFilter=document.getElementById('filterFundSelect')?.value||'all';
+const dateFrom=document.getElementById('filterDateFrom')?.value||'';
+const dateTo=document.getElementById('filterDateTo')?.value||'';
+const filtered=_0x1a7.transactions.filter((tx)=>{
+const txBucket=(FUND_BUCKET_LABELS)[tx.fund_bucket]
+?tx.fund_bucket
+:inferDefaultFundBucket(tx.category,tx.merchant,tx.items_summary,tx.purpose_analysis,tx.note);
+if(typeFilter!=='all'&&tx.type!==typeFilter)return false;
+if(catFilter!=='all'&&tx.category!==catFilter)return false;
+if(fundFilter!=='all'&&txBucket!==fundFilter)return false;
+if(dateFrom&&String(tx.transaction_date)<dateFrom)return false;
+if(dateTo&&String(tx.transaction_date)>dateTo)return false;
+if(q){
+const haystack=[
+tx.merchant,
+tx.items_summary,
+tx.purpose_analysis,
+tx.note,
+_0x1a4[tx.category],
+FUND_BUCKET_LABELS[txBucket]
+]
+.filter(Boolean)
+.join(' ')
+.toLowerCase();
+if(!haystack.includes(q))return false;
+}
+return true;
+});
+if(summaryEl){
+summaryEl.textContent=`แสดง ${filtered.length} จากทั้งหมด ${_0x1a7.transactions.length} รายการ`;
+}
+listContainer.innerHTML='';
+if(filtered.length===0){
+const emptyDiv=document.createElement('div');
+emptyDiv.className='empty-state';
+emptyDiv.textContent=_0x1a7.transactions.length===0
+?'ยังไม่มีรายการธุรกรรม เริ่มต้นด้วยการถ่ายภาพใบเสร็จหรือกดปุ่ม "+ เพิ่มรายการใหม่"'
+:'ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหาหรือตัวกรอง';
+listContainer.appendChild(emptyDiv);
+return;
+}
+for(const tx of filtered){
+const card=document.createElement('article');
+card.className='tx-item';
+const top=document.createElement('div');
+top.className='tx-top';
+const leftInfo=document.createElement('div');
+const merchantEl=document.createElement('div');
+merchantEl.className='tx-merchant';
+merchantEl.textContent=tx.merchant;
+const dateEl=document.createElement('div');
+dateEl.style.fontSize='0.8rem';
+dateEl.style.color='var(--text-muted)';
+dateEl.textContent=`วันที่ ${tx.transaction_date} • ${_0x1a5[tx.source_type]||'กรอกด้วยตนเอง'}`;
+leftInfo.appendChild(merchantEl);
+leftInfo.appendChild(dateEl);
+const amountEl=document.createElement('div');
+amountEl.className=`tx-amount ${tx.type}`;
+const sign=tx.type==='income'?'+':'-';
+amountEl.textContent=`${sign}${formatCurrency(tx.amount,tx.currency)}`;
+top.appendChild(leftInfo);
+top.appendChild(amountEl);
+card.appendChild(top);
+const badgesRow=document.createElement('div');
+badgesRow.className='tx-badges';
+const typeBadge=document.createElement('span');
+typeBadge.className=`badge ${tx.type==='income'?'badge-income':'badge-expense'}`;
+typeBadge.textContent=tx.type==='income'?'รายรับ':'รายจ่าย';
+const catBadge=document.createElement('span');
+catBadge.className='badge badge-category';
+catBadge.textContent=_0x1a4[tx.category]||tx.category;
+const resolvedBucket=(FUND_BUCKET_LABELS)[tx.fund_bucket]
+?tx.fund_bucket
+:inferDefaultFundBucket(tx.category,tx.merchant,tx.items_summary,tx.purpose_analysis,tx.note);
+const fundBadge=document.createElement('span');
+fundBadge.className='badge badge-fund';
+fundBadge.textContent=(tx.type==='expense'?'ถอนจาก: ':'เข้า: ')+FUND_BUCKET_LABELS[resolvedBucket];
+const syncBadge=document.createElement('span');
+const statusClass=
+tx.sync_status==='synced'?'badge-synced':
+tx.sync_status==='pending_sync'?'badge-pending':
+tx.sync_status==='sync_failed'?'badge-failed':'badge-local';
+syncBadge.className=`badge ${statusClass}`;
+syncBadge.textContent=_0x1a6[tx.sync_status]||'บันทึกในเครื่อง';
+badgesRow.appendChild(typeBadge);
+badgesRow.appendChild(catBadge);
+badgesRow.appendChild(fundBadge);
+badgesRow.appendChild(syncBadge);
+card.appendChild(badgesRow);
+if(tx.items_summary){
+const summaryP=document.createElement('p');
+summaryP.style.fontSize='0.86rem';
+summaryP.style.color='var(--text-main)';
+summaryP.textContent=`รายการ: ${tx.items_summary}`;
+card.appendChild(summaryP);
+}
+if(tx.purpose_analysis){
+const purposeBox=document.createElement('div');
+purposeBox.className='tx-purpose-box';
+purposeBox.textContent=`วิเคราะห์วัตถุประสงค์: ${tx.purpose_analysis}`;
+card.appendChild(purposeBox);
+}
+if(tx.note){
+const noteP=document.createElement('p');
+noteP.style.fontSize='0.8rem';
+noteP.style.color='var(--text-muted)';
+noteP.textContent=`หมายเหตุ: ${tx.note}`;
+card.appendChild(noteP);
+}
+const actions=document.createElement('div');
+actions.className='tx-actions';
+const btnEdit=document.createElement('button');
+btnEdit.type='button';
+btnEdit.className='btn btn-secondary btn-sm';
+btnEdit.textContent='แก้ไข';
+btnEdit.onclick=()=>openVerificationModalForEdit(tx);
+const btnDel=document.createElement('button');
+btnDel.type='button';
+btnDel.className='btn btn-danger btn-sm';
+btnDel.textContent='ลบ';
+btnDel.onclick=()=>deleteTransactionInteractive(tx.id);
+actions.appendChild(btnEdit);
+actions.appendChild(btnDel);
+card.appendChild(actions);
+listContainer.appendChild(card);
+}
+}
+function clearUncertainHighlights(){
+const fields=['Date','Type','Merchant','Amount','Category'];
+for(const f of fields){
+const grp=document.getElementById(`groupTx${f}`);
+const bdg=document.getElementById(`badgeUncertain${f}`);
+if(grp)grp.classList.remove('uncertain-field');
+if(bdg)bdg.hidden=true;
+}
+const warnBox=document.getElementById('aiVerificationWarningsBox');
+const errBox=document.getElementById('txFormValidationErrorsBox');
+if(warnBox){warnBox.hidden=true;warnBox.textContent='';}
+if(errBox){errBox.hidden=true;errBox.textContent='';}
+}
+function openVerificationModalFromAiResult(aiResult){
+clearUncertainHighlights();
+const normalized=normalizeAiAnalysisResult(aiResult);
+document.getElementById('verificationModalTitle').textContent='ตรวจสอบผลวิเคราะห์จาก AI ก่อนบันทึก';
+document.getElementById('txFormId').value='';
+document.getElementById('txFormDate').value=normalized.date||'';
+document.getElementById('txFormType').value=normalized.type||'unknown';
+document.getElementById('txFormMerchant').value=normalized.merchant||'';
+document.getElementById('txFormAmount').value=normalized.amount!==null?String(normalized.amount):'';
+document.getElementById('txFormCurrency').value=normalized.currency||'THB';
+document.getElementById('txFormCategory').value=normalized.category||'unknown';
+document.getElementById('txFormSourceType').value=normalized.source_type||'receipt';
+const fundBucketSelectAi=document.getElementById('txFormFundBucket');
+if(fundBucketSelectAi){
+fundBucketSelectAi.value=normalized.fund_bucket||'general_expense';
+}
+document.getElementById('txFormItemsSummary').value=normalized.items_summary||'';
+document.getElementById('txFormPurposeAnalysis').value=normalized.purpose_analysis||'';
+document.getElementById('txFormNote').value='';
+const mapFieldToSuffix={
+date:'Date',
+type:'Type',
+merchant:'Merchant',
+amount:'Amount',
+category:'Category'
+};
+for(const uf of normalized.uncertain_fields){
+const suffix=mapFieldToSuffix[uf];
+if(suffix){
+document.getElementById(`groupTx${suffix}`)?.classList.add('uncertain-field');
+const badge=document.getElementById(`badgeUncertain${suffix}`);
+if(badge)badge.hidden=false;
+}
+}
+if(normalized.warnings.length>0){
+const warnBox=document.getElementById('aiVerificationWarningsBox');
+if(warnBox){
+warnBox.hidden=false;
+warnBox.textContent='ข้อควรตรวจสอบจาก AI: '+normalized.warnings.join(' | ');
+}
+}
+const hasTempImage=Boolean(_0x1a7.currentCompressedImage);
+document.getElementById('btnReanalyzeCurrentImage').hidden=!hasTempImage;
+document.getElementById('btnRemoveImageFromModal').hidden=!hasTempImage;
+document.getElementById('verificationModal').hidden=false;
+}
+function openVerificationModalForManual(
+sourceType='manual',
+defaultFundBucket='general_expense',
+defaultCategory='food_drink'
+){
+clearUncertainHighlights();
+document.getElementById('verificationModalTitle').textContent='เพิ่มรายการรายรับ-รายจ่าย (เลือกตัดจาก 5 ส่วน)';
+document.getElementById('txFormId').value='';
+document.getElementById('txFormDate').value=getBangkokTodayIso();
+document.getElementById('txFormType').value='expense';
+document.getElementById('txFormMerchant').value='';
+document.getElementById('txFormAmount').value='';
+document.getElementById('txFormCurrency').value=_0x1a7.settings.defaultCurrency||'THB';
+document.getElementById('txFormCategory').value=defaultCategory;
+document.getElementById('txFormSourceType').value=sourceType;
+const fundBucketSelectManual=document.getElementById('txFormFundBucket');
+if(fundBucketSelectManual){
+fundBucketSelectManual.value=defaultFundBucket;
+}
+document.getElementById('txFormItemsSummary').value='';
+document.getElementById('txFormPurposeAnalysis').value='';
+document.getElementById('txFormNote').value='';
+const hasTempImage=Boolean(_0x1a7.currentCompressedImage);
+document.getElementById('btnReanalyzeCurrentImage').hidden=!hasTempImage;
+document.getElementById('btnRemoveImageFromModal').hidden=!hasTempImage;
+document.getElementById('verificationModal').hidden=false;
+}
+function openVerificationModalForEdit(tx){
+clearUncertainHighlights();
+document.getElementById('verificationModalTitle').textContent='แก้ไขข้อมูลรายการ';
+document.getElementById('txFormId').value=tx.id;
+document.getElementById('txFormDate').value=tx.transaction_date||'';
+document.getElementById('txFormType').value=tx.type||'expense';
+document.getElementById('txFormMerchant').value=tx.merchant||'';
+document.getElementById('txFormAmount').value=tx.amount!==undefined?String(tx.amount):'';
+document.getElementById('txFormCurrency').value=tx.currency||'THB';
+document.getElementById('txFormCategory').value=tx.category||'shopping_general';
+document.getElementById('txFormSourceType').value=tx.source_type||'manual';
+const fundBucketSelectEdit=document.getElementById('txFormFundBucket');
+if(fundBucketSelectEdit){
+const resolvedBucket=(FUND_BUCKET_LABELS)[tx.fund_bucket]
+?tx.fund_bucket
+:inferDefaultFundBucket(tx.category,tx.merchant,tx.items_summary,tx.purpose_analysis,tx.note);
+fundBucketSelectEdit.value=resolvedBucket;
+}
+document.getElementById('txFormItemsSummary').value=tx.items_summary||'';
+document.getElementById('txFormPurposeAnalysis').value=tx.purpose_analysis||'';
+document.getElementById('txFormNote').value=tx.note||'';
+document.getElementById('btnReanalyzeCurrentImage').hidden=true;
+document.getElementById('btnRemoveImageFromModal').hidden=true;
+document.getElementById('verificationModal').hidden=false;
+}
+function clearTemporaryReceiptImage(){
+_0x1a7.currentCompressedImage=null;
+const previewPanel=document.getElementById('imagePreviewPanel');
+const previewImg=document.getElementById('receiptPreviewImg');
+const infoBox=document.getElementById('compressionInfoBox');
+const camInput=document.getElementById('inputCameraCapture');
+const galInput=document.getElementById('inputGalleryFile');
+if(previewPanel)previewPanel.hidden=true;
+if(previewImg)previewImg.removeAttribute('src');
+if(infoBox)infoBox.textContent='';
+if(camInput)camInput.value='';
+if(galInput)galInput.value='';
+}
+async function handleImageFileSelected(file){
+if(!file)return;
+const errBox=document.getElementById('aiAnalysisErrorBox');
+if(errBox){errBox.hidden=true;errBox.textContent='';}
+try{
+const compressed=await compressReceiptImage(file,1600,0.82);
+_0x1a7.currentCompressedImage=compressed;
+const previewPanel=document.getElementById('imagePreviewPanel');
+const previewImg=document.getElementById('receiptPreviewImg');
+const infoBox=document.getElementById('compressionInfoBox');
+if(previewImg)previewImg.src=compressed.dataUrl;
+if(infoBox){
+const origKB=(compressed.originalSize/1024).toFixed(1);
+const compKB=(compressed.compressedSize/1024).toFixed(1);
+infoBox.textContent=`ขนาดภาพหลังบีบอัด: ${compressed.width}×${compressed.height} px | ลดขนาดจาก ${origKB} KB เหลือ ${compKB} KB (ไม่บันทึกรูปขึ้น Cloud)`;
+}
+if(previewPanel)previewPanel.hidden=false;
+}catch(err){
+clearTemporaryReceiptImage();
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=err.message||'ไม่สามารถประมวลผลรูปภาพได้';
+}
+_0x1c1(err.message||'ไฟล์รูปภาพไม่รองรับ','error');
+}
+}
+async function triggerAiAnalysisForCurrentImage(){
+if(_0x1a7.isAnalyzingAi)return;
+if(!_0x1a7.currentCompressedImage){
+_0x1c1('กรุณาถ่ายภาพหรือเลือกรูปใบเสร็จก่อนเริ่มวิเคราะห์','warning');
+return;
+}
+const btnAnalyze=document.getElementById('btnAnalyzeWithAi');
+const btnReanalyze=document.getElementById('btnReanalyzeCurrentImage');
+const progressBox=document.getElementById('aiAnalysisProgressBox');
+const errBox=document.getElementById('aiAnalysisErrorBox');
+_0x1a7.isAnalyzingAi=true;
+if(btnAnalyze)btnAnalyze.disabled=true;
+if(btnReanalyze)btnReanalyze.disabled=true;
+if(progressBox)progressBox.hidden=false;
+if(errBox){errBox.hidden=true;errBox.textContent='';}
+try{
+const resultPayload=await _0x1b2({
+action:'analyze',
+mimeType:_0x1a7.currentCompressedImage.mimeType,
+imageBase64:_0x1a7.currentCompressedImage.base64
+});
+const aiData=resultPayload?.data||resultPayload;
+openVerificationModalFromAiResult(aiData);
+_0x1c1('AI อ่านข้อมูลใบเสร็จเสร็จแล้ว กรุณาตรวจสอบก่อนยืนยันบันทึก','success');
+}catch(err){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=err.message||'เกิดข้อผิดพลาดในการวิเคราะห์ด้วย AI';
+}
+_0x1c1(err.message||'ไม่สามารถวิเคราะห์ด้วย AI ได้','error');
+}finally{
+_0x1a7.isAnalyzingAi=false;
+if(btnAnalyze)btnAnalyze.disabled=false;
+if(btnReanalyze)btnReanalyze.disabled=false;
+if(progressBox)progressBox.hidden=true;
+}
+}
+function _0x1c4(){
+document.getElementById('btnStartScanCamera')?.addEventListener('click',()=>{
+document.getElementById('inputCameraCapture')?.click();
+});
+document.getElementById('btnChooseGallery')?.addEventListener('click',()=>{
+document.getElementById('inputGalleryFile')?.click();
+});
+document.getElementById('inputCameraCapture')?.addEventListener('change',(e)=>{
+const file=e.target.files&&e.target.files[0];
+if(file)handleImageFileSelected(file);
+});
+document.getElementById('inputGalleryFile')?.addEventListener('change',(e)=>{
+const file=e.target.files&&e.target.files[0];
+if(file)handleImageFileSelected(file);
+});
+document.getElementById('btnAnalyzeWithAi')?.addEventListener('click',triggerAiAnalysisForCurrentImage);
+document.getElementById('btnReanalyzeCurrentImage')?.addEventListener('click',triggerAiAnalysisForCurrentImage);
+document.getElementById('btnUseImageForManual')?.addEventListener('click',()=>{
+openVerificationModalForManual('receipt');
+});
+document.getElementById('btnClearTempImage')?.addEventListener('click',()=>{
+clearTemporaryReceiptImage();
+_0x1c1('ลบรูปชั่วคราวออกจากหน่วยความจำแล้ว','info');
+});
+document.getElementById('btnRemoveImageFromModal')?.addEventListener('click',()=>{
+clearTemporaryReceiptImage();
+document.getElementById('btnReanalyzeCurrentImage').hidden=true;
+document.getElementById('btnRemoveImageFromModal').hidden=true;
+_0x1c1('ลบรูปชั่วคราวแล้ว','info');
+});
+document.getElementById('btnOpenManualEntry')?.addEventListener('click',()=>{
+openVerificationModalForManual('manual');
+});
+const closeVerification=()=>{
+document.getElementById('verificationModal').hidden=true;
+};
+document.getElementById('btnCloseVerificationModal')?.addEventListener('click',closeVerification);
+document.getElementById('btnCancelVerification')?.addEventListener('click',closeVerification);
+document.getElementById('btnConfirmSaveTx')?.addEventListener('click',async()=>{
+if(_0x1a7.isSavingTx)return;
+const btnSave=document.getElementById('btnConfirmSaveTx');
+const errBox=document.getElementById('txFormValidationErrorsBox');
+if(errBox){errBox.hidden=true;errBox.textContent='';}
+const formPayload={
+id:document.getElementById('txFormId').value,
+transaction_date:document.getElementById('txFormDate').value,
+type:document.getElementById('txFormType').value,
+merchant:document.getElementById('txFormMerchant').value,
+amount:document.getElementById('txFormAmount').value,
+currency:document.getElementById('txFormCurrency').value,
+category:document.getElementById('txFormCategory').value,
+fund_bucket:(document.getElementById('txFormFundBucket'))?.value||'general_expense',
+source_type:document.getElementById('txFormSourceType').value,
+items_summary:document.getElementById('txFormItemsSummary').value,
+purpose_analysis:document.getElementById('txFormPurposeAnalysis').value,
+note:document.getElementById('txFormNote').value
+};
+_0x1a7.isSavingTx=true;
+if(btnSave)btnSave.disabled=true;
+try{
+const saved=await saveTransaction(formPayload);
+clearTemporaryReceiptImage();
+document.getElementById('verificationModal').hidden=true;
+_0x1c1(
+saved.sync_status==='synced'
+?'บันทึกและซิงก์รายการขึ้น Cloud สำเร็จแล้ว'
+:'บันทึกรายการลงในเครื่องเรียบร้อยแล้ว',
+'success'
+);
+}catch(err){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=err.message||'ไม่สามารถบันทึกรายการได้ กรุณาตรวจสอบข้อมูลอีกครั้ง';
+}
+}finally{
+_0x1a7.isSavingTx=false;
+if(btnSave)btnSave.disabled=false;
+}
+});
+const filterIds=[
+'dashboardMonthPicker',
+'filterSearchInput',
+'filterTypeSelect',
+'filterCategorySelect',
+'filterFundSelect',
+'filterDateFrom',
+'filterDateTo'
+];
+for(const fid of filterIds){
+document.getElementById(fid)?.addEventListener('input',_0x1b6);
+document.getElementById(fid)?.addEventListener('change',_0x1b6);
+}
+document.getElementById('btnResetFilters')?.addEventListener('click',()=>{
+document.getElementById('filterSearchInput').value='';
+document.getElementById('filterTypeSelect').value='all';
+document.getElementById('filterCategorySelect').value='all';
+const fundSelectEl=document.getElementById('filterFundSelect');
+if(fundSelectEl)fundSelectEl.value='all';
+document.getElementById('filterDateFrom').value='';
+document.getElementById('filterDateTo').value='';
+_0x1b7();
+});
+const recalculateSalarySplitPreview=()=>{
+const totalVal=Number((document.getElementById('salarySplitTotalInput'))?.value||0);
+const f1=Number((document.getElementById('salarySplitFund1Input'))?.value||0);
+const f2=Number((document.getElementById('salarySplitFund2Input'))?.value||0);
+const f3=Number((document.getElementById('salarySplitFund3Input'))?.value||0);
+const f4=Number((document.getElementById('salarySplitFund4Input'))?.value||0);
+const f5El=document.getElementById('salarySplitFund5Input');
+const previewBox=document.getElementById('salarySplitSummaryPreview');
+const fixedSum=Math.round((f1+f2+f3+f4)*100)/100;
+const remainForF5=totalVal>0?Math.max(0,Math.round((totalVal-fixedSum)*100)/100):0;
+if(f5El&&totalVal>0){
+f5El.value=String(remainForF5);
+}
+if(previewBox){
+if(totalVal>0&&totalVal<fixedSum){
+previewBox.className='alert-box alert-warning';
+previewBox.textContent=`ยอดเงินเดือนรวม (${formatCurrency(totalVal,'THB')}) น้อยกว่ายอด Fix ข้อ 1–4 (${formatCurrency(fixedSum,'THB')}) ขาดอีก ${formatCurrency(fixedSum-totalVal,'THB')}`;
+}else{
+previewBox.className='alert-box alert-success';
+previewBox.textContent=`ยอดรวม Fix (ข้อ 1–4) = ${formatCurrency(fixedSum,'THB')} | คงเหลือเข้าข้อ 5 ค่าใช้จ่ายทั่วไป = ${formatCurrency(remainForF5,'THB')}`;
+}
+}
+};
+document.getElementById('btnOpenSalarySplitModal')?.addEventListener('click',()=>{
+const selectedMonth=(document.getElementById('dashboardMonthPicker'))?.value||getBangkokTodayIso().slice(0,7);
+const defaultDate=selectedMonth===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${selectedMonth}-01`;
+const dateEl=document.getElementById('salarySplitDate');
+if(dateEl)dateEl.value=defaultDate;
+const errBox=document.getElementById('salarySplitErrorBox');
+if(errBox){errBox.hidden=true;errBox.textContent='';}
+recalculateSalarySplitPreview();
+const modal=document.getElementById('salarySplitModal');
+if(modal)modal.hidden=false;
+});
+const closeSalarySplitModal=()=>{
+const modal=document.getElementById('salarySplitModal');
+if(modal)modal.hidden=true;
+};
+document.getElementById('btnCloseSalarySplitModal')?.addEventListener('click',closeSalarySplitModal);
+document.getElementById('btnCancelSalarySplit')?.addEventListener('click',closeSalarySplitModal);
+document.getElementById('salarySplitFatherInsMode')?.addEventListener('change',(e)=>{
+const modeVal=Number((e.target).value||1300);
+const f3El=document.getElementById('salarySplitFund3Input');
+const lblFather=document.getElementById('labelFatherInsAmount');
+if(lblFather)lblFather.textContent=modeVal.toLocaleString('en-US');
+if(f3El){
+f3El.value=String(
+modeVal===2600
+?FIXED_MONTHLY_PRESETS.FIXED_EXPENSE_TOTAL_EVERY_3RD
+:FIXED_MONTHLY_PRESETS.FIXED_EXPENSE_TOTAL_NORMAL
+);
+}
+recalculateSalarySplitPreview();
+});
+for(const id of[
+'salarySplitTotalInput',
+'salarySplitFund1Input',
+'salarySplitFund2Input',
+'salarySplitFund3Input',
+'salarySplitFund4Input'
+]){
+document.getElementById(id)?.addEventListener('input',recalculateSalarySplitPreview);
+}
+document.getElementById('btnConfirmSalarySplit')?.addEventListener('click',async()=>{
+const errBox=document.getElementById('salarySplitErrorBox');
+if(errBox){errBox.hidden=true;errBox.textContent='';}
+try{
+const res=await allocateMonthlySalary({
+transaction_date:(document.getElementById('salarySplitDate'))?.value,
+total_salary:Number((document.getElementById('salarySplitTotalInput'))?.value||0),
+investment_stock:Number((document.getElementById('salarySplitFund1Input'))?.value||0),
+home_building:Number((document.getElementById('salarySplitFund2Input'))?.value||0),
+fixed_expense:Number((document.getElementById('salarySplitFund3Input'))?.value||0),
+father_insurance_mode:Number((document.getElementById('salarySplitFatherInsMode'))?.value||1300),
+emergency_personal:Number((document.getElementById('salarySplitFund4Input'))?.value||0),
+general_expense:Number((document.getElementById('salarySplitFund5Input'))?.value||0)
+});
+closeSalarySplitModal();
+_0x1c1(`แบ่งเงินเดือนประจำเดือน ${res.yearMonth} เข้าทั้ง 5 ส่วนเรียบร้อยแล้ว`,'success');
+}catch(err){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=err.message||'ไม่สามารถแบ่งเงินเดือนได้ กรุณาตรวจสอบข้อมูล';
+}
+}
+});
+document.getElementById('btnRolloverSurplusToEmergency')?.addEventListener('click',async()=>{
+const selectedMonth=(document.getElementById('dashboardMonthPicker'))?.value||getBangkokTodayIso().slice(0,7);
+const metrics=calculateDashboardMetrics(_0x1a7.transactions,selectedMonth);
+const gBal=metrics.fundBalances.find((b)=>b.bucket==='general_expense')?.availableBalance||0;
+const fBal=metrics.fundBalances.find((b)=>b.bucket==='fixed_expense')?.availableBalance||0;
+const surplus=Math.max(0,gBal)+Math.max(0,fBal);
+if(surplus<=0){
+_0x1c1(`ไม่มีเงินเหลือใช้ในงบรายเดือน (${selectedMonth}) สำหรับโอนเข้าข้อ 4`,'info');
+return;
+}
+const confirmed=await askUserConfirmation(
+'เก็บเงินเหลือใช้เข้าข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
+`ต้องการโอนเงินที่เหลือใช้ของเดือน ${selectedMonth} จำนวนรวม ${formatCurrency(surplus,'THB')} ไปเก็บสะสมไว้ใน "4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)" ใช่หรือไม่?`
+);
+if(!confirmed)return;
+const res=await rolloverMonthlySurplusToEmergency(selectedMonth);
+if(res.rolledOver){
+_0x1c1(`โอนเงินเหลือใช้ ${formatCurrency(res.amount,'THB')} เข้าข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว) สำเร็จแล้ว`,'success');
+}
+});
+document.getElementById('btnTriggerSyncNow')?.addEventListener('click',async()=>{
+const res=await syncPendingTransactions();
+_0x1c1(`ซิงก์ข้อมูลสำเร็จ ${res.syncedCount} รายการ`,res.failedCount===0?'success':'warning');
+});
+document.getElementById('btnMigrateLocalToCloud')?.addEventListener('click',migrateLocalOnlyRecordsToCloudInteractive);
+document.getElementById('btnOpenSettingsModal')?.addEventListener('click',()=>{
+document.getElementById('inputSupabaseUrl').value=_0x1a7.settings.supabaseUrl||'';
+document.getElementById('inputSupabaseAnonKey').value=_0x1a7.settings.supabaseAnonKey||'';
+document.getElementById('settingsModal').hidden=false;
+});
+document.getElementById('btnCloseSettingsModal')?.addEventListener('click',()=>{
+document.getElementById('settingsModal').hidden=true;
+});
+document.getElementById('btnSaveSupabaseConfig')?.addEventListener('click',async()=>{
+try{
+const url=document.getElementById('inputSupabaseUrl').value;
+const key=document.getElementById('inputSupabaseAnonKey').value;
+_0x1ad(url,key);
+await _0x1b1(true);
+}catch(err){
+_0x1c1(err.message,'error');
+}
+});
+document.getElementById('btnTestSupabaseConn')?.addEventListener('click',async()=>{
+try{
+const url=document.getElementById('inputSupabaseUrl').value;
+const key=document.getElementById('inputSupabaseAnonKey').value;
+_0x1ad(url,key);
+await _0x1b1(true);
+}catch(err){
+_0x1c1(err.message,'error');
+}
+});
+document.getElementById('btnClearSupabaseConfig')?.addEventListener('click',async()=>{
+_0x1ad('','');
+await _0x1b1(false);
+_0x1c1('สลับเป็นโหมดบันทึกข้อมูลในเครื่องแล้ว','info');
+});
+document.getElementById('btnCheckAiEdgeHealth')?.addEventListener('click',async()=>{
+try{
+const res=await _0x1b2({action:'health'},10000);
+_0x1c1(res.message||'ตรวจสอบสถานะ AI เรียบร้อยแล้ว',res.ready?'success':'warning');
+}catch(err){
+_0x1c1(err.message||'ไม่สามารถติดต่อ Edge Function ได้','error');
+}
+});
+document.getElementById('btnExportJson')?.addEventListener('click',exportBackupJson);
+document.getElementById('btnExportCsv')?.addEventListener('click',exportBackupCsv);
+document.getElementById('inputImportBackupFile')?.addEventListener('change',async(e)=>{
+const file=e.target.files&&e.target.files[0];
+if(!file)return;
+const resultBox=document.getElementById('importResultBox');
+try{
+const text=await file.text();
+const res=await validateAndImportBackup(text,file.name);
+if(resultBox){
+resultBox.hidden=false;
+resultBox.textContent=`นำเข้าสำเร็จ ${res.imported} รายการ | ข้ามรายการซ้ำ ${res.duplicateCount} รายการ | ปฏิเสธข้อมูลผิดรูปแบบ ${res.rejected} รายการ`;
+}
+_0x1c1(`นำเข้าข้อมูลสำเร็จ ${res.imported} รายการ`,'success');
+}catch(err){
+if(resultBox){
+resultBox.hidden=false;
+resultBox.textContent=`นำเข้าไม่สำเร็จ: ${err.message}`;
+}
+_0x1c1(err.message||'ไฟล์นำเข้าไม่ถูกต้อง','error');
+}finally{
+e.target.value='';
+}
+});
+document.getElementById('btnOpenAuthModal')?.addEventListener('click',()=>{
+_0x1c5();
+document.getElementById('authModal').hidden=false;
+});
+document.getElementById('btnCloseAuthModal')?.addEventListener('click',()=>{
+document.getElementById('authModal').hidden=true;
+});
+document.getElementById('authForm')?.addEventListener('submit',async(e)=>{
+e.preventDefault();
+await _0x1c6();
+});
+document.getElementById('btnSignUp')?.addEventListener('click',_0x1c7);
+document.getElementById('btnResetPassword')?.addEventListener('click',_0x1c8);
+document.getElementById('btnSignOut')?.addEventListener('click',_0x1c9);
+document.getElementById('btnVerifySessionNow')?.addEventListener('click',async()=>{
+await _0x1b1(true);
+_0x1c5();
+});
+globalScope.addEventListener('online',async()=>{
+_0x1b8();
+if(_0x1a7.supabaseConnected&&_0x1a7.currentUser){
+await syncPendingTransactions();
+}
+});
+globalScope.addEventListener('offline',()=>{
+_0x1b8();
+});
+}
+function _0x1c5(){
+const accountBox=document.getElementById('authCurrentAccountBox');
+const loggedInActions=document.getElementById('authLoggedInActions');
+const errBox=document.getElementById('authErrorBox');
+const okBox=document.getElementById('authSuccessBox');
+if(errBox)errBox.hidden=true;
+if(okBox)okBox.hidden=true;
+if(_0x1a7.currentUser){
+accountBox.textContent=`เข้าสู่ระบบในชื่อ: ${_0x1a7.currentUser.email} (ID: ${_0x1a7.currentUser.id.slice(0,8)}...)`;
+loggedInActions.hidden=false;
+}else{
+accountBox.textContent='สถานะปัจจุบัน: ยังไม่ได้เข้าสู่ระบบ (ทำงานในโหมดบันทึกข้อมูลในเครื่อง)';
+loggedInActions.hidden=true;
+}
+}
+async function _0x1c6(){
+const errBox=document.getElementById('authErrorBox');
+const okBox=document.getElementById('authSuccessBox');
+if(errBox)errBox.hidden=true;
+if(okBox)okBox.hidden=true;
+if(!_0x1a7.supabaseClient){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent='กรุณาตั้งค่า Supabase URL และ Publishable Key ในหน้า "ตั้งค่า" ก่อนเข้าสู่ระบบ';
+}
+return;
+}
+const email=document.getElementById('authEmailInput').value.trim();
+const password=document.getElementById('authPasswordInput').value;
+if(!email||!password){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent='กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน';
+}
+return;
+}
+const{data,error}=await _0x1a7.supabaseClient.auth.signInWithPassword({email,password});
+if(error){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=`เข้าสู่ระบบไม่สำเร็จ: ${error.message}`;
+}
+return;
+}
+_0x1a7.currentUser=data?.user||null;
+_0x1c5();
+_0x1b8();
+await pullCloudTransactionsAndMerge();
+_0x1c1('เข้าสู่ระบบสำเร็จแล้ว','success');
+}
+async function _0x1c7(){
+const errBox=document.getElementById('authErrorBox');
+const okBox=document.getElementById('authSuccessBox');
+if(errBox)errBox.hidden=true;
+if(okBox)okBox.hidden=true;
+if(!_0x1a7.supabaseClient){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent='กรุณาตั้งค่า Supabase URL และ Publishable Key ในหน้า "ตั้งค่า" ก่อนสมัครสมาชิก';
+}
+return;
+}
+const email=document.getElementById('authEmailInput').value.trim();
+const password=document.getElementById('authPasswordInput').value;
+if(!email||password.length<6){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent='กรุณากรอกอีเมลและรหัสผ่านอย่างน้อย 6 ตัวอักษร';
+}
+return;
+}
+const redirectUrl=new URL('./index.html',globalScope.location.href).href;
+const{error}=await _0x1a7.supabaseClient.auth.signUp({
+email,
+password,
+options:{emailRedirectTo:redirectUrl}
+});
+if(error){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=`สมัครบัญชีไม่สำเร็จ: ${error.message}`;
+}
+return;
+}
+if(okBox){
+okBox.hidden=false;
+okBox.textContent='สมัครบัญชีสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี (หรือเข้าสู่ระบบได้ทันทีหากปิด Confirm Email ไว้)';
+}
+}
+async function _0x1c8(){
+const errBox=document.getElementById('authErrorBox');
+const okBox=document.getElementById('authSuccessBox');
+if(errBox)errBox.hidden=true;
+if(okBox)okBox.hidden=true;
+if(!_0x1a7.supabaseClient){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent='กรุณาตั้งค่า Supabase ในหน้า "ตั้งค่า" ก่อนกู้คืนรหัสผ่าน';
+}
+return;
+}
+const email=document.getElementById('authEmailInput').value.trim();
+if(!email){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent='กรุณากรอกอีเมลที่ต้องการกู้คืนรหัสผ่าน';
+}
+return;
+}
+const redirectUrl=new URL('./index.html',globalScope.location.href).href;
+const{error}=await _0x1a7.supabaseClient.auth.resetPasswordForEmail(email,{
+redirectTo:redirectUrl
+});
+if(error){
+if(errBox){
+errBox.hidden=false;
+errBox.textContent=`ส่งลิงก์กู้คืนรหัสผ่านไม่สำเร็จ: ${error.message}`;
+}
+return;
+}
+if(okBox){
+okBox.hidden=false;
+okBox.textContent='ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณแล้ว';
+}
+}
+async function _0x1c9(){
+await _0x1af();
+if(_0x1a7.supabaseClient){
+await _0x1a7.supabaseClient.auth.signOut();
+}
+_0x1a7.currentUser=null;
+await _0x1b5();
+_0x1c5();
+_0x1b8();
+_0x1c1('ออกจากระบบเรียบร้อยแล้ว','info');
+}
+function _0x1ca(){
+if('serviceWorker'in navigator&&(globalScope.location.protocol==='https:'||globalScope.location.hostname==='localhost'||globalScope.location.hostname==='127.0.0.1')){
+navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
+}
+}
+async function _0x1cb(){
+_0x1ac();
+_0x1c4();
+await _0x1b5();
+await _0x1b1(false);
+_0x1ca();
+}
+const SlipSenseApp={
+init:_0x1cb,
+getState:()=>_0x1a7,
+FUND_BUCKET_LABELS,
+FIXED_MONTHLY_PRESETS,
+generateUuid,
+getBangkokTodayIso,
+normalizeIsoDate,
+formatCurrency,
+inferDefaultFundBucket,
+validateTransactionInput,
+normalizeAiAnalysisResult,
+calculateDashboardMetrics,
+compressReceiptImage,
+saveTransaction,
+deleteTransaction,
+allocateMonthlySalary,
+recordFixedExpenseItem,
+rolloverMonthlySurplusToEmergency,
+syncPendingTransactions,
+pullCloudTransactionsAndMerge,
+validateAndImportBackup,
+exportBackupJson,
+exportBackupCsv
+};
+globalScope.SlipSenseApp=SlipSenseApp;
+if(typeof document!=='undefined'&&document.readyState==='loading'){
+document.addEventListener('DOMContentLoaded',_0x1cb);
+}else if(typeof document!=='undefined'){
+_0x1cb();
+}
+})(typeof window!=='undefined'?window:globalThis);
+  </script>
+</body>
+</html>
