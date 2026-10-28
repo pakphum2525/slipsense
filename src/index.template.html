@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="th" dir="ltr" data-theme="blue">
+<html lang="th" dir="ltr" data-theme="dark-red">
 <head>
   <meta charset="utf-8">
   <script>
     // ตั้งโทนสีก่อนแสดงหน้าให้ตรงกับค่าที่ผู้ใช้บันทึกไว้
     try {
-      const theme = localStorage.getItem('slipsense_theme') ?? 'blue';
-      document.documentElement.setAttribute('data-theme', ['light', 'dark', 'blue'].includes(theme) ? theme : 'light');
+      const theme = localStorage.getItem('slipsense_theme') ?? 'dark-red';
+      document.documentElement.setAttribute('data-theme', ['light', 'dark', 'blue', 'dark-red'].includes(theme) ? theme : 'light');
     } catch (_) {}
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -877,7 +877,31 @@
       --glass:rgba(164,218,255,0.08); --glass-border:rgba(134,218,255,0.32);
       --aurora-blue:rgba(55,192,222,0.16); --aurora-green:rgba(39,194,147,0.14); --aurora-purple:rgba(144,110,219,0.16);
     }
+    [data-theme="dark-red"] {
+      color-scheme:dark; --bg-app:#12070a; --bg-surface:#200910; --bg-subtle:#32121d;
+      --text-main:#fff0f3; --text-secondary:#f4bac4; --text-muted:#dca3b0;
+      --border-color:#814354; --border-strong:#db879c; --brand-primary:#e11d48; --brand-soft:#481325;
+      --brand-primary-hover:#be123c;
+      --expense-color:#ff9eae; --expense-bg:#481321; --income-color:#8ee6bf; --income-bg:#10382d;
+      --glass:rgba(225,29,72,0.08); --glass-border:rgba(244,186,196,0.32);
+      --aurora-blue:rgba(225,29,72,0.16); --aurora-green:rgba(159,18,57,0.14); --aurora-purple:rgba(190,24,93,0.16);
+      --shadow-sm:0 1px 6px rgba(18,7,10,0.4); --shadow-md:0 4px 20px rgba(18,7,10,0.5); --shadow-lg:0 12px 32px rgba(18,7,10,0.65);
+    }
     body { background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app); background-attachment:fixed; }
+    [data-theme="dark-red"] body {
+      background:radial-gradient(ellipse at 8% 10%,rgba(225,29,72,0.22) 0%,rgba(159,18,57,0.08) 35%,transparent 65%),
+        radial-gradient(ellipse at 90% 75%,rgba(190,24,93,0.18) 0%,rgba(88,15,38,0.08) 40%,transparent 70%),
+        linear-gradient(155deg,rgba(18,7,10,0.72) 0%,rgba(32,9,16,0.6) 55%,rgba(18,7,10,0.82) 100%),
+        url('./icons/dark_red_finance_bg.png') center / cover no-repeat,#12070a;
+      background-attachment:fixed;
+    }
+    [data-theme="dark-red"] :focus-visible { outline-color:#ff91ad; }
+    [data-theme="dark-red"] .form-control,
+    [data-theme="dark-red"] .tx-item,
+    [data-theme="dark-red"] .kpi-box { background:var(--bg-surface); color:var(--text-main); border-color:var(--glass-border); }
+    [data-theme="dark-red"] .kpi-box.net .kpi-value { color:#ff91ad; }
+    [data-theme="dark-red"] .form-group.uncertain-field .form-control { background-color:#3b2410; }
+    [data-theme="dark-red"] .form-control:focus-visible { outline:3px solid #ff91ad; outline-offset:3px; box-shadow:none; }
     .app-header, .card, .fund-card { background:var(--glass); border:1px solid var(--glass-border); -webkit-backdrop-filter:blur(24px) saturate(130%); backdrop-filter:blur(24px) saturate(130%); }
     [data-theme="blue"] body {
       background:radial-gradient(ellipse at 4% 8%,var(--aurora-green),transparent 58%),
@@ -991,7 +1015,7 @@
     <section class="card automation-panel" aria-labelledby="automationTitle">
       <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
       <div class="automation-bar">
-        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option></select>
+        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
         <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
         <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
         <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>

@@ -2011,8 +2011,8 @@ interface DashboardMetrics {
       function bindAutomationEvents() {
         const on = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         const safe = (fn) => async () => { try { await fn(); } catch (err) { showToast(err.message || 'ดำเนินการไม่สำเร็จ', 'error'); } };
-        let theme = 'blue'; try { theme = localStorage.getItem('slipsense_theme') ?? 'blue'; } catch (_) {}
-        if (!['light', 'dark', 'blue'].includes(theme)) theme = 'light';
+        let theme = 'dark-red'; try { theme = localStorage.getItem('slipsense_theme') ?? 'dark-red'; } catch (_) {}
+        if (!['light', 'dark', 'blue', 'dark-red'].includes(theme)) theme = 'light';
         document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeSelect').value = theme;
         on('themeSelect', 'change', event => { document.documentElement.setAttribute('data-theme', event.target.value); try { localStorage.setItem('slipsense_theme', event.target.value); } catch (_) {} });
         document.addEventListener('paste', handleReceiptPaste);

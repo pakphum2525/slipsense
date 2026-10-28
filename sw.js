@@ -1,5 +1,5 @@
 const CACHE_PREFIX='slipsense-app-shell-';
-const CACHE_VERSION=`${CACHE_PREFIX}v4-aurora-1`;
+const CACHE_VERSION=`${CACHE_PREFIX}v4-dark-red-1`;
 const SHARE_TTL=24*60*60*1000;
 function openShareInbox(){
 return new Promise((resolve,reject)=>{
@@ -47,6 +47,8 @@ const APP_SHELL_ASSETS=[
 './manifest.json',
 './icons/icon-192.png',
 './icons/icon-512.png',
+'./icons/dark_red_finance_bg.png',
+'./icons/aurora_finance_bg.png',
 './apple-touch-icon.png',
 './vendor/supabase.min.js'
 ];

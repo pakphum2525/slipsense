@@ -1,14 +1,14 @@
 {
-  "source_sha256": "e425b9c7480c8daac1ac7a0620f92b4a7195a7b51131e02e85b1adaedecfcdd6",
+  "source_sha256": "04a650bc9bf5e4192a1684e50c89a5bd8025c1474387152620d5ee6c57517bd2",
   "node_version": "v24.16.0",
   "source_stats": {
-    "app_ts_bytes": 194131,
-    "sw_ts_bytes": 9011
+    "app_ts_bytes": 194151,
+    "sw_ts_bytes": 9087
   },
   "production_stats": {
-    "compiled_app_js_bytes": 133462,
-    "compiled_sw_js_bytes": 6137,
-    "dist_index_html_bytes": 198268,
+    "compiled_app_js_bytes": 133481,
+    "compiled_sw_js_bytes": 6207,
+    "dist_index_html_bytes": 199990,
     "mangled_internal_identifiers": 44,
     "source_maps_generated": false
   },
@@ -24,6 +24,16 @@
       "sha256": "8681aeb7b22e3cd4d17ce6014eca94cb6a2cb8b055edc13287648a3cf6943a60"
     },
     {
+      "path": "icons/aurora_finance_bg.png",
+      "bytes": 1824423,
+      "sha256": "77a142cc14383e05676cd196e8d45b78825ad08b29541ccd507a19ba69caf965"
+    },
+    {
+      "path": "icons/dark_red_finance_bg.png",
+      "bytes": 1597541,
+      "sha256": "b0811f03abc6a76bb639d7f8c060101cb98b3565bd0c433a474aeda22c7e781d"
+    },
+    {
       "path": "icons/icon-192.png",
       "bytes": 9034,
       "sha256": "c65c9a6e8ce8cbcd6d5db278b5b011f66bed55abce6710da861233962dfd8e77"
@@ -35,8 +45,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 198268,
-      "sha256": "b718ce7ffa18d253ac8179d6532ae9c9d7fad7398fda0fb34fef96e8eead715e"
+      "bytes": 199990,
+      "sha256": "f71319f3966d41d87cfa3ff08cfcddab20bd17dbc5abcb0f07c4fa34a4f2b94a"
     },
     {
       "path": "manifest.json",
@@ -45,8 +55,8 @@
     },
     {
       "path": "sw.js",
-      "bytes": 6138,
-      "sha256": "cf6809b6722722038dd976a8ac6b7183c83295b797f4db721722db9607695a71"
+      "bytes": 6208,
+      "sha256": "3df88a7b013cd6958b3c056fe094540531b8314060322f0a8d1ce36862a83cef"
     },
     {
       "path": "vendor/supabase.min.js",

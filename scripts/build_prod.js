@@ -409,6 +409,8 @@ function main() {
     'apple-touch-icon.png',
     'icons/icon-192.png',
     'icons/icon-512.png',
+    'icons/dark_red_finance_bg.png',
+    'icons/aurora_finance_bg.png',
     'vendor/supabase.min.js'
   ];
 
