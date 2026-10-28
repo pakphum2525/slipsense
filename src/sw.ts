@@ -12,7 +12,50 @@ interface SwMessageData {
 }
 
 const CACHE_PREFIX: string = 'slipsense-app-shell-';
-const CACHE_VERSION: string = `${CACHE_PREFIX}v1.0.0`;
+const CACHE_VERSION: string = `${CACHE_PREFIX}v4-aurora-1`;
+
+const SHARE_TTL = 24 * 60 * 60 * 1000;
+function openShareInbox(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('slipsense_share_inbox', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('images', { keyPath: 'id' });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function receiveSharedReceipt(request: Request): Promise<Response> {
+  const headers = { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' };
+  if (!request.headers.get('content-type')?.startsWith('multipart/form-data')) return new Response('ต้องแชร์ไฟล์ภาพ', { status: 415, headers });
+  if (Number(request.headers.get('content-length')) > 21 * 1024 * 1024) return new Response('ไฟล์ใหญ่เกินกำหนด', { status: 413, headers });
+  let db;
+  try {
+    const data = await request.formData();
+    const files = data.getAll('receipt');
+    const file: any = files[0];
+    if (files.length !== 1 || !file || typeof file === 'string' || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return new Response('รองรับภาพ JPEG, PNG หรือ WebP หนึ่งภาพ', { status: 415, headers });
+    if (!file.size || file.size > 20 * 1024 * 1024) return new Response('ขนาดภาพต้องไม่เกิน 20 MB', { status: 413, headers });
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    db = await openShareInbox();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('images', 'readwrite');
+      const store = tx.objectStore('images');
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const alive = req.result.filter(row => row.expires > now && row.state !== 'acked');
+        req.result.filter(row => row.expires <= now).forEach(row => store.delete(row.id));
+        if (alive.length >= 5 || alive.reduce((sum, row) => sum + (row.file?.size || 0), file.size) > 40 * 1024 * 1024) { tx.abort(); return; }
+        store.put({ id, file, created: now, expires: now + SHARE_TTL, state: 'pending', owner: null, transactionId: crypto.randomUUID() });
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(new Error('quota'));
+    });
+    return Response.redirect(new URL(`./index.html?share=${encodeURIComponent(id)}`, (self as any).registration.scope).href, 303);
+  } catch (_) {
+    return new Response('รับภาพไม่สำเร็จ พื้นที่อาจเต็ม กรุณาเลือกภาพจากอัลบั้ม', { status: 507, headers });
+  } finally { db?.close(); }
+}
 
 const APP_SHELL_ASSETS: readonly string[] = [
   './',
@@ -110,6 +153,14 @@ self.addEventListener('fetch', (event: any) => {
   }
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
+  const shareAction = new URL('./share-target', (self as any).registration.scope);
+  if (request.method === 'POST' && url.origin === shareAction.origin && url.pathname === shareAction.pathname) {
+    const response = receiveSharedReceipt(request);
+    event.respondWith(response);
+    event.waitUntil(response.then(() => undefined));
     return;
   }
 

@@ -423,7 +423,10 @@ function main() {
   const distArtifacts = verifyDistSecurityAndIp(DIST_DIR);
 
   const buildManifest = {
-    built_at: new Date().toISOString(),
+    source_sha256: crypto.createHash('sha256').update(JSON.stringify([
+      rawAppTs, rawSwTs, rawTemplateHtml,
+      fs.readFileSync(path.join(PROJECT_ROOT, 'manifest.json'), 'utf8')
+    ])).digest('hex'),
     node_version: process.version,
     source_stats: {
       app_ts_bytes: Buffer.byteLength(rawAppTs, 'utf8'),
@@ -439,9 +442,8 @@ function main() {
     artifacts: distArtifacts
   };
 
-  fs.mkdirSync(path.join(PROJECT_ROOT, '.agent_loop'), { recursive: true });
   fs.writeFileSync(
-    path.join(PROJECT_ROOT, '.agent_loop', 'BUILD_MANIFEST.json'),
+    path.join(DIST_DIR, 'BUILD_MANIFEST.json'),
     JSON.stringify(buildManifest, null, 2),
     'utf8'
   );

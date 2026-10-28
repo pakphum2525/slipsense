@@ -187,111 +187,7 @@ function createBrowserSandbox() {
     removeEventListener: () => {}
   };
 
-  // Fake IndexedDB implementation
-  const indexedDBMock = {
-    open: (dbName) => {
-      const req = {
-        result: null,
-        error: null,
-        onsuccess: null,
-        onerror: null,
-        onupgradeneeded: null
-      };
-      setImmediate(() => {
-        if (!idbStores.has(dbName)) {
-          idbStores.set(dbName, new Map());
-        }
-        const dbMap = idbStores.get(dbName);
-        const db = {
-          objectStoreNames: {
-            contains: (name) => dbMap.has(name)
-          },
-          createObjectStore: (name) => {
-            if (!dbMap.has(name)) dbMap.set(name, new Map());
-            return {
-              createIndex: () => {}
-            };
-          },
-          transaction: (storeNames) => {
-            const names = Array.isArray(storeNames) ? storeNames : [storeNames];
-            names.forEach((n) => {
-              if (!dbMap.has(n)) dbMap.set(n, new Map());
-            });
-            const tx = {
-              oncomplete: null,
-              onerror: null,
-              onabort: null,
-              objectStore: (name) => {
-                if (!dbMap.has(name)) dbMap.set(name, new Map());
-                const store = dbMap.get(name);
-                return {
-                  put: (val) => {
-                    const r = { result: val.id, onsuccess: null, onerror: null };
-                    store.set(val.id, JSON.parse(JSON.stringify(val)));
-                    setImmediate(() => {
-                      if (r.onsuccess) r.onsuccess({ target: r });
-                      if (tx.oncomplete) tx.oncomplete({});
-                    });
-                    return r;
-                  },
-                  get: (key) => {
-                    const r = {
-                      result: store.has(key) ? JSON.parse(JSON.stringify(store.get(key))) : undefined,
-                      onsuccess: null,
-                      onerror: null
-                    };
-                    setImmediate(() => {
-                      if (r.onsuccess) r.onsuccess({ target: r });
-                    });
-                    return r;
-                  },
-                  getAll: () => {
-                    const r = {
-                      result: Array.from(store.values()).map((v) => JSON.parse(JSON.stringify(v))),
-                      onsuccess: null,
-                      onerror: null
-                    };
-                    setImmediate(() => {
-                      if (r.onsuccess) r.onsuccess({ target: r });
-                    });
-                    return r;
-                  },
-                  delete: (key) => {
-                    const r = { result: undefined, onsuccess: null, onerror: null };
-                    store.delete(key);
-                    setImmediate(() => {
-                      if (r.onsuccess) r.onsuccess({ target: r });
-                      if (tx.oncomplete) tx.oncomplete({});
-                    });
-                    return r;
-                  },
-                  clear: () => {
-                    const r = { result: undefined, onsuccess: null, onerror: null };
-                    store.clear();
-                    setImmediate(() => {
-                      if (r.onsuccess) r.onsuccess({ target: r });
-                      if (tx.oncomplete) tx.oncomplete({});
-                    });
-                    return r;
-                  }
-                };
-              }
-            };
-            return tx;
-          },
-          close: () => {}
-        };
-        req.result = db;
-        if (req.onupgradeneeded) {
-          req.onupgradeneeded({ target: req });
-        }
-        if (req.onsuccess) {
-          req.onsuccess({ target: req });
-        }
-      });
-      return req;
-    }
-  };
+  const indexedDBMock = require('../tests/idb_harness').createIndexedDB();
 
   const windowObj = {
     location: {
@@ -352,10 +248,7 @@ function createBrowserSandbox() {
         this.size = parts.reduce((acc, p) => acc + Buffer.byteLength(String(p)), 0);
       }
     },
-    URL: {
-      createObjectURL: () => 'blob:http://127.0.0.1:8080/mock-blob',
-      revokeObjectURL: () => {}
-    },
+    URL: Object.assign(URL, { createObjectURL: () => 'blob:mock', revokeObjectURL: () => {} }),
     FileReader: class FileReader {
       readAsDataURL() {
         if (this.onload) this.onload({ target: { result: 'data:image/jpeg;base64,AAAA' } });
@@ -1357,6 +1250,10 @@ async function main() {
   // =========================================================================
   // SUMMARY
   // =========================================================================
+  for (const file of fs.readdirSync(path.join(PROJECT_ROOT, 'tests')).filter(file => file.endsWith('.test.js'))) {
+    await runTest('Automation', file, () => require(path.join(PROJECT_ROOT, 'tests', file))());
+  }
+
   console.log('\n======================================================================');
   console.log(` สรุปผลการทดสอบ: ผ่าน ${passedTests}/${totalTests} รายการ (ล้มเหลว ${failedTests} รายการ)`);
   console.log('======================================================================');
@@ -1372,7 +1269,9 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((err) => {
+module.exports = { createBrowserSandbox };
+
+if (require.main === module) main().catch((err) => {
   console.error('เกิดข้อผิดพลาดร้ายแรงในการรันชุดทดสอบ:', err);
   process.exit(1);
 });

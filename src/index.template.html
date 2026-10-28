@@ -850,6 +850,43 @@
       font-size: 0.75rem;
       color: var(--text-muted);
     }
+    :root, [data-theme="light"] {
+      color-scheme:light; --bg-app:#edf5f9; --bg-surface:#f9fcff; --bg-subtle:#e6f0f6;
+      --text-main:#102c40; --text-secondary:#304f63; --text-muted:#456176;
+      --glass:rgba(255,255,255,0.08); --glass-border:rgba(34,108,142,0.30);
+      --aurora-blue:rgba(45,170,240,0.16); --aurora-green:rgba(34,206,160,0.12); --aurora-purple:rgba(153,104,230,0.13);
+    }
+    [data-theme="dark"] {
+      color-scheme:dark; --bg-app:#07151f; --bg-surface:#102734; --bg-subtle:#183342;
+      --text-main:#effaff; --text-secondary:#c3dbe7; --text-muted:#abc8d7;
+      --border-color:#446171; --border-strong:#6b8a9b; --brand-primary:#147e88; --brand-soft:#163e47;
+      --glass:rgba(181,226,255,0.06); --glass-border:rgba(166,226,255,0.28);
+      --aurora-blue:rgba(45,170,240,0.12); --aurora-green:rgba(34,206,160,0.08); --aurora-purple:rgba(153,104,230,0.11);
+    }
+    [data-theme="blue"] {
+      color-scheme:dark; --bg-app:#071e39; --bg-surface:#102f4e; --bg-subtle:#163d5c;
+      --text-main:#f2fbff; --text-secondary:#c9e3f5; --text-muted:#b2d1e8;
+      --border-color:#416986; --border-strong:#739ab5; --brand-primary:#147e88; --brand-soft:#133e59;
+      --glass:rgba(126,202,255,0.10); --glass-border:rgba(134,218,255,0.32);
+      --aurora-blue:rgba(45,170,240,0.16); --aurora-green:rgba(34,206,160,0.09); --aurora-purple:rgba(153,104,230,0.14);
+    }
+    body { background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app); background-attachment:fixed; }
+    .app-header, .card, .fund-card { background:var(--glass); border:1px solid var(--glass-border); -webkit-backdrop-filter:blur(24px) saturate(130%); backdrop-filter:blur(24px) saturate(130%); }
+    .modal-content { background:var(--bg-surface); }
+    .app-header { padding-top:env(safe-area-inset-top); }
+    .app-container { padding-bottom:calc(1rem + env(safe-area-inset-bottom)); }
+    .btn, .card { transition:transform 180ms ease, opacity 180ms ease; }
+    .btn:active { transform:scale(0.97); }
+    button, .btn, select, input { min-height:44px; }
+    :focus-visible { outline:3px solid #22a6c7; outline-offset:3px; }
+    .automation-bar { display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center; margin-block:0.8rem; }
+    .automation-panel { margin-bottom:1rem; padding:1rem; }
+    .batch-row { display:grid; grid-template-columns:auto 1fr minmax(80px,120px); gap:0.5rem; align-items:center; margin-block:0.6rem; }
+    .batch-row input { width:100%; }
+    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+      .app-header, .card, .fund-card { background:var(--bg-surface); }
+    }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
@@ -892,6 +929,32 @@
 
   <!-- พื้นที่ทำงานหลัก -->
   <main class="app-container">
+    <section class="card automation-panel" aria-labelledby="automationTitle">
+      <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
+      <div class="automation-bar">
+        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option></select>
+        <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
+        <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
+        <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
+      </div>
+      <p id="captureStatus" role="status" aria-live="polite">วางภาพด้วย Ctrl+V / Cmd+V หรือแชร์ภาพมายังแอป หากไม่รองรับให้เลือกภาพจากอัลบั้ม</p>
+      <button id="btnResumeShare" type="button" class="btn btn-secondary">รับภาพแชร์ที่ค้างไว้</button>
+      <p id="voiceStatus" role="status" aria-live="polite"></p>
+      <div id="dailyQuickChips" class="automation-bar" aria-label="รายจ่ายที่เคยยืนยัน"></div>
+      <button id="btnClearLearning" type="button" class="btn btn-secondary">ล้างร้านค้าและชิปที่จำไว้</button>
+      <fieldset><legend>จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</legend>
+        <label for="batchPayDate">วันที่ชำระ</label><input id="batchPayDate" type="date" required>
+        <div id="batchPayItems"></div>
+        <button id="btnBatchPay" type="button" class="btn btn-primary">ยืนยันจ่ายรายการที่เลือก</button>
+        <p id="batchPayStatus" role="status" aria-live="polite"></p>
+      </fieldset>
+      <fieldset><legend>รอบประกันพ่อที่ยืนยันเอง</legend>
+        <label for="fatherAnchor">วันที่อ้างอิง</label><input id="fatherAnchor" type="date">
+        <label for="fatherInterval">ห่างกันกี่เดือน</label><input id="fatherInterval" type="number" min="1" max="120" step="1">
+        <button id="btnSaveFatherCycle" type="button" class="btn btn-secondary">ยืนยันรอบประกันพ่อ</button>
+        <p id="fatherCycleStatus" role="status" aria-live="polite">ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ</p>
+      </fieldset>
+    </section>
     <!-- คอลัมน์ซ้าย: สแกนใบเสร็จด้วย AI + สรุปภาพรวมประจำเดือน -->
     <div class="col-stack">
       <!-- การ์ดที่ 1: ปุ่มด่วนและสแกนใบเสร็จ/สลิป -->

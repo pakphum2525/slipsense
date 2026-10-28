@@ -71,7 +71,7 @@ interface DashboardMetrics {
       'use strict';
 
       const DB_NAME: string = 'slipsense_db';
-      const DB_VERSION: number = 1;
+      const DB_VERSION: number = 2;
       const STORE_TRANSACTIONS: string = 'transactions';
       const SETTINGS_STORAGE_KEY: string = 'slipsense_settings_v1';
 
@@ -681,6 +681,7 @@ interface DashboardMetrics {
             const req = indexedDB.open(DB_NAME, DB_VERSION);
             req.onupgradeneeded = function (event) {
               const db = event.target.result;
+              if (!db.objectStoreNames.contains('automation')) db.createObjectStore('automation', { keyPath: 'id' });
               if (!db.objectStoreNames.contains(STORE_TRANSACTIONS)) {
                 const store = db.createObjectStore(STORE_TRANSACTIONS, { keyPath: 'id' });
                 store.createIndex('by_date', 'transaction_date', { unique: false });
@@ -770,7 +771,7 @@ interface DashboardMetrics {
           throw new Error('ไม่รองรับไฟล์ภาพรูปแบบ HEIC/HEIF โดยตรง กรุณาตั้งค่ากล้อง iPhone ให้บันทึกเป็น JPEG (Most Compatible) หรือแปลงไฟล์เป็น JPEG/PNG ก่อนอัปโหลด');
         }
 
-        if (!fileType.startsWith('image/')) {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(fileType) || file.size <= 0) {
           throw new Error('ไฟล์ที่เลือกไม่ใช่รูปภาพ กรุณาเลือกไฟล์รูปภาพชนิด JPEG, PNG หรือ WebP');
         }
 
@@ -1026,6 +1027,11 @@ interface DashboardMetrics {
             }
             await refreshTransactionsFromLocal();
             updateStatusBannersAndPills();
+            if (prevUserId !== (nextUser?.id || null)) {
+              await releaseSharedReceipt(); clearTemporaryReceiptImage();
+              document.getElementById('verificationModal').hidden = true;
+              await refreshAutomationUi().catch(() => {});
+            }
           });
 
           if (appState.currentUser) {
@@ -1738,6 +1744,311 @@ interface DashboardMetrics {
       // =====================================================================
       // 5-FUND SALARY ENVELOPE & FIXED MONTHLY ALLOCATION WORKFLOW
       // =====================================================================
+      function automationKey(name: string): string { return `${appState.currentUser?.id || 'local'}:${name}`; }
+
+      async function automationPreference(name: string, value: any = undefined) {
+        const db = await openLocalDatabase();
+        if (!db) throw new Error('ต้องเปิดใช้งาน IndexedDB เพื่อจำข้อมูลอย่างปลอดภัย');
+        const id = automationKey(name);
+        return new Promise<any>((resolve, reject) => {
+          const tx = db.transaction('automation', value === undefined ? 'readonly' : 'readwrite');
+          const req = value === undefined ? tx.objectStore('automation').get(id) : tx.objectStore('automation').put({ id, value });
+          let result;
+          req.onsuccess = () => { result = value === undefined ? req.result?.value : value; if (value === undefined) resolve(result); };
+          tx.oncomplete = () => { db.close(); resolve(result); };
+          tx.onerror = tx.onabort = () => { db.close(); reject(new Error('บันทึกการตั้งค่าไม่สำเร็จ')); };
+        });
+      }
+
+      // The ledger and all records commit together. IndexedDB serializes overlapping
+      // readwrite transactions across tabs, including when navigator.locks is absent.
+      async function commitAutomation(inputs: any[], keys: string[], preference: any = null) {
+        const owner = appState.currentUser?.id || null;
+        const now = new Date().toISOString();
+        const records = inputs.map(input => {
+          const checked = validateTransactionInput(input);
+          if (!checked.valid) throw new Error(checked.errors.join('\n'));
+          return { ...checked.normalized, id: generateUuid(), user_id: owner,
+            sync_status: owner ? 'pending_sync' : 'local_only', created_at: now, updated_at: now };
+        });
+        const ledger = keys.map(key => automationKey(`paid:${key}`));
+        const db = await openLocalDatabase();
+        if (!db || appState.usingMemoryFallback) throw new Error('ไม่สามารถจ่ายกลุ่มได้เมื่อพื้นที่จัดเก็บไม่พร้อม');
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction([STORE_TRANSACTIONS, 'automation'], 'readwrite');
+          const store = tx.objectStore('automation');
+          let pending = ledger.length;
+          let reason = 'ไม่สามารถบันทึกรายการทั้งหมดได้';
+          const write = () => {
+            if ((appState.currentUser?.id || null) !== owner) { reason = 'บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่'; tx.abort(); return; }
+            ledger.forEach(id => store.put({ id, value: now }));
+            records.forEach(record => tx.objectStore(STORE_TRANSACTIONS).put(record));
+            if (preference) store.put(preference);
+          };
+          if (!pending) write();
+          ledger.forEach(id => {
+            const req = store.get(id);
+            req.onsuccess = () => {
+              if (req.result) { reason = 'รอบนี้บันทึกแล้ว กรุณาตรวจรายการเดิม'; tx.abort(); return; }
+              if (--pending === 0) write();
+            };
+          });
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = tx.onabort = () => { db.close(); reject(new Error(reason)); };
+        });
+        records.forEach(r => appState.memoryStore.set(r.id, r));
+        await refreshTransactionsFromLocal();
+        if (owner && navigator.onLine) await syncPendingTransactions();
+        return records;
+      }
+
+      const BATCH_PRESETS = {
+        father_insurance: { merchant: 'ประกันพ่อ', amount: 1300, category: 'health_medical' },
+        dan_insurance: { merchant: 'ประกันแดน', amount: 2900, category: 'health_medical' },
+        sister_mind: { merchant: 'ให้น้อง (มายด์)', amount: 2000, category: 'transfer_other' }
+      };
+
+      function fatherInsuranceCycle(config: any, month: string, paid: string[] = []) {
+        const anchor = normalizeIsoDate(String(config?.anchor || '')).date;
+        const interval = Number(config?.interval);
+        if (!anchor || !Number.isInteger(interval) || interval < 1 || interval > 120 || !/^\d{4}-\d{2}$/.test(month)) return { status: 'needs_review' };
+        const [year, mon, day] = anchor.split('-').map(Number);
+        const [targetYear, targetMonth] = month.split('-').map(Number);
+        if (targetMonth < 1 || targetMonth > 12) return { status: 'needs_review' };
+        const difference = (targetYear - year) * 12 + targetMonth - mon;
+        let offset = Math.max(0, Math.ceil(difference / interval)) * interval;
+        let due = '';
+        for (let attempt = 0; attempt < 2400; attempt++, offset += interval) {
+          const d = new Date(Date.UTC(year, mon - 1 + offset, 1));
+          const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+          due = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(Math.min(day, last)).padStart(2, '0')}`;
+          if (!paid.includes(due.slice(0, 7))) break;
+        }
+        return { status: due.slice(0, 7) === month ? 'due' : 'upcoming', due };
+      }
+
+      async function batchPayFixedExpenses(items: any[], date: string) {
+        if (!normalizeIsoDate(date).date || !items.length) throw new Error('เลือกอย่างน้อยหนึ่งรายการและตรวจวันที่');
+        const month = date.slice(0, 7);
+        const seen = new Set();
+        const inputs = [];
+        for (const item of items) {
+          const preset = BATCH_PRESETS[item.key];
+          if (!preset || seen.has(item.key)) throw new Error('รายการซ้ำหรือไม่รู้จัก');
+          seen.add(item.key);
+          if (item.key === 'father_insurance') {
+            const cycle = fatherInsuranceCycle(await automationPreference('father-cycle'), month);
+            if (cycle.status !== 'due') throw new Error('กรุณายืนยันรอบประกันพ่อที่ถึงกำหนดก่อน');
+          }
+          inputs.push({ ...preset, amount: Number(item.amount), transaction_date: date, type: 'expense',
+            currency: 'THB', source_type: 'manual', fund_bucket: 'fixed_expense', note: `[fixed_item:${item.key}]` });
+        }
+        // Include legacy confirmed fixed payments in duplicate detection.
+        const existing = await dbGetAllTransactions();
+        if (items.some(item => existing.some(tx => tx.user_id === (appState.currentUser?.id || null) &&
+          tx.transaction_date?.slice(0, 7) === month && tx.note?.includes(`[fixed_item:${item.key}]`)))) throw new Error('มีรายการที่จ่ายแล้วในรอบนี้');
+        return commitAutomation(inputs, items.map(item => `fixed:${item.key}:${month}`));
+      }
+
+      function normalizeMerchant(value: string) { return String(value || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('th-TH'); }
+
+      async function learnConfirmedRecord(record: any) {
+        const owner = automationKey('owner');
+        const learning = await automationPreference('learning') || { merchants: {}, chips: [] };
+        if (automationKey('owner') !== owner) return;
+        const name = normalizeMerchant(record.merchant);
+        learning.merchants[name] = record.category;
+        if (record.type === 'expense' && record.source_type === 'manual') {
+          learning.chips = [ { merchant: record.merchant, category: record.category, amount: record.amount },
+            ...learning.chips.filter(c => normalizeMerchant(c.merchant) !== name) ].slice(0, 8);
+        }
+        await automationPreference('learning', learning);
+        await renderQuickChips();
+      }
+
+      async function suggestMerchantCategory() {
+        const merchant = document.getElementById('txFormMerchant').value;
+        const category = document.getElementById('txFormCategory');
+        const before = category.value;
+        const owner = automationKey('owner');
+        if (before && before !== 'unknown') return;
+        const learning = await automationPreference('learning');
+        if (owner === automationKey('owner') && category.value === before && document.getElementById('txFormMerchant').value === merchant) {
+          const suggested = learning?.merchants?.[normalizeMerchant(merchant)];
+          if (suggested && CATEGORY_LABELS[suggested]) category.value = suggested;
+        }
+      }
+
+      function applyQuickChip(chip: any) {
+        openVerificationModalForManual('manual', 'general_expense', chip.category);
+        document.getElementById('txFormMerchant').value = chip.merchant;
+        document.getElementById('txFormAmount').value = String(chip.amount);
+      }
+
+      async function renderQuickChips() {
+        const host = document.getElementById('dailyQuickChips');
+        if (!host) return;
+        const owner = automationKey('owner');
+        const learning = await automationPreference('learning');
+        if (owner !== automationKey('owner')) return;
+        host.innerHTML = '';
+        for (const chip of learning?.chips || []) {
+          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn btn-secondary';
+          btn.textContent = `${chip.merchant} ${formatCurrency(chip.amount, 'THB')}`;
+          btn.addEventListener('click', () => applyQuickChip(chip)); host.appendChild(btn);
+        }
+      }
+
+      function startVoiceEntry() {
+        const Recognition = globalScope.SpeechRecognition || globalScope.webkitSpeechRecognition;
+        const status = document.getElementById('voiceStatus');
+        if (!Recognition) { status.textContent = 'เบราว์เซอร์นี้ไม่รองรับเสียง กรุณาพิมพ์รายการ'; return; }
+        const recognition = new Recognition(); recognition.lang = 'th-TH'; recognition.interimResults = false;
+        recognition.onresult = event => {
+          openVerificationModalForManual('manual');
+          document.getElementById('txFormNote').value = String(event.results[0][0].transcript);
+          document.getElementById('txFormAmount').value = '';
+          document.getElementById('txFormDate').value = '';
+          status.textContent = 'ตรวจข้อความในช่องหมายเหตุ แล้วกรอกยอดเงินและวันที่ก่อนบันทึก';
+        };
+        recognition.onerror = () => { status.textContent = 'ใช้ไมโครโฟนไม่ได้ กรุณาพิมพ์รายการแทน'; };
+        try { recognition.start(); status.textContent = 'กำลังฟังภาษาไทย…'; } catch (_) { recognition.onerror(); }
+      }
+
+      function validReceiptFile(file: any): boolean {
+        return Boolean(file && ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && file.size > 0 && file.size <= 20 * 1024 * 1024);
+      }
+
+      function handleReceiptPaste(event: any) {
+        if (appState.isAnalyzingAi || activeShare) return;
+        const item = Array.from(event.clipboardData?.items || []).find((item: any) => item.kind === 'file' && item.type.startsWith('image/')) as any;
+        if (!item) return;
+        const file = item.getAsFile();
+        if (!validReceiptFile(file)) { captureMessage('ภาพต้องเป็น JPEG, PNG หรือ WebP ขนาดไม่เกิน 20 MB'); return; }
+        event.preventDefault();
+        handleImageFileSelected(file);
+        captureMessage('รับภาพที่วางแล้ว กรุณาวิเคราะห์และตรวจสอบก่อนบันทึก');
+      }
+
+      function captureMessage(message: string) { const el = document.getElementById('captureStatus'); if (el) el.textContent = message; }
+
+      let activeShare: any = null;
+      const shareClaimToken = generateUuid();
+      let shareHeartbeat: any = null;
+      async function shareInboxChange(id: string, change: (row: any) => any) {
+        const db: any = await new Promise((resolve, reject) => {
+          const req = indexedDB.open('slipsense_share_inbox', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('images', { keyPath: 'id' });
+          req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+        });
+        return new Promise<any>((resolve, reject) => {
+          const tx = db.transaction('images', 'readwrite'); const store = tx.objectStore('images');
+          let result = null;
+          const req = store.get(id);
+          req.onsuccess = () => { const row = req.result; if (!row) return;
+            if (row.expires <= Date.now()) { store.delete(id); return; }
+            result = change(row); if (result) store.put(result);
+          };
+          tx.oncomplete = () => { db.close(); resolve(result); };
+          tx.onerror = tx.onabort = () => { db.close(); reject(new Error('รับภาพที่แชร์ไม่สำเร็จ')); };
+        });
+      }
+
+      async function resumeSharedReceipt() {
+        const id = new URL(globalScope.location.href).searchParams.get('share');
+        if (!id || activeShare) return;
+        if (!appState.currentUser) { captureMessage('มีภาพแชร์รออยู่ กรุณาเข้าสู่ระบบแล้วกดรับภาพแชร์ที่ค้างไว้'); return; }
+        const owner = appState.currentUser.id;
+        try {
+          const row = await shareInboxChange(id, row => {
+            if (row.state === 'acked' || (row.owner && row.owner !== owner) || (row.claim && row.claim !== shareClaimToken && row.lease > Date.now())) return null;
+            return { ...row, owner, claim: shareClaimToken, lease: Date.now() + 60000, state: 'claimed' };
+          });
+          if (!row) { captureMessage('ภาพหมดอายุ รับแล้ว อยู่ในแท็บอื่น หรือเป็นของบัญชีอื่น'); return; }
+          if (appState.currentUser?.id !== owner) return;
+          activeShare = row;
+          if (!validReceiptFile(row.file)) throw new Error('ภาพที่แชร์ไม่รองรับ');
+          await handleImageFileSelected(row.file);
+          if (shareHeartbeat) clearInterval(shareHeartbeat);
+          shareHeartbeat = setInterval(() => {
+            shareInboxChange(id, row => row.claim === shareClaimToken && row.owner === appState.currentUser?.id ? { ...row, lease: Date.now() + 60000 } : null).catch(() => {});
+          }, 20000);
+          captureMessage('รับภาพแชร์แล้ว กดวิเคราะห์และตรวจข้อมูลก่อนบันทึก');
+        } catch (err) { await releaseSharedReceipt(); captureMessage(err.message || 'รับภาพแชร์ไม่ได้ กรุณาเลือกจากอัลบั้ม'); }
+      }
+
+      async function releaseSharedReceipt(ack = false) {
+        if (shareHeartbeat) { clearInterval(shareHeartbeat); shareHeartbeat = null; }
+        const current = activeShare; activeShare = null;
+        if (!current) return;
+        await shareInboxChange(current.id, row => row.claim === shareClaimToken ?
+          { ...row, claim: null, lease: 0, state: ack ? 'acked' : 'pending', file: ack ? null : row.file } : null);
+        if (ack) {
+          const url = new URL(globalScope.location.href); url.searchParams.delete('share');
+          globalScope.history?.replaceState(null, '', url.href);
+        }
+      }
+
+      async function refreshAutomationUi() {
+        await renderQuickChips();
+        const host = document.getElementById('batchPayItems'); if (!host) return;
+        const date = document.getElementById('batchPayDate').value || getBangkokTodayIso();
+        const cycle = fatherInsuranceCycle(await automationPreference('father-cycle'), date.slice(0, 7));
+        document.getElementById('fatherCycleStatus').textContent = cycle.due ? `รอบถัดไป ${cycle.due} — ตรวจยอดก่อนจ่าย` : 'ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ';
+        host.innerHTML = '';
+        const all = await dbGetAllTransactions();
+        for (const [key, preset] of Object.entries(BATCH_PRESETS)) {
+          const paid = all.some(tx => tx.user_id === (appState.currentUser?.id || null) && tx.transaction_date?.slice(0, 7) === date.slice(0, 7) && tx.note?.includes(`[fixed_item:${key}]`));
+          const row = document.createElement('div'); row.className = 'batch-row';
+          const select = document.createElement('input'); select.type = 'checkbox'; select.id = `batch-${key}`; select.dataset.key = key;
+          select.disabled = paid || (key === 'father_insurance' && cycle.status !== 'due');
+          const label = document.createElement('label'); label.htmlFor = select.id; label.textContent = preset.merchant + (paid ? ' (จ่ายแล้ว)' : '');
+          const amount = document.createElement('input'); amount.type = 'number'; amount.min = '0.01'; amount.step = '0.01'; amount.value = String(preset.amount); amount.id = `amount-${key}`; amount.setAttribute('aria-label', `ยอด ${preset.merchant}`);
+          row.appendChild(select); row.appendChild(label); row.appendChild(amount); host.appendChild(row);
+        }
+      }
+
+      function bindAutomationEvents() {
+        const on = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
+        const safe = (fn) => async () => { try { await fn(); } catch (err) { showToast(err.message || 'ดำเนินการไม่สำเร็จ', 'error'); } };
+        let theme = 'light'; try { theme = localStorage.getItem('slipsense_theme') || (globalScope.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'); } catch (_) {}
+        if (!['light', 'dark', 'blue'].includes(theme)) theme = 'light';
+        document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeSelect').value = theme;
+        on('themeSelect', 'change', event => { document.documentElement.setAttribute('data-theme', event.target.value); try { localStorage.setItem('slipsense_theme', event.target.value); } catch (_) {} });
+        document.addEventListener('paste', handleReceiptPaste);
+        on('btnResumeShare', 'click', resumeSharedReceipt);
+        on('btnVoiceEntry', 'click', startVoiceEntry);
+        const supported = Boolean(globalScope.SpeechRecognition || globalScope.webkitSpeechRecognition);
+        document.getElementById('btnVoiceEntry').disabled = !supported;
+        if (!supported) document.getElementById('voiceStatus').textContent = 'ไม่รองรับเสียงบนเบราว์เซอร์นี้ สามารถพิมพ์รายการได้';
+        on('txFormMerchant', 'blur', safe(suggestMerchantCategory));
+        on('btnClearLearning', 'click', safe(async () => { await automationPreference('learning', { merchants: {}, chips: [] }); await renderQuickChips(); }));
+        on('btnClearSalaryTemplate', 'click', safe(() => automationPreference('salary', null)));
+        on('btnUseSalaryTemplate', 'click', safe(async () => {
+          const template = await automationPreference('salary'); if (!template) throw new Error('ยังไม่มีแบบเงินเดือนที่ยืนยันแล้ว');
+          document.getElementById('btnOpenSalarySplitModal')?.click();
+          document.getElementById('salarySplitModal').hidden = false;
+          const fields = { TotalInput: 'total_salary', Fund1Input: 'investment_stock', Fund2Input: 'home_building', Fund3Input: 'fixed_expense', Fund4Input: 'emergency_personal', Fund5Input: 'general_expense', FatherInsMode: 'father_insurance_mode' };
+          Object.entries(fields).forEach(([suffix, key]) => { document.getElementById(`salarySplit${suffix}`).value = String(template[key]); });
+          document.getElementById('salarySplitDate').value = getBangkokTodayIso();
+          document.getElementById('salarySplitSummaryPreview').textContent = 'ใช้แบบล่าสุดแล้ว กรุณาตรวจยอดรวมและวันที่ก่อนยืนยัน';
+        }));
+        document.getElementById('batchPayDate').value = getBangkokTodayIso();
+        on('batchPayDate', 'change', safe(refreshAutomationUi));
+        on('btnSaveFatherCycle', 'click', safe(async () => {
+          const value = { anchor: document.getElementById('fatherAnchor').value, interval: Number(document.getElementById('fatherInterval').value) };
+          if (fatherInsuranceCycle(value, getBangkokTodayIso().slice(0, 7)).status === 'needs_review') throw new Error('ตรวจวันที่อ้างอิงและจำนวนเดือนก่อนยืนยัน');
+          await automationPreference('father-cycle', value); await refreshAutomationUi();
+        }));
+        on('btnBatchPay', 'click', safe(async () => {
+          const btn = document.getElementById('btnBatchPay'); if (btn.disabled) return;
+          const items = Object.keys(BATCH_PRESETS).filter(key => document.getElementById(`batch-${key}`)?.checked).map(key => ({ key, amount: document.getElementById(`amount-${key}`).value }));
+          btn.disabled = true;
+          try { await batchPayFixedExpenses(items, document.getElementById('batchPayDate').value); document.getElementById('batchPayStatus').textContent = 'บันทึกรายการที่เลือกแล้ว'; await refreshAutomationUi(); }
+          finally { btn.disabled = false; }
+        }));
+      }
+
       async function allocateMonthlySalary(options: Record<string, any> = {}) {
         const rawDate = options.transaction_date || options.date || getBangkokTodayIso();
         const { date } = normalizeIsoDate(String(rawDate));
@@ -1777,15 +2088,16 @@ interface DashboardMetrics {
         const fixedFourSumCents = Math.round((fund1 + fund2 + fund3 + fund4) * 100);
         const totalSalaryCents = Math.round(totalSalary * 100);
 
-        const fund5 = options.general_expense !== undefined && Number(options.general_expense) > 0
+        const fund5 = options.general_expense !== undefined
           ? Math.round(Number(options.general_expense) * 100) / 100
           : Math.max(0, (totalSalaryCents - fixedFourSumCents) / 100);
 
-        if (fund1 < 0 || fund2 < 0 || fund3 < 0 || fund4 < 0 || fund5 < 0) {
+        if ([fund1, fund2, fund3, fund4, fund5].some(v => !Number.isFinite(v) || v < 0)) {
           throw new Error('ยอดแบ่งเงินในแต่ละส่วนต้องไม่ติดลบ');
         }
 
         const totalAllocatedCents = Math.round((fund1 + fund2 + fund3 + fund4 + fund5) * 100);
+        if (totalAllocatedCents !== totalSalaryCents) throw new Error('ยอดจัดสรรต้องเท่ากับเงินเดือน กรุณาตรวจส่วนต่าง');
         if (totalAllocatedCents <= 0) {
           throw new Error('ยอดแบ่งเงินรวมทั้ง 5 ส่วนต้องมากกว่า 0 บาท');
         }
@@ -1839,24 +2151,7 @@ interface DashboardMetrics {
           }
         ];
 
-        const allExisting = await dbGetAllTransactions();
-        const savedRecords = [];
-
-        for (const entry of splitEntries) {
-          const splitTag = `[SALARY_SPLIT:${yearMonth}:${entry.bucket}]`;
-          const existingMatch = allExisting.find(
-            (tx) => tx && !tx.deleted_at && typeof tx.note === 'string' && tx.note.includes(splitTag)
-          );
-
-          if (entry.amount <= 0) {
-            if (existingMatch) {
-              await deleteTransaction(existingMatch.id);
-            }
-            continue;
-          }
-
-          const saved = await saveTransaction({
-            id: existingMatch ? existingMatch.id : undefined,
+        const inputs = splitEntries.filter(entry => entry.amount > 0).map(entry => ({
             transaction_date: date,
             type: 'income',
             merchant: entry.merchant,
@@ -1867,10 +2162,11 @@ interface DashboardMetrics {
             source_type: 'manual',
             items_summary: entry.items_summary,
             purpose_analysis: entry.purpose_analysis,
-            note: `จัดสรรเงินเดือน ${yearMonth} (${FUND_BUCKET_LABELS[entry.bucket]}) ${splitTag}`
-          });
-          savedRecords.push(saved);
-        }
+            note: `จัดสรรเงินเดือน ${yearMonth} [SALARY_SPLIT:${yearMonth}:${entry.bucket}]`
+          }));
+        const template = { total_salary: totalSalary, investment_stock: fund1, home_building: fund2,
+          fixed_expense: fund3, emergency_personal: fund4, general_expense: fund5, father_insurance_mode: fatherInsAmount };
+        const savedRecords = await commitAutomation(inputs, [`salary:${yearMonth}`], { id: automationKey('salary'), value: template });
 
         return {
           yearMonth,
@@ -1933,7 +2229,7 @@ interface DashboardMetrics {
         }
 
         const customAmount = options.amount !== undefined ? Number(options.amount) : preset.amount;
-        const saved = await saveTransaction({
+        const saved = await commitAutomation([{
           transaction_date: txDate,
           type: 'expense',
           merchant: preset.merchant,
@@ -1945,9 +2241,9 @@ interface DashboardMetrics {
           items_summary: preset.items_summary,
           purpose_analysis: preset.purpose_analysis,
           note: `รายการ Fix ประจำเดือน ${yearMonth} ${preset.tag}`
-        });
+        }], [`fixed:${itemKey.startsWith('father_insurance') ? 'father_insurance' : itemKey}:${yearMonth}`]);
 
-        return saved;
+        return saved[0];
       }
 
       async function rolloverMonthlySurplusToEmergency(targetYearMonth: string = '') {
@@ -2727,11 +3023,12 @@ interface DashboardMetrics {
       // INITIALIZATION & EVENT BINDINGS
       // =====================================================================
       async function handleImageFileSelected(file) {
-        if (!file) return;
+        if (!file || appState.isAnalyzingAi) return;
         const errBox = document.getElementById('aiAnalysisErrorBox');
         if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
 
         try {
+          if (!validReceiptFile(file)) throw new Error('ภาพต้องเป็น JPEG, PNG หรือ WebP ขนาดไม่เกิน 20 MB');
           const compressed = await compressReceiptImage(file, 1600, 0.82);
           appState.currentCompressedImage = compressed;
 
@@ -2774,13 +3071,16 @@ interface DashboardMetrics {
         if (progressBox) progressBox.hidden = false;
         if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
 
+        const analysisOwner = appState.currentUser?.id || null;
         try {
+          if (activeShare && activeShare.owner !== analysisOwner) throw new Error('บัญชีผู้ใช้ไม่ตรงกับภาพ');
           const resultPayload = await callAnalyzeReceiptEdgeFunction({
             action: 'analyze',
             mimeType: appState.currentCompressedImage.mimeType,
             imageBase64: appState.currentCompressedImage.base64
           });
 
+          if (analysisOwner !== (appState.currentUser?.id || null)) throw new Error('บัญชีผู้ใช้เปลี่ยน กรุณาวิเคราะห์ใหม่');
           const aiData = resultPayload?.data || resultPayload;
           openVerificationModalFromAiResult(aiData);
           showToast('AI อ่านข้อมูลใบเสร็จเสร็จแล้ว กรุณาตรวจสอบก่อนยืนยันบันทึก', 'success');
@@ -2799,6 +3099,7 @@ interface DashboardMetrics {
       }
 
       function bindUiEvents() {
+        bindAutomationEvents();
         // ปุ่มกล้องและอัลบั้ม
         document.getElementById('btnStartScanCamera')?.addEventListener('click', () => {
           document.getElementById('inputCameraCapture')?.click();
@@ -2839,6 +3140,7 @@ interface DashboardMetrics {
         // ปุ่มปิด/ยกเลิก Verification Modal
         const closeVerification = () => {
           document.getElementById('verificationModal').hidden = true;
+          releaseSharedReceipt().catch(() => {});
         };
         document.getElementById('btnCloseVerificationModal')?.addEventListener('click', closeVerification);
         document.getElementById('btnCancelVerification')?.addEventListener('click', closeVerification);
@@ -2869,7 +3171,15 @@ interface DashboardMetrics {
           if (btnSave) btnSave.disabled = true;
 
           try {
+            if (activeShare) {
+              if (activeShare.owner !== appState.currentUser?.id) throw new Error('บัญชีผู้ใช้เปลี่ยน');
+              const claimed = await shareInboxChange(activeShare.id, row => row.claim === shareClaimToken && row.owner === appState.currentUser?.id ? { ...row, lease: Date.now() + 60000 } : null);
+              if (!claimed) throw new Error('ภาพนี้อยู่ในแท็บอื่น กรุณารับภาพใหม่');
+              formPayload.id = activeShare.transactionId;
+            }
             const saved = await saveTransaction(formPayload);
+            await releaseSharedReceipt(true);
+            await learnConfirmedRecord(saved).catch(() => {});
             // ล้างรูปชั่วคราวหลังบันทึกสำเร็จตามข้อกำหนดความเป็นส่วนตัว
             clearTemporaryReceiptImage();
             document.getElementById('verificationModal').hidden = true;
@@ -3318,11 +3628,18 @@ interface DashboardMetrics {
         await refreshTransactionsFromLocal();
         await initSupabaseClientAndVerify(false);
         registerServiceWorkerSafe();
+        await refreshAutomationUi().catch(() => {});
+        await resumeSharedReceipt();
       }
 
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
         init: initApp,
+        automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
+        normalizeMerchant, learnConfirmedRecord, suggestMerchantCategory, applyQuickChip,
+        startVoiceEntry, validReceiptFile, handleReceiptPaste, handleImageFileSelected,
+        resumeSharedReceipt, releaseSharedReceipt, shareInboxChange, bindAutomationEvents,
+        triggerAiAnalysisForCurrentImage,
         getState: () => appState,
         FUND_BUCKET_LABELS,
         FIXED_MONTHLY_PRESETS,
