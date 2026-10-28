@@ -15,10 +15,11 @@ module.exports = async function () {
   assert.equal(fs.readFileSync('manifest.json', 'utf8'), fs.readFileSync('dist/manifest.json', 'utf8'));
   for (const id of ['btnBatchPay', 'btnUseSalaryTemplate', 'btnVoiceEntry', 'dailyQuickChips']) assert(fs.readFileSync('dist/index.html', 'utf8').includes(`id="${id}"`));
   const server = createServer();
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(8080, '127.0.0.1', resolve); });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  const origin = `http://127.0.0.1:${server.address().port}`;
   try {
-    const response = await fetch('http://127.0.0.1:8080/dist/index.html');
+    const response = await fetch(`${origin}/dist/index.html`);
     assert.equal(response.status, 200); assert((await response.text()).includes('btnBatchPay'));
-    assert.equal((await fetch('http://127.0.0.1:8080/dist/manifest.json')).status, 200);
+    assert.equal((await fetch(`${origin}/dist/manifest.json`)).status, 200);
   } finally { await new Promise(resolve => server.close(resolve)); }
 };

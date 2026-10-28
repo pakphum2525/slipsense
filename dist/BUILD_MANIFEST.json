@@ -1,14 +1,14 @@
 {
-  "source_sha256": "e971e55935967fd74e37e6318baa387a5cde054a35afb0535e4fa0f50d1e3864",
+  "source_sha256": "e425b9c7480c8daac1ac7a0620f92b4a7195a7b51131e02e85b1adaedecfcdd6",
   "node_version": "v24.16.0",
   "source_stats": {
-    "app_ts_bytes": 194212,
+    "app_ts_bytes": 194131,
     "sw_ts_bytes": 9011
   },
   "production_stats": {
-    "compiled_app_js_bytes": 133539,
+    "compiled_app_js_bytes": 133462,
     "compiled_sw_js_bytes": 6137,
-    "dist_index_html_bytes": 194197,
+    "dist_index_html_bytes": 198268,
     "mangled_internal_identifiers": 44,
     "source_maps_generated": false
   },
@@ -35,13 +35,13 @@
     },
     {
       "path": "index.html",
-      "bytes": 194197,
-      "sha256": "6184796a071aa909c63b33aada30bd530c9e450f0fcdb0c915860d8f915f42ba"
+      "bytes": 198268,
+      "sha256": "b718ce7ffa18d253ac8179d6532ae9c9d7fad7398fda0fb34fef96e8eead715e"
     },
     {
       "path": "manifest.json",
-      "bytes": 1665,
-      "sha256": "8a1110f6ce9d728c5910404a34b8ebad561846fc49316ab2c474fffbec6e008e"
+      "bytes": 1726,
+      "sha256": "2c9bcb6a3cbdfb3e62c73954d457bd10aa4cbdb813d45913e4200d4e367800cf"
     },
     {
       "path": "sw.js",

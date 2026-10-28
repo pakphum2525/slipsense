@@ -1,7 +1,14 @@
 <!DOCTYPE html>
-<html lang="th" dir="ltr">
+<html lang="th" dir="ltr" data-theme="blue">
 <head>
   <meta charset="utf-8">
+  <script>
+    // ตั้งโทนสีก่อนแสดงหน้าให้ตรงกับค่าที่ผู้ใช้บันทึกไว้
+    try {
+      const theme = localStorage.getItem('slipsense_theme') ?? 'blue';
+      document.documentElement.setAttribute('data-theme', ['light', 'dark', 'blue'].includes(theme) ? theme : 'light');
+    } catch (_) {}
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SlipSense — บันทึกใบเสร็จและรายจ่ายอัจฉริยะ</title>
   <meta name="description" content="ระบบบันทึกรายรับและรายจ่ายจากภาพใบเสร็จและสลิปโอนเงินด้วย AI วิเคราะห์วัตถุประสงค์การซื้อ และซิงก์ข้อมูลข้ามอุปกรณ์อย่างปลอดภัย">
@@ -864,29 +871,81 @@
       --aurora-blue:rgba(45,170,240,0.12); --aurora-green:rgba(34,206,160,0.08); --aurora-purple:rgba(153,104,230,0.11);
     }
     [data-theme="blue"] {
-      color-scheme:dark; --bg-app:#071e39; --bg-surface:#102f4e; --bg-subtle:#163d5c;
+      color-scheme:dark; --bg-app:#071526; --bg-surface:#102f4e; --bg-subtle:#163d5c;
       --text-main:#f2fbff; --text-secondary:#c9e3f5; --text-muted:#b2d1e8;
       --border-color:#416986; --border-strong:#739ab5; --brand-primary:#147e88; --brand-soft:#133e59;
-      --glass:rgba(126,202,255,0.10); --glass-border:rgba(134,218,255,0.32);
-      --aurora-blue:rgba(45,170,240,0.16); --aurora-green:rgba(34,206,160,0.09); --aurora-purple:rgba(153,104,230,0.14);
+      --glass:rgba(164,218,255,0.08); --glass-border:rgba(134,218,255,0.32);
+      --aurora-blue:rgba(55,192,222,0.16); --aurora-green:rgba(39,194,147,0.14); --aurora-purple:rgba(144,110,219,0.16);
     }
     body { background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app); background-attachment:fixed; }
     .app-header, .card, .fund-card { background:var(--glass); border:1px solid var(--glass-border); -webkit-backdrop-filter:blur(24px) saturate(130%); backdrop-filter:blur(24px) saturate(130%); }
+    [data-theme="blue"] body {
+      background:radial-gradient(ellipse at 4% 8%,var(--aurora-green),transparent 58%),
+        radial-gradient(ellipse at 90% 18%,var(--aurora-purple),transparent 56%),
+        radial-gradient(ellipse at 60% 85%,var(--aurora-blue),transparent 64%),
+        linear-gradient(155deg,#071526 15%,#0b233b 60%,#071526);
+      background-attachment:fixed;
+    }
     .modal-content { background:var(--bg-surface); }
     .app-header { padding-top:env(safe-area-inset-top); }
     .app-container { padding-bottom:calc(1rem + env(safe-area-inset-bottom)); }
-    .btn, .card { transition:transform 180ms ease, opacity 180ms ease; }
-    .btn:active { transform:scale(0.97); }
-    button, .btn, select, input { min-height:44px; }
-    :focus-visible { outline:3px solid #22a6c7; outline-offset:3px; }
-    .automation-bar { display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center; margin-block:0.8rem; }
-    .automation-panel { margin-bottom:1rem; padding:1rem; }
-    .batch-row { display:grid; grid-template-columns:auto 1fr minmax(80px,120px); gap:0.5rem; align-items:center; margin-block:0.6rem; }
-    .batch-row input { width:100%; }
-    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
-      .app-header, .card, .fund-card { background:var(--bg-surface); }
+    .glass-subcard, input:not([type="file"]):not(.sr-only), select, textarea, button, .btn {
+      border:1px solid var(--glass-border);
+      border-radius:14px;
+      background:var(--glass);
+      color:var(--text-main);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 16px rgba(0,8,20,0.08);
+      -webkit-backdrop-filter:blur(18px) saturate(125%);
+      backdrop-filter:blur(18px) saturate(125%);
     }
-    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+    button, .btn, select, input:not([type="checkbox"]) { min-height:44px; }
+    input:not([type="file"]):not([type="checkbox"]):not(.sr-only), select, textarea { padding:0.65rem 0.8rem; max-width:100%; min-width:0; }
+    input::placeholder, textarea::placeholder { color:var(--text-muted); opacity:1; }
+    select option { background:var(--bg-surface); color:var(--text-main); }
+    input[type="checkbox"] { appearance:none; width:24px; height:24px; min-height:24px; border-radius:12px; accent-color:var(--brand-primary); cursor:pointer; }
+    input[type="checkbox"]:checked {
+      background-color:var(--brand-primary);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      outline:1px solid var(--border-strong); outline-offset:2px;
+    }
+    @media (forced-colors:active) { input[type="checkbox"] { appearance:auto; } }
+    [hidden] { display:none !important; }
+    input:disabled, select:disabled, textarea:disabled { opacity:0.58; cursor:not-allowed; }
+    input[aria-invalid="true"], input:user-invalid { border-color:var(--expense-color); outline:2px solid var(--expense-color); outline-offset:2px; }
+    .btn-primary, .btn-accent { background:linear-gradient(145deg,rgba(255,255,255,0.12),transparent),var(--brand-primary); color:#fff; }
+    .btn-danger { background:var(--expense-bg); color:var(--expense-color); }
+    .btn, button, input, select, textarea { transition:transform 180ms ease,background-color 180ms ease,border-color 180ms ease; }
+    :focus-visible { outline:3px solid #22a6c7; outline-offset:3px; }
+    .automation-panel { grid-column:1 / -1; margin-bottom:0; padding:clamp(1rem,3vw,1.5rem); }
+    .automation-panel h2 { font-size:1.2rem; letter-spacing:-0.02em; }
+    .automation-panel p { color:var(--text-secondary); font-size:0.9rem; line-height:1.7; }
+    .automation-panel > button { margin-block:0.65rem; }
+    .automation-bar { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; margin-block:1rem; }
+    .automation-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-top:1.25rem; }
+    .glass-subcard { padding:clamp(1rem,2vw,1.4rem); min-width:0; display:flex; flex-direction:column; align-items:stretch; gap:0.75rem; }
+    .glass-subcard h3 { font-size:1rem; font-weight:650; letter-spacing:-0.01em; line-height:1.6; }
+    .glass-subcard label { font-size:0.9rem; color:var(--text-secondary); }
+    .glass-subcard > button { align-self:flex-start; margin-top:0.25rem; }
+    .batch-row { display:grid; grid-template-columns:24px minmax(0,1fr) minmax(80px,120px); gap:0.75rem; align-items:center; margin-block:0.75rem; }
+    .batch-row input { width:100%; }
+    .batch-row label { overflow-wrap:anywhere; }
+    @media (max-width:600px) {
+      .automation-grid { grid-template-columns:minmax(0,1fr); }
+      .automation-bar > .btn { flex:1 1 100%; }
+      .batch-row { grid-template-columns:24px minmax(0,1fr); }
+      .batch-row input[type="number"] { grid-column:2; }
+    }
+    @media (hover:hover) and (pointer:fine) {
+      button:hover:not(:disabled), .btn:hover:not(:disabled) { transform:scale(1.015); border-color:var(--border-strong); }
+      button:active:not(:disabled), .btn:active:not(:disabled) { transform:scale(0.98); }
+    }
+    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+      .app-header, .card, .fund-card, .glass-subcard, input:not([type="file"]):not(.sr-only), select, textarea, button, .btn { background:var(--bg-surface); }
+      input[type="checkbox"]:checked { background-color:var(--brand-primary); }
+      .btn-primary, .btn-accent { background:var(--brand-primary); color:#fff; }
+      .btn-danger { background:var(--expense-bg); color:var(--expense-color); }
+    }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; transform:none !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
@@ -942,18 +1001,22 @@
       <p id="voiceStatus" role="status" aria-live="polite"></p>
       <div id="dailyQuickChips" class="automation-bar" aria-label="รายจ่ายที่เคยยืนยัน"></div>
       <button id="btnClearLearning" type="button" class="btn btn-secondary">ล้างร้านค้าและชิปที่จำไว้</button>
-      <fieldset><legend>จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</legend>
+      <div class="automation-grid">
+      <div class="glass-subcard" role="group" aria-labelledby="batchPayTitle">
+        <h3 id="batchPayTitle">จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</h3>
         <label for="batchPayDate">วันที่ชำระ</label><input id="batchPayDate" type="date" required>
         <div id="batchPayItems"></div>
         <button id="btnBatchPay" type="button" class="btn btn-primary">ยืนยันจ่ายรายการที่เลือก</button>
         <p id="batchPayStatus" role="status" aria-live="polite"></p>
-      </fieldset>
-      <fieldset><legend>รอบประกันพ่อที่ยืนยันเอง</legend>
+      </div>
+      <div class="glass-subcard" role="group" aria-labelledby="fatherCycleTitle">
+        <h3 id="fatherCycleTitle">รอบประกันพ่อที่ยืนยันเอง</h3>
         <label for="fatherAnchor">วันที่อ้างอิง</label><input id="fatherAnchor" type="date">
         <label for="fatherInterval">ห่างกันกี่เดือน</label><input id="fatherInterval" type="number" min="1" max="120" step="1">
         <button id="btnSaveFatherCycle" type="button" class="btn btn-secondary">ยืนยันรอบประกันพ่อ</button>
         <p id="fatherCycleStatus" role="status" aria-live="polite">ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ</p>
-      </fieldset>
+      </div>
+      </div>
     </section>
     <!-- คอลัมน์ซ้าย: สแกนใบเสร็จด้วย AI + สรุปภาพรวมประจำเดือน -->
     <div class="col-stack">
