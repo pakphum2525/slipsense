@@ -325,34 +325,6 @@
         <div id="txFormValidationErrorsBox" class="alert-box alert-error" hidden></div>
 
         <div class="form-grid two-col">
-          <div class="form-group" id="groupTxDate">
-            <label for="txFormDate" class="form-label">
-              <span>วันที่รายการ *</span>
-              <span id="badgeUncertainDate" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
-            </label>
-            <input type="date" id="txFormDate" class="form-control" required>
-          </div>
-
-          <div class="form-group" id="groupTxType">
-            <label for="txFormType" class="form-label">
-              <span>ประเภท: รายรับ / รายจ่าย *</span>
-              <span id="badgeUncertainType" class="uncertain-badge" hidden>ต้องเลือกเอง</span>
-            </label>
-            <select id="txFormType" class="form-control" required>
-              <option value="unknown">-- กรุณาเลือกประเภทรายการ --</option>
-              <option value="expense">รายจ่าย (Expense)</option>
-              <option value="income">รายรับ (Income)</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
-            <label for="txFormMerchant" class="form-label">
-              <span>ร้านค้า หรือ คู่รายการ *</span>
-              <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
-            </label>
-            <input type="text" id="txFormMerchant" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
-          </div>
-
           <div class="form-group" id="groupTxAmount">
             <label for="txFormAmount" class="form-label">
               <span>ยอดเงิน (ค่าบวก) *</span>
@@ -361,11 +333,14 @@
             <input type="number" id="txFormAmount" class="form-control" step="0.01" min="0.01" max="9999999999.99" placeholder="0.00" required>
           </div>
 
-          <div class="form-group" id="groupTxCurrency">
-            <label for="txFormCurrency" class="form-label">
-              <span>สกุลเงิน *</span>
+          <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
+            <label for="txFormMerchant" class="form-label">
+              <span>ร้านค้า / รายการ *</span>
+              <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
             </label>
-            <input type="text" id="txFormCurrency" class="form-control" value="THB" maxlength="3" pattern="[A-Za-z]{3}" required>
+            <input type="text" id="txFormMerchant" list="txMerchantHistory" aria-describedby="txMerchantHistoryHelp" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
+            <datalist id="txMerchantHistory"></datalist>
+            <p id="txMerchantHistoryHelp" class="text-muted">เลือกหรือพิมพ์ชื่อเดิมเต็มชื่อเพื่อเติมหมวดหมู่และกระปุกเงินจากประวัติ หรือพิมพ์ชื่อใหม่ได้ ตรวจสอบและแก้ไขได้ก่อนบันทึก</p>
           </div>
 
           <div class="form-group" id="groupTxCategory">
@@ -391,17 +366,6 @@
             </select>
           </div>
 
-          <div class="form-group" id="groupTxSourceType">
-            <label for="txFormSourceType" class="form-label">
-              <span>แหล่งที่มาของข้อมูล</span>
-            </label>
-            <select id="txFormSourceType" class="form-control">
-              <option value="manual">กรอกด้วยตนเอง (Manual)</option>
-              <option value="receipt">ใบเสร็จรับเงิน (Receipt)</option>
-              <option value="transfer_slip">สลิปโอนเงิน (Transfer Slip)</option>
-            </select>
-          </div>
-
           <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
             <label for="txFormFundBucket" class="form-label">
               <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
@@ -416,6 +380,46 @@
             </select>
           </div>
 
+          <div class="form-group" id="groupTxDate">
+            <label for="txFormDate" class="form-label">
+              <span>วันที่รายการ *</span>
+              <span id="badgeUncertainDate" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="date" id="txFormDate" class="form-control" required>
+          </div>
+
+          <div class="form-group" id="groupTxType">
+            <label for="txFormType" class="form-label">
+              <span>ประเภท: รายรับ / รายจ่าย *</span>
+              <span id="badgeUncertainType" class="uncertain-badge" hidden>ต้องเลือกเอง</span>
+            </label>
+            <select id="txFormType" class="form-control" required>
+              <option value="unknown">-- กรุณาเลือกประเภทรายการ --</option>
+              <option value="expense">รายจ่าย (Expense)</option>
+              <option value="income">รายรับ (Income)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxCurrency">
+            <label for="txFormCurrency" class="form-label">
+              <span>สกุลเงิน *</span>
+            </label>
+            <input type="text" id="txFormCurrency" class="form-control" value="THB" maxlength="3" pattern="[A-Za-z]{3}" required>
+          </div>
+
+          <div class="form-group" id="groupTxSourceType">
+            <label for="txFormSourceType" class="form-label">
+              <span>แหล่งที่มาของข้อมูล</span>
+            </label>
+            <select id="txFormSourceType" class="form-control">
+              <option value="manual">กรอกด้วยตนเอง (Manual)</option>
+              <option value="receipt">ใบเสร็จรับเงิน (Receipt)</option>
+              <option value="transfer_slip">สลิปโอนเงิน (Transfer Slip)</option>
+            </select>
+          </div>
+
+          <details id="txFormOptionalDetails" style="grid-column: 1 / -1;">
+            <summary>+ รายละเอียดเพิ่มเติม</summary>
           <div class="form-group" style="grid-column: 1 / -1;">
             <label for="txFormItemsSummary" class="form-label">
               <span>สรุปรายการสินค้า / บริการ</span>
@@ -425,10 +429,12 @@
 
           <div class="form-group" style="grid-column: 1 / -1;">
             <label for="txFormPurposeAnalysis" class="form-label">
-              <span>วัตถุประสงค์ของการซื้อ (purpose_analysis)</span>
+              <span>วัตถุประสงค์ของการซื้อ (ถ้ามี)</span>
             </label>
             <textarea id="txFormPurposeAnalysis" class="form-control" rows="2" maxlength="2000" placeholder="เช่น ซื้ออุปกรณ์ฮาร์ดแวร์ คาดว่าใช้สำหรับซ่อมบำรุงภายในบ้าน"></textarea>
           </div>
+
+          </details>
 
           <div class="form-group" style="grid-column: 1 / -1;">
             <label for="txFormNote" class="form-label">
@@ -906,8 +912,8 @@ type,
 category,
 fund_bucket,
 source_type,
-items_summary:itemsSummaryClean,
-purpose_analysis:purposeAnalysisClean,
+items_summary:itemsSummaryClean||(source_type==='manual'?merchant:''),
+purpose_analysis:purposeAnalysisClean||(source_type==='manual'?'ไม่ได้ระบุวัตถุประสงค์เพิ่มเติม':''),
 note:noteClean
 }:null
 };
@@ -1475,6 +1481,10 @@ client.auth.onAuthStateChange(async(_event,session)=>{
 const prevUserId=_0x1a7.currentUser?.id||null;
 const nextUser=session?.user||null;
 _0x1a7.currentUser=nextUser;
+if(prevUserId!==(nextUser?.id||null)){
+suggestionRequest++;historyRequest++;
+document.getElementById('txMerchantHistory').replaceChildren();
+}
 if(nextUser&&nextUser.id!==prevUserId){
 await _0x1b0();
 await pullCloudTransactionsAndMerge();
@@ -1612,6 +1622,7 @@ if(dateCmp!==0)return dateCmp;
 return String(b.updated_at||'').localeCompare(String(a.updated_at||''));
 });
 _0x1a7.transactions=visible;
+await refreshMerchantHistory().catch(()=>{});
 _0x1b6();
 _0x1b8();
 return visible;
@@ -2429,35 +2440,114 @@ tx.transaction_date?.slice(0,7)===month&&tx.note?.includes(`[fixed_item:${item.k
 return commitAutomation(inputs,items.map(item=>`fixed:${item.key}:${month}`));
 }
 function normalizeMerchant(value){return String(value||'').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH');}
+let entryRound=0,suggestionRequest=0,historyRequest=0;
+let entryMerchant='',entryOwner='';
+let entryDefaults={};
+let entryFields={};
+const entryIds={category:'txFormCategory',fund_bucket:'txFormFundBucket'};
+const validEntryValue=(field,value)=>Object.prototype.hasOwnProperty.call(
+field==='category'?_0x1a4:FUND_BUCKET_LABELS,value)&&value!=='unknown';
+function resetEntrySuggestions(protectedValues=false){
+entryRound++;suggestionRequest++;
+entryOwner=automationKey('owner');
+entryMerchant=normalizeMerchant(document.getElementById('txFormMerchant').value);
+document.getElementById('txFormOptionalDetails').open=false;
+entryFields={};
+for(const[field,id]of Object.entries(entryIds)){
+const value=document.getElementById(id).value;
+entryFields[field]={origin:protectedValues?'protected':'default',value};
+entryDefaults[field]=protectedValues?(field==='category'?'food_drink':'general_expense'):value;
+}
+void refreshMerchantHistory().catch(()=>{});
+}
+async function readMerchantHistory(){
+const owner=_0x1a7.currentUser?.id||null;
+const rows=(await _0x1a9()).filter(tx=>(tx.user_id||null)===owner);
+if(owner!==(_0x1a7.currentUser?.id||null))return new Map();
+const stamp=(value)=>Number.isFinite(Date.parse(value))?Date.parse(value):0;
+rows.sort((a,b)=>stamp(b.created_at)-stamp(a.created_at)||
+stamp(b.updated_at)-stamp(a.updated_at)||String(b.id||'').localeCompare(String(a.id||'')));
+const records=new Map(),knownNames=new Set();
+for(const tx of rows){
+const name=normalizeMerchant(tx.merchant);
+if(name)knownNames.add(name);
+if(!name||tx.deleted_at||tx.pending_delete||records.has(name))continue;
+records.set(name,tx);
+}
+const learning=await automationPreference('learning');
+if(owner!==(_0x1a7.currentUser?.id||null))return new Map();
+for(const[name,cached]of Object.entries(learning?.merchants||{})){
+const key=normalizeMerchant(name);
+if(!key||knownNames.has(key)||records.has(key))continue;
+records.set(key,{merchant:name,...(typeof cached==='string'?{category:cached}:cached)});
+}
+return records;
+}
+async function refreshMerchantHistory(){
+const request=++historyRequest,owner=automationKey('owner'),round=entryRound;
+const host=document.getElementById('txMerchantHistory');
+if(entryOwner!==owner){suggestionRequest++;host.replaceChildren();}
+const records=await readMerchantHistory();
+if(request!==historyRequest||owner!==automationKey('owner')||round!==entryRound)return;
+host.replaceChildren();
+for(const tx of records.values()){
+const option=document.createElement('option');
+option.value=String(tx.merchant).normalize('NFC').trim().replace(/\s+/g,' ');
+option.textContent=option.value;
+host.appendChild(option);
+}
+}
 async function learnConfirmedRecord(record){
 const owner=automationKey('owner');
+if((record.user_id||null)!==(_0x1a7.currentUser?.id||null))return;
 const learning=await automationPreference('learning')||{merchants:{},chips:[]};
 if(automationKey('owner')!==owner)return;
 const name=normalizeMerchant(record.merchant);
-learning.merchants[name]=record.category;
+learning.merchants||={};
+learning.merchants[name]={category:record.category,fund_bucket:record.fund_bucket};
 if(record.type==='expense'&&record.source_type==='manual'){
-learning.chips=[{merchant:record.merchant,category:record.category,amount:record.amount},
-...learning.chips.filter(c=>normalizeMerchant(c.merchant)!==name)].slice(0,8);
+learning.chips=[{merchant:record.merchant,category:record.category,fund_bucket:record.fund_bucket,amount:record.amount},
+...(learning.chips||[]).filter(c=>normalizeMerchant(c.merchant)!==name)].slice(0,8);
 }
 await automationPreference('learning',learning);
 await renderQuickChips();
+await refreshMerchantHistory();
 }
 async function suggestMerchantCategory(){
-const merchant=document.getElementById('txFormMerchant').value;
-const category=document.getElementById('txFormCategory');
-const before=category.value;
-const owner=automationKey('owner');
-if(before&&before!=='unknown')return;
-const learning=await automationPreference('learning');
-if(owner===automationKey('owner')&&category.value===before&&document.getElementById('txFormMerchant').value===merchant){
-const suggested=learning?.merchants?.[normalizeMerchant(merchant)];
-if(suggested&&_0x1a4[suggested])category.value=suggested;
+const merchant=normalizeMerchant(document.getElementById('txFormMerchant').value);
+const owner=automationKey('owner'),round=entryRound,request=++suggestionRequest;
+if(entryOwner!==owner)return;
+const changed=merchant!==entryMerchant;
+entryMerchant=merchant;
+const before={};
+for(const[field,id]of Object.entries(entryIds)){
+const el=document.getElementById(id),state=entryFields[field];
+if(!state)continue;
+if(el.value!==state.value&&el.value!=='unknown')state.origin='user';
+if(changed&&state.origin==='protected')state.origin='default';
+if(changed&&['history','default'].includes(state.origin)){
+el.value=entryDefaults[field];state.origin='default';
+}
+state.value=el.value;before[field]=el.value;
+}
+const records=await readMerchantHistory();
+if(owner!==automationKey('owner')||round!==entryRound||request!==suggestionRequest||
+merchant!==normalizeMerchant(document.getElementById('txFormMerchant').value))return;
+const tx=records.get(merchant);
+for(const[field,id]of Object.entries(entryIds)){
+const state=entryFields[field],el=document.getElementById(id);
+if(!state||!tx||!['default','history'].includes(state.origin)||el.value!==before[field])continue;
+if(validEntryValue(field,tx[field])){
+el.value=tx[field];state.value=el.value;state.origin='history';
+}
 }
 }
 function applyQuickChip(chip){
-openVerificationModalForManual('manual','general_expense',chip.category);
+openVerificationModalForManual('manual',validEntryValue('fund_bucket',chip.fund_bucket)?chip.fund_bucket:'general_expense',
+validEntryValue('category',chip.category)?chip.category:'food_drink');
 document.getElementById('txFormMerchant').value=chip.merchant;
 document.getElementById('txFormAmount').value=String(chip.amount);
+resetEntrySuggestions(true);
 }
 async function renderQuickChips(){
 const host=document.getElementById('dailyQuickChips');
@@ -2556,6 +2646,7 @@ globalScope.history?.replaceState(null,'',url.href);
 }
 }
 async function refreshAutomationUi(){
+await refreshMerchantHistory().catch(()=>{});
 await renderQuickChips();
 const host=document.getElementById('batchPayItems');if(!host)return;
 const date=document.getElementById('batchPayDate').value||getBangkokTodayIso();
@@ -2589,7 +2680,12 @@ on('btnVoiceEntry','click',startVoiceEntry);
 const supported=Boolean(globalScope.SpeechRecognition||globalScope.webkitSpeechRecognition);
 document.getElementById('btnVoiceEntry').disabled=!supported;
 if(!supported)document.getElementById('voiceStatus').textContent='ไม่รองรับเสียงบนเบราว์เซอร์นี้ สามารถพิมพ์รายการได้';
-on('txFormMerchant','blur',safe(suggestMerchantCategory));
+for(const event of['input','change'])on('txFormMerchant',event,safe(suggestMerchantCategory));
+for(const[field,id]of Object.entries(entryIds)){
+for(const event of['input','change'])on(id,event,()=>{
+entryFields[field]={origin:'user',value:document.getElementById(id).value};
+});
+}
 on('btnClearLearning','click',safe(async()=>{await automationPreference('learning',{merchants:{},chips:[]});await renderQuickChips();}));
 on('btnClearSalaryTemplate','click',safe(()=>automationPreference('salary',null)));
 on('btnUseSalaryTemplate','click',safe(async()=>{
@@ -3331,6 +3427,7 @@ const hasTempImage=Boolean(_0x1a7.currentCompressedImage);
 document.getElementById('btnReanalyzeCurrentImage').hidden=!hasTempImage;
 document.getElementById('btnRemoveImageFromModal').hidden=!hasTempImage;
 document.getElementById('verificationModal').hidden=false;
+resetEntrySuggestions(true);
 }
 function openVerificationModalForManual(
 sourceType='manual',
@@ -3358,6 +3455,7 @@ const hasTempImage=Boolean(_0x1a7.currentCompressedImage);
 document.getElementById('btnReanalyzeCurrentImage').hidden=!hasTempImage;
 document.getElementById('btnRemoveImageFromModal').hidden=!hasTempImage;
 document.getElementById('verificationModal').hidden=false;
+resetEntrySuggestions();
 }
 function openVerificationModalForEdit(tx){
 clearUncertainHighlights();
@@ -3383,6 +3481,7 @@ document.getElementById('txFormNote').value=tx.note||'';
 document.getElementById('btnReanalyzeCurrentImage').hidden=true;
 document.getElementById('btnRemoveImageFromModal').hidden=true;
 document.getElementById('verificationModal').hidden=false;
+resetEntrySuggestions(true);
 }
 function clearTemporaryReceiptImage(){
 _0x1a7.currentCompressedImage=null;
@@ -3502,6 +3601,7 @@ document.getElementById('btnOpenManualEntry')?.addEventListener('click',()=>{
 openVerificationModalForManual('manual');
 });
 const closeVerification=()=>{
+suggestionRequest++;
 document.getElementById('verificationModal').hidden=true;
 releaseSharedReceipt().catch(()=>{});
 };
@@ -3940,6 +4040,8 @@ init:_0x1cb,
 automationPreference,commitAutomation,batchPayFixedExpenses,fatherInsuranceCycle,
 upgradeSalaryTemplate,legacyInsuranceReview,upgradeLegacyInsurance,
 aggregateFinancialCharts,renderFinancialCharts,selectAppPanel,bindAppNavigation,
+openVerificationModalForManual,openVerificationModalFromAiResult,openVerificationModalForEdit,
+refreshMerchantHistory,readMerchantHistory,'bindUiEvents':_0x1c4,
 normalizeMerchant,learnConfirmedRecord,suggestMerchantCategory,applyQuickChip,
 startVoiceEntry,validReceiptFile,handleReceiptPaste,handleImageFileSelected,
 resumeSharedReceipt,releaseSharedReceipt,shareInboxChange,bindAutomationEvents,
