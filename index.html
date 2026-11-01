@@ -26,7 +26,7 @@
   
   <script src="./vendor/supabase.min.js"></script>
 
-  <style>:root{--bg-app:#f1f5f9;--bg-surface:#ffffff;--bg-subtle:#f8fafc;--text-main:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border-color:#e2e8f0;--border-strong:#cbd5e1;--brand-primary:#0f766e;--brand-primary-hover:#115e59;--brand-soft:#ccfbf1;--income-color:#15803d;--income-bg:#dcfce7;--expense-color:#b91c1c;--expense-bg:#fee2e2;--warning-color:#b45309;--warning-bg:#fef3c7;--warning-border:#f59e0b;--info-color:#1d4ed8;--info-bg:#dbeafe;--shadow-sm:0 1px 3px rgba(15,23,42,0.06);--shadow-md:0 4px 12px rgba(15,23,42,0.08);--shadow-lg:0 12px 28px rgba(15,23,42,0.16);--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sarabun",Roboto,sans-serif}*{box-sizing:border-box;margin:0;padding:0}html,body{min-height:100%;background-color:var(--bg-app);color:var(--text-main);font-family:var(--font-sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}button,input,select,textarea{font-family:inherit;font-size:1rem;color:inherit}button{cursor:pointer;border:none;background:none}button:disabled{opacity:0.58;cursor:not-allowed}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.system-banner{background:var(--warning-bg);color:#92400e;border-bottom:1px solid #fde68a;padding:0.55rem 1rem;font-size:0.88rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.system-banner.online-synced{background:#ecfdf5;color:#065f46;border-bottom-color:#a7f3d0}.system-banner.offline-mode{background:#fef2f2;color:#991b1b;border-bottom-color:#fecaca}.app-header{background:var(--bg-surface);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:30;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px)}.header-inner{max-width:1200px;margin:0 auto;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.brand-group{display:flex;align-items:center;gap:0.7rem}.brand-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;border:1px solid var(--border-color)}.brand-title{font-size:1.15rem;font-weight:700;color:var(--brand-primary);letter-spacing:-0.01em}.brand-subtitle{font-size:0.78rem;color:var(--text-muted)}.header-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}.status-pill{display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:999px;font-size:0.78rem;font-weight:600;background:var(--bg-subtle);border:1px solid var(--border-color);color:var(--text-secondary)}.status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.green{background:#16a34a}.status-dot.amber{background:#d97706}.status-dot.red{background:#dc2626}.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;min-height:44px;padding:0.55rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.92rem;transition:background-color 0.15s,border-color 0.15s,transform 0.08s;user-select:none}.btn:active:not(:disabled){transform:translateY(1px)}.btn-primary{background:var(--brand-primary);color:#ffffff}.btn-primary:hover:not(:disabled){background:var(--brand-primary-hover)}.btn-secondary{background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border-strong)}.btn-secondary:hover:not(:disabled){background:var(--bg-subtle)}.btn-accent{background:#0284c7;color:#ffffff}.btn-accent:hover:not(:disabled){background:#0369a1}.btn-danger{background:var(--expense-bg);color:var(--expense-color);border:1px solid #fecaca}.btn-danger:hover:not(:disabled){background:#fecaca}.btn-sm{min-height:36px;padding:0.35rem 0.7rem;font-size:0.82rem}.app-container{max-width:1200px;margin:0 auto;padding:1rem;padding-bottom:calc(2.5rem + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr;gap:1.25rem}@media (min-width:768px){.app-container{grid-template-columns:5fr 7fr;align-items:start;padding:1.25rem}}@media (min-width:1024px){.app-container{grid-template-columns:440px 1fr;gap:1.5rem}}.col-stack{display:flex;flex-direction:column;gap:1.25rem}.card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.15rem;box-shadow:var(--shadow-sm)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap}.card-title{font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.45rem}.quick-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}@media (max-width:420px){.quick-actions-grid{grid-template-columns:1fr}}.kpi-grid{display:grid;grid-template-columns:1fr;gap:0.75rem;margin-bottom:1rem}@media (min-width:480px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}.kpi-box{padding:0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-subtle)}.kpi-box.income{background:#f0fdf4;border-color:#bbf7d0}.kpi-box.expense{background:#fef2f2;border-color:#fecaca}.kpi-box.net{background:#f0fdfa;border-color:#99f6e4}.kpi-label{font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem}.kpi-value{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}.kpi-box.income .kpi-value{color:var(--income-color)}.kpi-box.expense .kpi-value{color:var(--expense-color)}.kpi-box.net .kpi-value{color:var(--brand-primary)}.kpi-sub{font-size:0.73rem;color:var(--text-muted);margin-top:0.2rem}.category-list{display:flex;flex-direction:column;gap:0.65rem}.category-row{display:flex;flex-direction:column;gap:0.25rem}.category-row-top{display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600}.progress-track{height:8px;background:var(--bg-app);border-radius:999px;overflow:hidden}.progress-fill{height:100%;background:var(--brand-primary);border-radius:999px;transition:width 0.25s ease}.upload-zone{border:2px dashed var(--border-strong);border-radius:var(--radius-md);padding:1.15rem;text-align:center;background:var(--bg-subtle);transition:border-color 0.2s,background-color 0.2s}.upload-zone:hover{border-color:var(--brand-primary)}.camera-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-top:0.85rem}.preview-container{margin-top:1rem;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:#ffffff}.preview-img{max-width:100%;max-height:280px;display:block;margin:0 auto 0.65rem;border-radius:6px;object-fit:contain;background:#0f172a}.compression-meta{font-size:0.8rem;color:var(--text-secondary);background:var(--bg-subtle);padding:0.45rem 0.65rem;border-radius:6px;margin-bottom:0.65rem}.form-grid{display:grid;grid-template-columns:1fr;gap:0.85rem}@media (min-width:540px){.form-grid.two-col{grid-template-columns:1fr 1fr}}.form-group{display:flex;flex-direction:column;gap:0.3rem}.form-label{font-size:0.86rem;font-weight:600;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;gap:0.4rem}.form-control{width:100%;min-height:44px;padding:0.55rem 0.75rem;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:#ffffff;transition:border-color 0.15s,box-shadow 0.15s}.form-control:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(15,118,110,0.18)}.form-group.uncertain-field .form-control{border-color:var(--warning-border);background-color:#fffbeb}.uncertain-badge{display:inline-block;font-size:0.72rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:999px;background:var(--warning-bg);color:var(--warning-color);border:1px solid var(--warning-border)}.tx-list{display:flex;flex-direction:column;gap:0.75rem}.tx-item{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.9rem;background:#ffffff;display:flex;flex-direction:column;gap:0.55rem;transition:border-color 0.15s}.tx-item:hover{border-color:var(--border-strong)}.tx-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem}.tx-merchant{font-weight:700;font-size:1rem;color:var(--text-main);word-break:break-word}.tx-amount{font-weight:800;font-size:1.08rem;font-variant-numeric:tabular-nums;white-space:nowrap}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.tx-badges{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}.badge{display:inline-flex;align-items:center;gap:0.25rem;padding:0.18rem 0.55rem;border-radius:999px;font-size:0.74rem;font-weight:600}.badge-income{background:var(--income-bg);color:var(--income-color)}.badge-expense{background:var(--expense-bg);color:var(--expense-color)}.badge-category{background:var(--bg-app);color:var(--text-secondary)}.badge-synced{background:#dcfce7;color:#166534}.badge-pending{background:#fef3c7;color:#92400e}.badge-local{background:#e2e8f0;color:#334155}.badge-failed{background:#fee2e2;color:#991b1b}.tx-purpose-box{font-size:0.84rem;color:var(--text-secondary);background:var(--bg-subtle);border-left:3px solid var(--brand-primary);padding:0.45rem 0.65rem;border-radius:0 6px 6px 0}.tx-actions{display:flex;justify-content:flex-end;gap:0.5rem;border-top:1px solid var(--bg-app);padding-top:0.5rem}.alert-box{padding:0.8rem 0.95rem;border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:0.85rem;border:1px solid transparent}.alert-warning{background:var(--warning-bg);color:#92400e;border-color:#fcd34d}.alert-error{background:var(--expense-bg);color:var(--expense-color);border-color:#fecaca}.alert-info{background:var(--info-bg);color:var(--info-color);border-color:#bfdbfe}.alert-success{background:var(--income-bg);color:var(--income-color);border-color:#bbf7d0}.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.92rem}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}.modal-backdrop[hidden]{display:none !important}.modal-panel{background:var(--bg-surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border-color);display:flex;flex-direction:column}.modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-surface);z-index:2}.modal-body{padding:1.25rem;overflow-y:auto}.modal-footer{padding:0.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.65rem;flex-wrap:wrap;background:var(--bg-subtle)}.toast-stack{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));right:1rem;left:1rem;max-width:420px;margin-left:auto;z-index:90;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}.toast{pointer-events:auto;padding:0.8rem 1rem;border-radius:var(--radius-sm);background:#0f172a;color:#ffffff;font-size:0.88rem;font-weight:500;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:space-between;gap:0.75rem}.toast.success{background:#15803d}.toast.error{background:#b91c1c}.toast.warning{background:#b45309}.fund-grid{display:flex;flex-direction:column;gap:0.65rem}.fund-card{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem 0.9rem;background:var(--bg-subtle);display:flex;flex-direction:column;gap:0.4rem}.fund-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem}.fund-title{font-weight:700;font-size:0.92rem;color:var(--text-main)}.fund-balance{font-weight:800;font-size:1.02rem;font-variant-numeric:tabular-nums;white-space:nowrap}.fund-balance.positive{color:var(--brand-primary)}.fund-balance.negative{color:var(--expense-color)}.fund-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.78rem;color:var(--text-muted)}.badge-fund{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}.fixed-checklist{display:flex;flex-direction:column;gap:0.45rem;margin-top:0.65rem;padding-top:0.65rem;border-top:1px dashed var(--border-color)}.fixed-item-row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:6px;background:var(--bg-surface);border:1px solid var(--border-color);font-size:0.82rem}.fixed-item-info{display:flex;flex-direction:column;gap:0.1rem}.fixed-item-name{font-weight:600;color:var(--text-main)}.fixed-item-sub{font-size:0.75rem;color:var(--text-muted)}:root,[data-theme="light"]{color-scheme:light;--bg-app:#edf5f9;--bg-surface:#f9fcff;--bg-subtle:#e6f0f6;--text-main:#102c40;--text-secondary:#304f63;--text-muted:#456176;--glass:rgba(255,255,255,0.08);--glass-border:rgba(34,108,142,0.30);--aurora-blue:rgba(45,170,240,0.16);--aurora-green:rgba(34,206,160,0.12);--aurora-purple:rgba(153,104,230,0.13)}[data-theme="dark"]{color-scheme:dark;--bg-app:#07151f;--bg-surface:#102734;--bg-subtle:#183342;--text-main:#effaff;--text-secondary:#c3dbe7;--text-muted:#abc8d7;--border-color:#446171;--border-strong:#6b8a9b;--brand-primary:#147e88;--brand-soft:#163e47;--glass:rgba(181,226,255,0.06);--glass-border:rgba(166,226,255,0.28);--aurora-blue:rgba(45,170,240,0.12);--aurora-green:rgba(34,206,160,0.08);--aurora-purple:rgba(153,104,230,0.11)}[data-theme="blue"]{color-scheme:dark;--bg-app:#071526;--bg-surface:#102f4e;--bg-subtle:#163d5c;--text-main:#f2fbff;--text-secondary:#c9e3f5;--text-muted:#b2d1e8;--border-color:#416986;--border-strong:#739ab5;--brand-primary:#147e88;--brand-soft:#133e59;--glass:rgba(164,218,255,0.08);--glass-border:rgba(134,218,255,0.32);--aurora-blue:rgba(55,192,222,0.16);--aurora-green:rgba(39,194,147,0.14);--aurora-purple:rgba(144,110,219,0.16)}[data-theme="dark-red"]{color-scheme:dark;--bg-app:#12070a;--bg-surface:#200910;--bg-subtle:#32121d;--text-main:#fff0f3;--text-secondary:#f4bac4;--text-muted:#dca3b0;--border-color:#814354;--border-strong:#db879c;--brand-primary:#e11d48;--brand-soft:#481325;--brand-primary-hover:#be123c;--expense-color:#ff9eae;--expense-bg:#481321;--income-color:#8ee6bf;--income-bg:#10382d;--glass:rgba(225,29,72,0.08);--glass-border:rgba(244,186,196,0.32);--aurora-blue:rgba(225,29,72,0.16);--aurora-green:rgba(159,18,57,0.14);--aurora-purple:rgba(190,24,93,0.16);--shadow-sm:0 1px 6px rgba(18,7,10,0.4);--shadow-md:0 4px 20px rgba(18,7,10,0.5);--shadow-lg:0 12px 32px rgba(18,7,10,0.65)}body{background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app);background-attachment:fixed}[data-theme="dark-red"] body{background:radial-gradient(ellipse at 8% 10%,rgba(225,29,72,0.22) 0%,rgba(159,18,57,0.08) 35%,transparent 65%),radial-gradient(ellipse at 90% 75%,rgba(190,24,93,0.18) 0%,rgba(88,15,38,0.08) 40%,transparent 70%),linear-gradient(155deg,rgba(18,7,10,0.72) 0%,rgba(32,9,16,0.6) 55%,rgba(18,7,10,0.82) 100%),url('./icons/dark_red_finance_bg.png') center / cover no-repeat,#12070a;background-attachment:fixed}[data-theme="dark-red"]:focus-visible{outline-color:#ff91ad}[data-theme="dark-red"] .form-control,[data-theme="dark-red"] .tx-item,[data-theme="dark-red"] .kpi-box{background:var(--bg-surface);color:var(--text-main);border-color:var(--glass-border)}[data-theme="dark-red"] .kpi-box.net .kpi-value{color:#ff91ad}[data-theme="dark-red"] .form-group.uncertain-field .form-control{background-color:#3b2410}[data-theme="dark-red"] .form-control:focus-visible{outline:3px solid #ff91ad;outline-offset:3px;box-shadow:none}.app-header,.card,.fund-card{background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(24px) saturate(130%);backdrop-filter:blur(24px) saturate(130%)}[data-theme="blue"] body{background:radial-gradient(ellipse at 4% 8%,var(--aurora-green),transparent 58%),radial-gradient(ellipse at 90% 18%,var(--aurora-purple),transparent 56%),radial-gradient(ellipse at 60% 85%,var(--aurora-blue),transparent 64%),linear-gradient(155deg,#071526 15%,#0b233b 60%,#071526);background-attachment:fixed}.modal-content{background:var(--bg-surface)}.app-header{padding-top:env(safe-area-inset-top)}.app-container{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{border:1px solid var(--glass-border);border-radius:14px;background:var(--glass);color:var(--text-main);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 16px rgba(0,8,20,0.08);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%)}button,.btn,select,input:not([type="checkbox"]){min-height:44px}input:not([type="file"]):not([type="checkbox"]):not(.sr-only),select,textarea{padding:0.65rem 0.8rem;max-width:100%;min-width:0}input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:1}select option{background:var(--bg-surface);color:var(--text-main)}input[type="checkbox"]{appearance:none;width:24px;height:24px;min-height:24px;border-radius:12px;accent-color:var(--brand-primary);cursor:pointer}input[type="checkbox"]:checked{background-color:var(--brand-primary);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");outline:1px solid var(--border-strong);outline-offset:2px}@media (forced-colors:active){input[type="checkbox"]{appearance:auto}}[hidden]{display:none !important}input:disabled,select:disabled,textarea:disabled{opacity:0.58;cursor:not-allowed}input[aria-invalid="true"],input:user-invalid{border-color:var(--expense-color);outline:2px solid var(--expense-color);outline-offset:2px}.btn-primary,.btn-accent{background:linear-gradient(145deg,rgba(255,255,255,0.12),transparent),var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}.btn,button,input,select,textarea{transition:transform 180ms ease,background-color 180ms ease,border-color 180ms ease}:focus-visible{outline:3px solid #22a6c7;outline-offset:3px}.automation-panel{grid-column:1 / -1;margin-bottom:0;padding:clamp(1rem,3vw,1.5rem)}.automation-panel h2{font-size:1.2rem;letter-spacing:-0.02em}.automation-panel p{color:var(--text-secondary);font-size:0.9rem;line-height:1.7}.automation-panel>button{margin-block:0.65rem}.automation-bar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-block:1rem}.automation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.25rem}.glass-subcard{padding:clamp(1rem,2vw,1.4rem);min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0.75rem}.glass-subcard h3{font-size:1rem;font-weight:650;letter-spacing:-0.01em;line-height:1.6}.glass-subcard label{font-size:0.9rem;color:var(--text-secondary)}.glass-subcard>button{align-self:flex-start;margin-top:0.25rem}.batch-row{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(80px,120px);gap:0.75rem;align-items:center;margin-block:0.75rem}.batch-row input{width:100%}.batch-row label{overflow-wrap:anywhere}@media (max-width:600px){.automation-grid{grid-template-columns:minmax(0,1fr)}.automation-bar>.btn{flex:1 1 100%}.batch-row{grid-template-columns:24px minmax(0,1fr)}.batch-row input[type="number"]{grid-column:2}}@media (hover:hover) and (pointer:fine){button:hover:not(:disabled),.btn:hover:not(:disabled){transform:scale(1.015);border-color:var(--border-strong)}button:active:not(:disabled),.btn:active:not(:disabled){transform:scale(0.98)}}@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.app-header,.card,.fund-card,.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{background:var(--bg-surface)}input[type="checkbox"]:checked{background-color:var(--brand-primary)}.btn-primary,.btn-accent{background:var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;transform:none !important;scroll-behavior:auto !important}}</style>
+  <style>:root{--bg-app:#f1f5f9;--bg-surface:#ffffff;--bg-subtle:#f8fafc;--text-main:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border-color:#e2e8f0;--border-strong:#cbd5e1;--brand-primary:#0f766e;--brand-primary-hover:#115e59;--brand-soft:#ccfbf1;--income-color:#15803d;--income-bg:#dcfce7;--expense-color:#b91c1c;--expense-bg:#fee2e2;--warning-color:#b45309;--warning-bg:#fef3c7;--warning-border:#f59e0b;--info-color:#1d4ed8;--info-bg:#dbeafe;--shadow-sm:0 1px 3px rgba(15,23,42,0.06);--shadow-md:0 4px 12px rgba(15,23,42,0.08);--shadow-lg:0 12px 28px rgba(15,23,42,0.16);--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sarabun",Roboto,sans-serif}*{box-sizing:border-box;margin:0;padding:0}html,body{min-height:100%;background-color:var(--bg-app);color:var(--text-main);font-family:var(--font-sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}button,input,select,textarea{font-family:inherit;font-size:1rem;color:inherit}button{cursor:pointer;border:none;background:none}button:disabled{opacity:0.58;cursor:not-allowed}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.system-banner{background:var(--warning-bg);color:#92400e;border-bottom:1px solid #fde68a;padding:0.55rem 1rem;font-size:0.88rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.system-banner.online-synced{background:#ecfdf5;color:#065f46;border-bottom-color:#a7f3d0}.system-banner.offline-mode{background:#fef2f2;color:#991b1b;border-bottom-color:#fecaca}.app-header{background:var(--bg-surface);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:30;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px)}.header-inner{max-width:1200px;margin:0 auto;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.brand-group{display:flex;align-items:center;gap:0.7rem}.brand-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;border:1px solid var(--border-color)}.brand-title{font-size:1.15rem;font-weight:700;color:var(--brand-primary);letter-spacing:-0.01em}.brand-subtitle{font-size:0.78rem;color:var(--text-muted)}.header-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}.status-pill{display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:999px;font-size:0.78rem;font-weight:600;background:var(--bg-subtle);border:1px solid var(--border-color);color:var(--text-secondary)}.status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.green{background:#16a34a}.status-dot.amber{background:#d97706}.status-dot.red{background:#dc2626}.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;min-height:44px;padding:0.55rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.92rem;transition:background-color 0.15s,border-color 0.15s,transform 0.08s;user-select:none}.btn:active:not(:disabled){transform:translateY(1px)}.btn-primary{background:var(--brand-primary);color:#ffffff}.btn-primary:hover:not(:disabled){background:var(--brand-primary-hover)}.btn-secondary{background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border-strong)}.btn-secondary:hover:not(:disabled){background:var(--bg-subtle)}.btn-accent{background:#0284c7;color:#ffffff}.btn-accent:hover:not(:disabled){background:#0369a1}.btn-danger{background:var(--expense-bg);color:var(--expense-color);border:1px solid #fecaca}.btn-danger:hover:not(:disabled){background:#fecaca}.btn-sm{min-height:36px;padding:0.35rem 0.7rem;font-size:0.82rem}.app-container{max-width:1200px;margin:0 auto;padding:1rem;padding-bottom:calc(2.5rem + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr;gap:1.25rem}@media (min-width:768px){.app-container{grid-template-columns:5fr 7fr;align-items:start;padding:1.25rem}}@media (min-width:1024px){.app-container{grid-template-columns:440px 1fr;gap:1.5rem}}.col-stack{display:flex;flex-direction:column;gap:1.25rem}.card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.15rem;box-shadow:var(--shadow-sm)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap}.card-title{font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.45rem}.quick-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}@media (max-width:420px){.quick-actions-grid{grid-template-columns:1fr}}.kpi-grid{display:grid;grid-template-columns:1fr;gap:0.75rem;margin-bottom:1rem}@media (min-width:480px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}.kpi-box{padding:0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-subtle)}.kpi-box.income{background:#f0fdf4;border-color:#bbf7d0}.kpi-box.expense{background:#fef2f2;border-color:#fecaca}.kpi-box.net{background:#f0fdfa;border-color:#99f6e4}.kpi-label{font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem}.kpi-value{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}.kpi-box.income .kpi-value{color:var(--income-color)}.kpi-box.expense .kpi-value{color:var(--expense-color)}.kpi-box.net .kpi-value{color:var(--brand-primary)}.kpi-sub{font-size:0.73rem;color:var(--text-muted);margin-top:0.2rem}.category-list{display:flex;flex-direction:column;gap:0.65rem}.category-row{display:flex;flex-direction:column;gap:0.25rem}.category-row-top{display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600}.progress-track{height:8px;background:var(--bg-app);border-radius:999px;overflow:hidden}.progress-fill{height:100%;background:var(--brand-primary);border-radius:999px;transition:width 0.25s ease}.upload-zone{border:2px dashed var(--border-strong);border-radius:var(--radius-md);padding:1.15rem;text-align:center;background:var(--bg-subtle);transition:border-color 0.2s,background-color 0.2s}.upload-zone:hover{border-color:var(--brand-primary)}.camera-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-top:0.85rem}.preview-container{margin-top:1rem;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:#ffffff}.preview-img{max-width:100%;max-height:280px;display:block;margin:0 auto 0.65rem;border-radius:6px;object-fit:contain;background:#0f172a}.compression-meta{font-size:0.8rem;color:var(--text-secondary);background:var(--bg-subtle);padding:0.45rem 0.65rem;border-radius:6px;margin-bottom:0.65rem}.form-grid{display:grid;grid-template-columns:1fr;gap:0.85rem}@media (min-width:540px){.form-grid.two-col{grid-template-columns:1fr 1fr}}.form-group{display:flex;flex-direction:column;gap:0.3rem}.form-label{font-size:0.86rem;font-weight:600;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;gap:0.4rem}.form-control{width:100%;min-height:44px;padding:0.55rem 0.75rem;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:#ffffff;transition:border-color 0.15s,box-shadow 0.15s}.form-control:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(15,118,110,0.18)}.form-group.uncertain-field .form-control{border-color:var(--warning-border);background-color:#fffbeb}.uncertain-badge{display:inline-block;font-size:0.72rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:999px;background:var(--warning-bg);color:var(--warning-color);border:1px solid var(--warning-border)}.tx-list{display:flex;flex-direction:column;gap:0.75rem}.tx-item{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.9rem;background:#ffffff;display:flex;flex-direction:column;gap:0.55rem;transition:border-color 0.15s}.tx-item:hover{border-color:var(--border-strong)}.tx-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem}.tx-merchant{font-weight:700;font-size:1rem;color:var(--text-main);word-break:break-word}.tx-amount{font-weight:800;font-size:1.08rem;font-variant-numeric:tabular-nums;white-space:nowrap}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.tx-badges{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}.badge{display:inline-flex;align-items:center;gap:0.25rem;padding:0.18rem 0.55rem;border-radius:999px;font-size:0.74rem;font-weight:600}.badge-income{background:var(--income-bg);color:var(--income-color)}.badge-expense{background:var(--expense-bg);color:var(--expense-color)}.badge-category{background:var(--bg-app);color:var(--text-secondary)}.badge-synced{background:#dcfce7;color:#166534}.badge-pending{background:#fef3c7;color:#92400e}.badge-local{background:#e2e8f0;color:#334155}.badge-failed{background:#fee2e2;color:#991b1b}.tx-purpose-box{font-size:0.84rem;color:var(--text-secondary);background:var(--bg-subtle);border-left:3px solid var(--brand-primary);padding:0.45rem 0.65rem;border-radius:0 6px 6px 0}.tx-actions{display:flex;justify-content:flex-end;gap:0.5rem;border-top:1px solid var(--bg-app);padding-top:0.5rem}.alert-box{padding:0.8rem 0.95rem;border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:0.85rem;border:1px solid transparent}.alert-warning{background:var(--warning-bg);color:#92400e;border-color:#fcd34d}.alert-error{background:var(--expense-bg);color:var(--expense-color);border-color:#fecaca}.alert-info{background:var(--info-bg);color:var(--info-color);border-color:#bfdbfe}.alert-success{background:var(--income-bg);color:var(--income-color);border-color:#bbf7d0}.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.92rem}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}.modal-backdrop[hidden]{display:none !important}.modal-panel{background:var(--bg-surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border-color);display:flex;flex-direction:column}.modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-surface);z-index:2}.modal-body{padding:1.25rem;overflow-y:auto}.modal-footer{padding:0.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.65rem;flex-wrap:wrap;background:var(--bg-subtle)}.toast-stack{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));right:1rem;left:1rem;max-width:420px;margin-left:auto;z-index:90;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}.toast{pointer-events:auto;padding:0.8rem 1rem;border-radius:var(--radius-sm);background:#0f172a;color:#ffffff;font-size:0.88rem;font-weight:500;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:space-between;gap:0.75rem}.toast.success{background:#15803d}.toast.error{background:#b91c1c}.toast.warning{background:#b45309}.fund-grid{display:flex;flex-direction:column;gap:0.65rem}.fund-card{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem 0.9rem;background:var(--bg-subtle);display:flex;flex-direction:column;gap:0.4rem}.fund-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem}.fund-title{font-weight:700;font-size:0.92rem;color:var(--text-main)}.fund-balance{font-weight:800;font-size:1.02rem;font-variant-numeric:tabular-nums;white-space:nowrap}.fund-balance.positive{color:var(--brand-primary)}.fund-balance.negative{color:var(--expense-color)}.fund-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.78rem;color:var(--text-muted)}.badge-fund{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}.fixed-checklist{display:flex;flex-direction:column;gap:0.45rem;margin-top:0.65rem;padding-top:0.65rem;border-top:1px dashed var(--border-color)}.fixed-item-row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:6px;background:var(--bg-surface);border:1px solid var(--border-color);font-size:0.82rem}.fixed-item-info{display:flex;flex-direction:column;gap:0.1rem}.fixed-item-name{font-weight:600;color:var(--text-main)}.fixed-item-sub{font-size:0.75rem;color:var(--text-muted)}:root,[data-theme="light"]{color-scheme:light;--bg-app:#edf5f9;--bg-surface:#f9fcff;--bg-subtle:#e6f0f6;--text-main:#102c40;--text-secondary:#304f63;--text-muted:#456176;--glass:rgba(255,255,255,0.08);--glass-border:rgba(34,108,142,0.30);--aurora-blue:rgba(45,170,240,0.16);--aurora-green:rgba(34,206,160,0.12);--aurora-purple:rgba(153,104,230,0.13)}[data-theme="dark"]{color-scheme:dark;--bg-app:#07151f;--bg-surface:#102734;--bg-subtle:#183342;--text-main:#effaff;--text-secondary:#c3dbe7;--text-muted:#abc8d7;--border-color:#446171;--border-strong:#6b8a9b;--brand-primary:#147e88;--brand-soft:#163e47;--glass:rgba(181,226,255,0.06);--glass-border:rgba(166,226,255,0.28);--aurora-blue:rgba(45,170,240,0.12);--aurora-green:rgba(34,206,160,0.08);--aurora-purple:rgba(153,104,230,0.11)}[data-theme="blue"]{color-scheme:dark;--bg-app:#071526;--bg-surface:#102f4e;--bg-subtle:#163d5c;--text-main:#f2fbff;--text-secondary:#c9e3f5;--text-muted:#b2d1e8;--border-color:#416986;--border-strong:#739ab5;--brand-primary:#147e88;--brand-soft:#133e59;--glass:rgba(164,218,255,0.08);--glass-border:rgba(134,218,255,0.32);--aurora-blue:rgba(55,192,222,0.16);--aurora-green:rgba(39,194,147,0.14);--aurora-purple:rgba(144,110,219,0.16)}[data-theme="dark-red"]{color-scheme:dark;--bg-app:#12070a;--bg-surface:#200910;--bg-subtle:#32121d;--text-main:#fff0f3;--text-secondary:#f4bac4;--text-muted:#dca3b0;--border-color:#814354;--border-strong:#db879c;--brand-primary:#e11d48;--brand-soft:#481325;--brand-primary-hover:#be123c;--expense-color:#ff9eae;--expense-bg:#481321;--income-color:#8ee6bf;--income-bg:#10382d;--glass:rgba(225,29,72,0.08);--glass-border:rgba(244,186,196,0.32);--aurora-blue:rgba(225,29,72,0.16);--aurora-green:rgba(159,18,57,0.14);--aurora-purple:rgba(190,24,93,0.16);--shadow-sm:0 1px 6px rgba(18,7,10,0.4);--shadow-md:0 4px 20px rgba(18,7,10,0.5);--shadow-lg:0 12px 32px rgba(18,7,10,0.65)}body{background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app);background-attachment:fixed}[data-theme="dark-red"] body{background:radial-gradient(ellipse at 8% 10%,rgba(225,29,72,0.22) 0%,rgba(159,18,57,0.08) 35%,transparent 65%),radial-gradient(ellipse at 90% 75%,rgba(190,24,93,0.18) 0%,rgba(88,15,38,0.08) 40%,transparent 70%),linear-gradient(155deg,rgba(18,7,10,0.72) 0%,rgba(32,9,16,0.6) 55%,rgba(18,7,10,0.82) 100%),url('./icons/dark_red_finance_bg.png') center / cover no-repeat,#12070a;background-attachment:fixed}[data-theme="dark-red"]:focus-visible{outline-color:#ff91ad}[data-theme="dark-red"] .form-control,[data-theme="dark-red"] .tx-item,[data-theme="dark-red"] .kpi-box{background:var(--bg-surface);color:var(--text-main);border-color:var(--glass-border)}[data-theme="dark-red"] .kpi-box.net .kpi-value{color:#ff91ad}[data-theme="dark-red"] .form-group.uncertain-field .form-control{background-color:#3b2410}[data-theme="dark-red"] .form-control:focus-visible{outline:3px solid #ff91ad;outline-offset:3px;box-shadow:none}.app-header,.card,.fund-card{background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(24px) saturate(130%);backdrop-filter:blur(24px) saturate(130%)}[data-theme="blue"] body{background:radial-gradient(ellipse at 4% 8%,var(--aurora-green),transparent 58%),radial-gradient(ellipse at 90% 18%,var(--aurora-purple),transparent 56%),radial-gradient(ellipse at 60% 85%,var(--aurora-blue),transparent 64%),linear-gradient(155deg,#071526 15%,#0b233b 60%,#071526);background-attachment:fixed}.modal-content{background:var(--bg-surface)}.app-header{padding-top:env(safe-area-inset-top)}.app-container{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{border:1px solid var(--glass-border);border-radius:14px;background:var(--glass);color:var(--text-main);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 16px rgba(0,8,20,0.08);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%)}button,.btn,select,input:not([type="checkbox"]){min-height:44px}input:not([type="file"]):not([type="checkbox"]):not(.sr-only),select,textarea{padding:0.65rem 0.8rem;max-width:100%;min-width:0}input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:1}select option{background:var(--bg-surface);color:var(--text-main)}input[type="checkbox"]{appearance:none;width:24px;height:24px;min-height:24px;border-radius:12px;accent-color:var(--brand-primary);cursor:pointer}input[type="checkbox"]:checked{background-color:var(--brand-primary);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");outline:1px solid var(--border-strong);outline-offset:2px}@media (forced-colors:active){input[type="checkbox"]{appearance:auto}}[hidden]{display:none !important}input:disabled,select:disabled,textarea:disabled{opacity:0.58;cursor:not-allowed}input[aria-invalid="true"],input:user-invalid{border-color:var(--expense-color);outline:2px solid var(--expense-color);outline-offset:2px}.btn-primary,.btn-accent{background:linear-gradient(145deg,rgba(255,255,255,0.12),transparent),var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}.btn,button,input,select,textarea{transition:transform 180ms ease,background-color 180ms ease,border-color 180ms ease}:focus-visible{outline:3px solid #22a6c7;outline-offset:3px}.automation-panel{grid-column:1 / -1;margin-bottom:0;padding:clamp(1rem,3vw,1.5rem)}.automation-panel h2{font-size:1.2rem;letter-spacing:-0.02em}.automation-panel p{color:var(--text-secondary);font-size:0.9rem;line-height:1.7}.automation-panel>button{margin-block:0.65rem}.automation-bar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-block:1rem}.automation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.25rem}.glass-subcard{padding:clamp(1rem,2vw,1.4rem);min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0.75rem}.glass-subcard h3{font-size:1rem;font-weight:650;letter-spacing:-0.01em;line-height:1.6}.glass-subcard label{font-size:0.9rem;color:var(--text-secondary)}.glass-subcard>button{align-self:flex-start;margin-top:0.25rem}.batch-row{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(80px,120px);gap:0.75rem;align-items:center;margin-block:0.75rem}.batch-row input{width:100%}.batch-row label{overflow-wrap:anywhere}@media (max-width:600px){.automation-grid{grid-template-columns:minmax(0,1fr)}.automation-bar>.btn{flex:1 1 100%}.batch-row{grid-template-columns:24px minmax(0,1fr)}.batch-row input[type="number"]{grid-column:2}}@media (hover:hover) and (pointer:fine){button:hover:not(:disabled),.btn:hover:not(:disabled){transform:scale(1.015);border-color:var(--border-strong)}button:active:not(:disabled),.btn:active:not(:disabled){transform:scale(0.98)}}@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.app-header,.card,.fund-card,.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{background:var(--bg-surface)}input[type="checkbox"]:checked{background-color:var(--brand-primary)}.btn-primary,.btn-accent{background:var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;transform:none !important;scroll-behavior:auto !important}}[hidden]{display:none !important}body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}.app-panels{display:block;max-width:900px;margin:auto;padding:12px}.app-panels>section{min-width:0}.app-panels .card{margin-bottom:16px;min-width:0}.hero-action{border-radius:24px;padding:24px;margin:0 0 18px;background:linear-gradient(135deg,#244780,#5c318a);color:#fff}.hero-action h1{font-size:clamp(1.3rem,5vw,2rem);margin:12px 0}.hero-action p{color:#fff;margin-bottom:12px}.app-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.app-shortcut{min-height:118px;padding:16px 8px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-surface);color:var(--text-main);display:flex;align-items:center;flex-direction:column;gap:10px;font:inherit}.shortcut-icon{border-radius:50%;background:#406bd5;color:white;width:48px;height:48px;display:grid;place-items:center;font-size:26px}.app-shortcut:nth-child(2) .shortcut-icon{background:#168065}.app-shortcut:nth-child(3) .shortcut-icon{background:#a45813}.app-shortcut:nth-child(4) .shortcut-icon{background:#a13878}.bottom-nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg-surface);border-top:1px solid var(--border-color);z-index:40}.bottom-nav button{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;min-height:52px;border:0;background:transparent;color:var(--text-main);font:inherit}.bottom-nav [aria-selected="true"]{background:#244780;color:#fff;border-radius:14px}button,.btn,input,select,summary{min-height:44px !important}:focus-visible{outline:3px solid #efac24;outline-offset:3px}.app-panels svg{display:block;width:100%;max-height:320px}.chart-table{width:100%;font-size:.78rem;border-collapse:collapse;margin:12px 0 24px}.chart-table td,.chart-table th{padding:6px 2px;text-align:right}.chart-legend{list-style:none;padding:0}.chart-legend li{padding:6px 10px;overflow-wrap:anywhere}progress{width:100%;height:20px;accent-color:#168065}.fund-card-header{flex-wrap:wrap}@media (max-width:400px){.app-panels .card{padding:14px}.fund-grid,.kpi-grid{grid-template-columns:1fr}.filters-grid{grid-template-columns:1fr}.batch-row{flex-wrap:wrap}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}}</style>
 </head>
 <body>
   
@@ -67,40 +67,10 @@
   </header>
 
   
-  <main class="app-container">
-    <section class="card automation-panel" aria-labelledby="automationTitle">
-      <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
-      <div class="automation-bar">
-        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
-        <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
-        <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
-        <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
-      </div>
-      <p id="captureStatus" role="status" aria-live="polite">วางภาพด้วย Ctrl+V / Cmd+V หรือแชร์ภาพมายังแอป หากไม่รองรับให้เลือกภาพจากอัลบั้ม</p>
-      <button id="btnResumeShare" type="button" class="btn btn-secondary">รับภาพแชร์ที่ค้างไว้</button>
-      <p id="voiceStatus" role="status" aria-live="polite"></p>
-      <div id="dailyQuickChips" class="automation-bar" aria-label="รายจ่ายที่เคยยืนยัน"></div>
-      <button id="btnClearLearning" type="button" class="btn btn-secondary">ล้างร้านค้าและชิปที่จำไว้</button>
-      <div class="automation-grid">
-      <div class="glass-subcard" role="group" aria-labelledby="batchPayTitle">
-        <h3 id="batchPayTitle">จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</h3>
-        <label for="batchPayDate">วันที่ชำระ</label><input id="batchPayDate" type="date" required>
-        <div id="batchPayItems"></div>
-        <button id="btnBatchPay" type="button" class="btn btn-primary">ยืนยันจ่ายรายการที่เลือก</button>
-        <p id="batchPayStatus" role="status" aria-live="polite"></p>
-      </div>
-      <div class="glass-subcard" role="group" aria-labelledby="fatherCycleTitle">
-        <h3 id="fatherCycleTitle">รอบประกันพ่อที่ยืนยันเอง</h3>
-        <label for="fatherAnchor">วันที่อ้างอิง</label><input id="fatherAnchor" type="date">
-        <label for="fatherInterval">ห่างกันกี่เดือน</label><input id="fatherInterval" type="number" min="1" max="120" step="1">
-        <button id="btnSaveFatherCycle" type="button" class="btn btn-secondary">ยืนยันรอบประกันพ่อ</button>
-        <p id="fatherCycleStatus" role="status" aria-live="polite">ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ</p>
-      </div>
-      </div>
-    </section>
-    
-    <div class="col-stack">
-      
+  <main class="app-container app-panels">
+    <section id="panel-home" role="tabpanel" aria-labelledby="tab-home" tabindex="-1">
+      <div class="hero-action"><p>สลิปเซนส์ • ผู้ช่วยการเงินของคุณ</p><h1>บันทึกวันนี้ วางแผนวันหน้า</h1><p>สแกนและตรวจข้อมูลก่อนบันทึกทุกครั้ง</p><button id="heroCapture" class="btn btn-primary" type="button">ถ่ายภาพ / เลือกสลิป</button></div>
+      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">◉</span>กระปุก 6 ส่วน</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">▥</span>กราฟการเงิน</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">≡</span>ประวัติรายการ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">฿</span>แบ่งเงินเดือน</button></div>
       <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
           <h2 id="scanSectionTitle" class="card-title">สแกนใบเสร็จ / สลิปโอนเงิน</h2>
@@ -151,8 +121,6 @@
         </div>
         <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
       </section>
-
-      
       <section class="card" aria-labelledby="dashboardSectionTitle">
         <div class="card-header">
           <h2 id="dashboardSectionTitle" class="card-title">สรุปการเงินประจำเดือน</h2>
@@ -189,24 +157,24 @@
           </div>
         </div>
       </section>
-
-      
+    </section>
+    <section id="panel-funds" role="tabpanel" aria-labelledby="tab-funds" tabindex="-1" hidden>
       <section class="card" aria-labelledby="fundBucketsSectionTitle">
         <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
           <div>
-            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 5 ส่วน & รายการ Fix</h2>
+            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 6 ส่วน & รายการ Fix</h2>
             <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">
-              เลือกถอน/ตัดจ่ายจาก 5 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
+              เลือกถอน/ตัดจ่ายจาก 6 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
             </p>
           </div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-            <button type="button" id="btnOpenSalarySplitModal" class="btn btn-primary btn-sm">แบ่งเงินเดือนเข้า 5 ส่วน</button>
+            <button type="button" id="btnOpenSalarySplitModal" class="btn btn-primary btn-sm">แบ่งเงินเดือนเข้า 6 ส่วน</button>
             <button type="button" id="btnRolloverSurplusToEmergency" class="btn btn-secondary btn-sm" title="โอนเงินเหลือใช้ของเดือนนี้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)">เก็บเงินเหลือใช้เข้าข้อ 4</button>
           </div>
         </div>
 
         <div id="fundBucketsContainer" class="fund-grid">
-          <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 5 ส่วน...</p>
+          <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 6 ส่วน...</p>
         </div>
 
         <div style="margin-top:0.9rem;">
@@ -219,11 +187,43 @@
           <div id="fixedMonthlyChecklistContainer" class="fixed-checklist"></div>
         </div>
       </section>
-    </div>
-
-    
-    <div class="col-stack">
-      <section class="card" aria-labelledby="historySectionTitle">
+      <div class="card" id="insuranceGauge" aria-live="polite"></div>
+      <div class="card"><h2>ตรวจข้อมูลประกันแดนเดิม</h2><p id="legacyInsuranceStatus" role="status"></p><button id="btnReviewLegacyInsurance" class="btn btn-secondary" type="button">ตรวจและยืนยันการแยกยอดเดิม</button></div>
+      <details class="card"><summary>ผู้ช่วยและรายการจ่ายประจำเดือน</summary><section class="card automation-panel" aria-labelledby="automationTitle">
+      <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
+      <div class="automation-bar">
+        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
+        <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
+        <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
+        <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
+      </div>
+      <p id="captureStatus" role="status" aria-live="polite">วางภาพด้วย Ctrl+V / Cmd+V หรือแชร์ภาพมายังแอป หากไม่รองรับให้เลือกภาพจากอัลบั้ม</p>
+      <button id="btnResumeShare" type="button" class="btn btn-secondary">รับภาพแชร์ที่ค้างไว้</button>
+      <p id="voiceStatus" role="status" aria-live="polite"></p>
+      <div id="dailyQuickChips" class="automation-bar" aria-label="รายจ่ายที่เคยยืนยัน"></div>
+      <button id="btnClearLearning" type="button" class="btn btn-secondary">ล้างร้านค้าและชิปที่จำไว้</button>
+      <div class="automation-grid">
+      <div class="glass-subcard" role="group" aria-labelledby="batchPayTitle">
+        <h3 id="batchPayTitle">จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</h3>
+        <label for="batchPayDate">วันที่ชำระ</label><input id="batchPayDate" type="date" required>
+        <div id="batchPayItems"></div>
+        <button id="btnBatchPay" type="button" class="btn btn-primary">ยืนยันจ่ายรายการที่เลือก</button>
+        <p id="batchPayStatus" role="status" aria-live="polite"></p>
+      </div>
+      <div class="glass-subcard" role="group" aria-labelledby="fatherCycleTitle">
+        <h3 id="fatherCycleTitle">รอบประกันพ่อที่ยืนยันเอง</h3>
+        <label for="fatherAnchor">วันที่อ้างอิง</label><input id="fatherAnchor" type="date">
+        <label for="fatherInterval">ห่างกันกี่เดือน</label><input id="fatherInterval" type="number" min="1" max="120" step="1">
+        <button id="btnSaveFatherCycle" type="button" class="btn btn-secondary">ยืนยันรอบประกันพ่อ</button>
+        <p id="fatherCycleStatus" role="status" aria-live="polite">ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ</p>
+      </div>
+      </div>
+    </section></details>
+    </section>
+    <section id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" tabindex="-1" hidden>
+      <div class="card"><h2>วิเคราะห์การเงิน</h2><label for="analyticsMonth">เดือนสุดท้ายของช่วง 6 เดือน</label><input id="analyticsMonth" class="form-control" type="month"><p>ไม่รวมการโอนภายใน เงินเดือนนับจากยอดจัดสรรรวมเพียงครั้งเดียว</p><div id="financialCharts" aria-live="polite"></div></div>
+    </section>
+    <section id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="-1" hidden><section class="card" aria-labelledby="historySectionTitle">
         <div class="card-header">
           <div>
             <h2 id="historySectionTitle" class="card-title">รายการธุรกรรมและวิเคราะห์วัตถุประสงค์</h2>
@@ -271,7 +271,7 @@
           </div>
 
           <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 5 ส่วน)</label>
+            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 6 ส่วน)</label>
             <select id="filterFundSelect" class="form-control">
               <option value="all">ทุกส่วนของเงิน (1–5)</option>
               <option value="investment_stock">1. เงินลงทุน (หุ้น)</option>
@@ -279,6 +279,7 @@
               <option value="fixed_expense">3. ค่าใช้จ่ายคงที่</option>
               <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)</option>
               <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
+              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
             </select>
           </div>
 
@@ -297,9 +298,14 @@
         <div id="transactionListContainer" class="tx-list" aria-live="polite">
           <div class="empty-state">ยังไม่มีรายการบันทึก เริ่มต้นด้วยการสแกนใบเสร็จหรือกดปุ่ม "+ เพิ่มรายการใหม่"</div>
         </div>
-      </section>
-    </div>
+      </section></section>
   </main>
+  <nav class="bottom-nav" role="tablist" aria-label="เมนูหลัก">
+    <button id="tab-home" type="button" role="tab" aria-controls="panel-home" aria-selected="true">⌂<span>หน้าหลัก</span></button>
+    <button id="tab-funds" type="button" role="tab" aria-controls="panel-funds" aria-selected="false" tabindex="-1">◉<span>กระปุก</span></button>
+    <button id="tab-analytics" type="button" role="tab" aria-controls="panel-analytics" aria-selected="false" tabindex="-1">▥<span>กราฟ</span></button>
+    <button id="tab-history" type="button" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1">≡<span>ประวัติ</span></button>
+  </nav>
 
   
   
@@ -398,11 +404,12 @@
 
           <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
             <label for="txFormFundBucket" class="form-label">
-              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 5 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
+              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
             </label>
             <select id="txFormFundBucket" class="form-control" required>
               <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
-              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ประกันแดน/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
+              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
+              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
               <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — เก็บสะสมเงินเหลือใช้)</option>
               <option value="home_building">2. เงินเก็บสร้างบ้าน (Fix 13,000/เดือน)</option>
               <option value="investment_stock">1. เงินลงทุน (หุ้น — Fix 6,500/เดือน)</option>
@@ -589,13 +596,13 @@
   <div id="salarySplitModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="salarySplitModalTitle" hidden>
     <div class="modal-panel" style="max-width:600px;">
       <div class="modal-header">
-        <h2 id="salarySplitModalTitle" class="card-title">แบ่งเงินเดือนออกเป็น 5 ส่วน (Fix ประจำเดือน)</h2>
+        <h2 id="salarySplitModalTitle" class="card-title">แบ่งเงินเดือนออกเป็น 6 ส่วน (Fix ประจำเดือน)</h2>
         <button type="button" id="btnCloseSalarySplitModal" class="btn btn-secondary btn-sm">ปิด</button>
       </div>
 
       <form id="salarySplitForm" class="modal-body" novalidate>
         <div class="alert-box alert-info" style="font-size:0.82rem;">
-          ระบบตั้งค่ายอด Fix รายเดือนตามสูตรของคุณไว้ให้แล้ว (เก็บสร้างบ้าน 13,000 / ลงทุนหุ้น 6,500 / ประกันพ่อ 1,300 หรือ 2,600 / ประกันแดน 2,900 / ให้น้องมายด์ 2,000 / น้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500) สามารถปรับแก้ตัวเลขก่อนยืนยันได้
+          ระบบตั้งค่ายอด Fix รายเดือนตามสูตรของคุณไว้ให้แล้ว (เก็บสร้างบ้าน 13,000 / ลงทุนหุ้น 6,500 / ประกันพ่อ 1,300 หรือ 2,600 / เงินสะสมประกันแดน 2,900 แยกที่กระปุก 6 / ให้น้องมายด์ 2,000 / น้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500) สามารถปรับแก้ตัวเลขก่อนยืนยันได้
         </div>
 
         <div id="salarySplitErrorBox" class="alert-box alert-error" hidden></div>
@@ -625,13 +632,13 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
               <label for="salarySplitFund3Input" class="form-label" style="margin:0;">3. ค่าใช้จ่ายคงที่รวม (บาท)</label>
               <select id="salarySplitFatherInsMode" class="form-control" style="width:auto;min-height:32px;padding:0.2rem 0.5rem;font-size:0.8rem;">
-                <option value="1300">รอบปกติ: ประกันพ่อ 1,300 บาท (รวมคงที่ 12,700)</option>
-                <option value="2600">รอบเดือนที่ 3: ประกันพ่อ 2,600 บาท (รวมคงที่ 14,000)</option>
+                <option value="1300">รอบปกติ: ประกันพ่อ 1,300 บาท (รวมคงที่ 9,800)</option>
+                <option value="2600">รอบเดือนที่ 3: ประกันพ่อ 2,600 บาท (รวมคงที่ 11,100)</option>
               </select>
             </div>
-            <input type="number" id="salarySplitFund3Input" class="form-control" step="0.01" min="0" value="12700" required>
+            <input type="number" id="salarySplitFund3Input" class="form-control" step="0.01" min="0" value="9800" required>
             <p style="font-size:0.76rem;color:var(--text-muted);margin-top:0.35rem;">
-              ประกอบด้วย: ประกันพ่อ (<span id="labelFatherInsAmount">1,300</span>) + ประกันแดน (2,900) + ให้น้องมายด์ (2,000) + ค่าน้ำ/ค่าไฟ/ค่าโทรศัพท์/ค่าเรียนพิเศษลูก (6,500)
+              ประกอบด้วย: ประกันพ่อ (<span id="labelFatherInsAmount">1,300</span>) + ให้น้องมายด์ (2,000) + ค่าน้ำ/ค่าไฟ/ค่าโทรศัพท์/ค่าเรียนพิเศษลูก (6,500)
             </p>
           </div>
 
@@ -640,6 +647,7 @@
             <input type="number" id="salarySplitFund4Input" class="form-control" step="0.01" min="0" value="0" required>
           </div>
 
+          <div class="form-group"><label for="salarySplitFund6Input" class="form-label">6. เงินเก็บประกันแดน — สะสม 2,900 ต่อเดือน / 34,800 ต่อปี</label><input id="salarySplitFund6Input" class="form-control" type="number" min="0" step="0.01" value="2900" required></div>
           <div class="form-group">
             <label for="salarySplitFund5Input" class="form-label">5. ค่าใช้จ่ายทั่วไป (ส่วนที่เหลือใช้จ่าย)</label>
             <input type="number" id="salarySplitFund5Input" class="form-control" step="0.01" min="0" value="0" required>
@@ -647,13 +655,13 @@
         </div>
 
         <div id="salarySplitSummaryPreview" class="alert-box alert-success" style="margin-top:0.85rem;margin-bottom:0;font-size:0.84rem;">
-          ยอดรวม Fix (ข้อ 1 + 2 + 3) = ฿32,200.00 | กรอกยอดเงินเดือนรวมเพื่อคำนวณข้อ 5 อัตโนมัติ
+          ยอดกันเงิน (ข้อ 1 + 2 + 3 + 6) = ฿32,200.00 | กรอกยอดเงินเดือนรวมเพื่อคำนวณข้อ 5 อัตโนมัติ
         </div>
       </form>
 
       <div class="modal-footer">
         <button type="button" id="btnCancelSalarySplit" class="btn btn-secondary">ยกเลิก</button>
-        <button type="button" id="btnConfirmSalarySplit" class="btn btn-primary">ยืนยันแบ่งเงินเดือนทั้ง 5 ส่วน</button>
+        <button type="button" id="btnConfirmSalarySplit" class="btn btn-primary">ยืนยันแบ่งเงินเดือนทั้ง 6 ส่วน</button>
       </div>
     </div>
   </div>
@@ -704,14 +712,16 @@ investment_stock:'1. เงินลงทุน (หุ้น)',
 home_building:'2. เงินเก็บสร้างบ้าน',
 fixed_expense:'3. ค่าใช้จ่ายคงที่',
 emergency_personal:'4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-general_expense:'5. ค่าใช้จ่ายทั่วไป'
+general_expense:'5. ค่าใช้จ่ายทั่วไป',
+dan_insurance:'6. เงินเก็บประกันแดน'
 };
 const FUND_BUCKET_ORDER=[
 'investment_stock',
 'home_building',
 'fixed_expense',
 'emergency_personal',
-'general_expense'
+'general_expense',
+'dan_insurance'
 ];
 const FIXED_MONTHLY_PRESETS={
 HOME_BUILDING:13000,
@@ -719,10 +729,11 @@ INVESTMENT_STOCK:6500,
 FATHER_INSURANCE_NORMAL:1300,
 FATHER_INSURANCE_EVERY_3RD:2600,
 DAN_INSURANCE:2900,
+DAN_INSURANCE_ANNUAL_TARGET:34800,
 SISTER_MIND:2000,
 UTILITIES_TUITION_BUDGET:6500,
-FIXED_EXPENSE_TOTAL_NORMAL:12700,
-FIXED_EXPENSE_TOTAL_EVERY_3RD:14000
+FIXED_EXPENSE_TOTAL_NORMAL:9800,
+FIXED_EXPENSE_TOTAL_EVERY_3RD:11100
 };
 const _0x1a7={
 settings:{
@@ -822,6 +833,7 @@ purposeAnalysis='',
 note=''
 ){
 const text=`${merchant} ${itemsSummary} ${purposeAnalysis} ${note}`.toLowerCase();
+if(/ประกัน\s*แดน|\[fixed_item:dan_insurance\]/.test(text))return'dan_insurance';
 if(/(หุ้น|กองทุน|ปันผล|หลักทรัพย์|พอร์ต|dime|innovestx|streaming|settrade|stock)/.test(text)){
 return'investment_stock';
 }
@@ -1011,7 +1023,8 @@ investment_stock:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,al
 home_building:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
 fixed_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
 emergency_personal:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
-general_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0}
+general_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
+dan_insurance:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0}
 };
 let fatherInsPaidCents=0;
 let danInsPaidCents=0;
@@ -1021,13 +1034,14 @@ let detectedFatherInsTarget=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL;
 const seenIds=new Set();
 const filtered=[];
 for(const tx of transactions){
-if(!tx||tx.deleted_at)continue;
+if(!tx||tx.deleted_at||tx.pending_delete||(tx.user_id||null)!==(_0x1a7.currentUser?.id||null))continue;
 const id=String(tx.id||'');
 if(id&&seenIds.has(id))continue;
 if(id)seenIds.add(id);
-const d=String(tx.transaction_date||tx.date||'');
-const cents=Math.round(Number(tx.amount||0)*100);
-if(!Number.isFinite(cents)||cents<=0)continue;
+const d=transactionCalendarDate(tx.transaction_date||tx.date);
+if(!d)continue;
+const cents=transactionAmountCents(tx.amount);
+if(!Number.isSafeInteger(cents)||cents<=0)continue;
 const rawBucket=typeof tx.fund_bucket==='string'?tx.fund_bucket.trim():'';
 const bucket=(FUND_BUCKET_LABELS)[rawBucket]
 ?(rawBucket)
@@ -1049,6 +1063,7 @@ detectedFatherInsTarget=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_EVERY_3RD;
 }
 }else if(tx.type==='expense'){
 fundStatsCents[bucket].monthExpenseCents+=cents;
+if(isInternalTransfer(tx))continue;
 const hay=`${tx.merchant||''} ${tx.items_summary||''} ${tx.purpose_analysis||''} ${tx.note||''}`.toLowerCase();
 if(hay.includes('ประกันพ่อ')||hay.includes('[fixed_item:father_insurance]')){
 fatherInsPaidCents+=cents;
@@ -1070,8 +1085,9 @@ utilitiesTuitionPaidCents+=cents;
 }
 }
 for(const tx of filtered){
-const cents=Math.round(Number(tx.amount||0)*100);
-if(!Number.isFinite(cents)||cents<=0)continue;
+const cents=transactionAmountCents(tx.amount);
+if(!Number.isSafeInteger(cents)||cents<=0)continue;
+if(isInternalTransfer(tx))continue;
 const status=tx.sync_status||'local_only';
 if(tx.type==='income'){
 totalIncomeCents+=cents;
@@ -1102,7 +1118,7 @@ amount:cents/100,
 percentage:totalExpenseCents>0?Math.round((cents/totalExpenseCents)*10000)/100:0
 }))
 .sort((a,b)=>b.amount-a.amount);
-const cumulativeBuckets=new Set(['investment_stock','home_building','emergency_personal']);
+const cumulativeBuckets=new Set(['investment_stock','home_building','emergency_personal','dan_insurance']);
 const fundBalances=FUND_BUCKET_ORDER.map((bucket)=>{
 const st=fundStatsCents[bucket];
 const isCumulative=cumulativeBuckets.has(bucket);
@@ -1134,13 +1150,6 @@ paidAmount:fatherInsPaidCents/100,
 targetAmount:detectedFatherInsTarget,
 isPaid:fatherInsPaidCents>=FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL*100
 },
-dan_insurance:{
-key:'dan_insurance',
-label:'ประกันแดน (Fix 2,900/เดือน)',
-paidAmount:danInsPaidCents/100,
-targetAmount:FIXED_MONTHLY_PRESETS.DAN_INSURANCE,
-isPaid:danInsPaidCents>=FIXED_MONTHLY_PRESETS.DAN_INSURANCE*100
-},
 sister_mind:{
 key:'sister_mind',
 label:'ให้น้อง (มายด์) (Fix 2,000/เดือน)',
@@ -1169,7 +1178,8 @@ localOrPendingCount,
 failedCount,
 categoryBreakdown,
 fundBalances,
-fixedChecklistStatus
+fixedChecklistStatus,
+insurancePaymentStatus:{paidAmount:danInsPaidCents/100}
 };
 }
 function _0x1a8(){
@@ -1610,6 +1620,10 @@ async function saveTransaction(txInput){
 const validation=validateTransactionInput(txInput);
 if(!validation.valid){
 throw new Error(validation.errors.join('\n'));
+}
+const fixedMarker=String(txInput.note||'').match(/\[fixed_item:(dan_insurance)\]/);
+if(!txInput.id&&txInput.type==='expense'&&fixedMarker){
+return(await commitAutomation([{...validation.normalized,fund_bucket:'dan_insurance'}],['fixed:dan_insurance:'+validation.normalized.transaction_date.slice(0,7)]))[0];
 }
 const nowIso=new Date().toISOString();
 const existingId=typeof txInput.id==='string'&&txInput.id.trim()?txInput.id.trim():null;
@@ -2084,7 +2098,200 @@ await syncPendingTransactions();
 }
 return{imported,rejected,duplicateCount};
 }
+function upgradeSalaryTemplate(template){
+if(!template||template.version===2)return template;
+const next={...template,needs_review:true};
+if(template.version===1&&[12700,14000].includes(template.fixed_expense)&&
+template.investment_stock===6500&&template.home_building===13000&&
+template.emergency_personal===0&&
+Number.isFinite(template.total_salary)&&template.general_expense>=0&&
+Math.round((template.investment_stock+template.home_building+template.fixed_expense+template.emergency_personal+template.general_expense)*100)===Math.round(template.total_salary*100)){
+next.fixed_expense=(Math.round(template.fixed_expense*100)-290000)/100;
+next.dan_insurance=2900;next.version=2;next.needs_review=false;
+}else{next.dan_insurance=template.dan_insurance??0;}
+return next;
+}
+function legacyInsuranceReview(rows,month){
+const migrated=new Set(rows.filter(row=>(row.user_id||null)===(_0x1a7.currentUser?.id||null)&&!row.deleted_at&&!row.pending_delete).flatMap(row=>[...String(row.note||'').matchAll(/\[INSURANCE_RECLASS:([^:]+):([^\]]+)\]/g)].filter(m=>m[1]===month).map(m=>m[2])));
+return rows.filter(row=>!migrated.has(row.id)&&!row.deleted_at&&!row.pending_delete&&
+(row.user_id||null)===(_0x1a7.currentUser?.id||null)&&row.transaction_date?.slice(0,7)===month&&
+row.fund_bucket==='fixed_expense'&&!row.note?.includes('[SIX_FUNDS_V2]')&&
+(row.note?.includes('[SALARY_SPLIT:'+month+':fixed_expense]')||
+row.note?.includes('[fixed_item:dan_insurance]')||/ประกัน\s*แดน/.test(`${row.merchant} ${row.items_summary} ${row.note}`)));
+}
+async function upgradeLegacyInsurance(month,confirmed=false){
+const owner=_0x1a7.currentUser?.id||null;
+if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('เดือนที่เลือกไม่ถูกต้อง');
+const rows=(await _0x1a9()).filter(row=>(row.user_id||null)===(_0x1a7.currentUser?.id||null));
+const candidates=legacyInsuranceReview(rows,month);
+if(!candidates.length)return{upgraded:false,pending:0};
+const rolled=rows.some(row=>row.note?.includes('SURPLUS_ROLLOVER_')&&row.note?.includes(month));
+const safe=!rolled&&candidates.every(row=>(row.type==='expense'&&row.note?.includes('[fixed_item:dan_insurance]'))||
+(row.type==='income'&&[12700,14000].includes(row.amount)&&row.note?.includes('[SALARY_SPLIT:'+month+':fixed_expense]')));
+if(!safe||!confirmed)return{upgraded:false,pending:candidates.reduce((sum,row)=>sum+Math.round(row.amount*100),0)/100,needs_review:true};
+const inputs=[];
+for(const row of candidates){
+const amount=row.type==='income'?2900:row.amount;
+for(const bucket of['fixed_expense','dan_insurance'])inputs.push({
+transaction_date:row.transaction_date,merchant:'แยกเงินเก็บประกันแดนจากข้อมูลเดิม',amount,
+type:bucket==='fixed_expense'?(row.type==='income'?'expense':'income'):row.type,
+currency:'THB',category:'transfer_other',fund_bucket:bucket,source_type:'manual',
+note:'[INSURANCE_RECLASS:'+month+':'+row.id+']'
+});
+}
+if((_0x1a7.currentUser?.id||null)!==owner)throw new Error('บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่');
+const records=await commitAutomation(inputs,candidates.map(row=>'insurance-upgrade:'+month+':'+row.id));
+return{upgraded:true,pending:0,records};
+}
 function automationKey(name){return`${_0x1a7.currentUser?.id||'local'}:${name}`;}
+function transactionAmountCents(value){
+if(typeof value!=='number'&&(typeof value!=='string'||!/^\d+(?:\.\d+)?$/.test(value)))return 0;
+const amount=Number(value);
+const cents=Math.round(amount*100);
+return Number.isSafeInteger(cents)&&amount>0&&amount<=9999999999.99?cents:0;
+}
+function transactionCalendarDate(value){
+if(typeof value!=='string')return null;
+if(/^\d{4}-\d{2}-\d{2}$/.test(value))return normalizeIsoDate(value).date;
+if(!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value)||!normalizeIsoDate(value.slice(0,10)).date)return null;
+const instant=new Date(value);
+if(!Number.isFinite(instant.getTime()))return null;
+return new Date(instant.getTime()+7*3600000).toISOString().slice(0,10);
+}
+function isInternalTransfer(row){
+return/\[(?:SURPLUS_ROLLOVER_(?:IN|OUT)|INSURANCE_RECLASS):/.test(row.note || '');
+}
+function aggregateFinancialCharts(rows       , month        ) {
+if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('เดือนที่เลือกไม่ถูกต้อง');
+const[year,mon]=month.split('-').map(Number);
+const months=Array.from({length:6},(_,i)=>({
+month:new Date(Date.UTC(year,mon-6+i,1)).toISOString().slice(0,7),incomeCents:0,expenseCents:0
+}));
+const categories=new Map();const seen=new Set();
+let availableCents=0,yearIncomeCents=0,yearExpenseCents=0;
+for(const row of rows){
+if(!row||row.deleted_at||row.pending_delete||(row.user_id||null)!==(_0x1a7.currentUser?.id||null))continue;
+const date=transactionCalendarDate(row.transaction_date);
+const cents=transactionAmountCents(row.amount);
+if(!row.id||!date||!Number.isSafeInteger(cents)||cents<=0||!['income','expense'].includes(row.type)||seen.has(row.id))continue;
+seen.add(row.id);
+const ym=date.slice(0,7);
+if(row.fund_bucket==='dan_insurance'&&ym<=month){
+availableCents+=row.type==='income'?cents:-cents;
+if(date.slice(0,4)===month.slice(0,4)){
+if(row.type==='income')yearIncomeCents+=cents;else yearExpenseCents+=cents;
+}
+}
+if(isInternalTransfer(row))continue;
+const target=months.find(entry=>entry.month===ym);
+if(target)target[row.type==='income'?'incomeCents':'expenseCents']+=cents;
+if(ym===month&&row.type==='expense'){
+const category=String(row.category||'unknown');
+categories.set(category,(categories.get(category)||0)+cents);
+}
+}
+return{months,categories:Array.from(categories,([category,cents])=>({category,label:_0x1a4[category]||category,amount:cents/100})),
+insurance:{available:availableCents/100,yearIncome:yearIncomeCents/100,yearExpense:yearExpenseCents/100,
+target:34800,percentage:Math.max(0,Math.min(100,availableCents/34800))}};
+}
+function renderFinancialCharts(month){
+const host=document.getElementById('financialCharts');if(!host)return;
+const data=aggregateFinancialCharts(_0x1a7.transactions,month);
+host.replaceChildren();
+const svgNode=(tag,attrs={},text='')=>{
+const node=document.createElementNS('http://www.w3.org/2000/svg',tag);
+Object.entries(attrs).forEach(([key,value])=>node.setAttribute(key,String(value)));
+if(text)node.textContent=text;return node;
+};
+const bars=svgNode('svg',{viewBox:'0 0 360 210',role:'img','aria-labelledby':'cashflowTitle cashflowDesc'});
+bars.appendChild(svgNode('title',{id:'cashflowTitle'},'รายรับเทียบรายจ่ายย้อนหลัง 6 เดือน'));
+bars.appendChild(svgNode('desc',{id:'cashflowDesc'},'สีเขียวคือรายรับ สีชมพูคือรายจ่าย ไม่รวมการโอนระหว่างกระปุก ดูยอดครบถ้วนในตารางด้านล่าง'));
+const max=Math.max(1,...data.months.flatMap(row=>[row.incomeCents,row.expenseCents]));
+const table=document.createElement('table');table.className='chart-table';
+const caption=document.createElement('caption');caption.textContent='รายรับ (สีเขียว) / รายจ่าย (สีชมพู) หน่วยบาท';table.appendChild(caption);
+const heading=document.createElement('tr');
+for(const label of['เดือน','รายรับ','รายจ่าย']){const cell=document.createElement('th');cell.scope='col';cell.textContent=label;heading.appendChild(cell);}table.appendChild(heading);
+data.months.forEach((row,i)=>{
+[row.incomeCents,row.expenseCents].forEach((cents,j)=>{
+const height=cents/max*150;
+bars.appendChild(svgNode('rect',{x:i*59+10+j*20,y:170-height,width:17,height,rx:3,fill:j?'#d44977':'#168065'}));
+});
+bars.appendChild(svgNode('text',{x:i*59+28,y:193,'text-anchor':'middle',fill:'currentColor','font-size':11},row.month.slice(2)));
+const tr=document.createElement('tr');
+for(const value of[row.month,formatCurrency(row.incomeCents/100),formatCurrency(row.expenseCents/100)]){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
+table.appendChild(tr);
+});
+host.appendChild(bars);host.appendChild(table);
+const donut=svgNode('svg',{viewBox:'0 0 240 200',role:'img','aria-labelledby':'expenseDonutTitle'});
+donut.appendChild(svgNode('title',{id:'expenseDonutTitle'},'สัดส่วนหมวดรายจ่ายเดือน '+month));
+const sum=data.categories.reduce((total,row)=>total+row.amount,0);
+const colors=['#168065','#d44977','#406bd5','#a45813','#7549be','#007c91'];let offset=0;
+donut.appendChild(svgNode('circle',{cx:120,cy:100,r:65,fill:'none',stroke:'#ced4df','stroke-width':25}));
+const legend=document.createElement('ul');legend.className='chart-legend';
+data.categories.forEach((row,i)=>{
+const percent=sum>0?row.amount/sum*100:0;
+donut.appendChild(svgNode('circle',{cx:120,cy:100,r:65,fill:'none',stroke:colors[i%colors.length],'stroke-width':25,
+pathLength:100,'stroke-dasharray':percent+' '+(100-percent),'stroke-dashoffset':-offset,transform:'rotate(-90 120 100)'}));offset+=percent;
+const li=document.createElement('li');li.textContent=row.label+': '+formatCurrency(row.amount)+' ('+percent.toFixed(1)+'%)';
+li.style.borderLeft='5px solid '+colors[i%colors.length];legend.appendChild(li);
+});
+donut.appendChild(svgNode('text',{x:120,y:104,'text-anchor':'middle',fill:'currentColor','font-size':13},sum?formatCurrency(sum):'ยังไม่มีรายจ่าย'));
+host.appendChild(donut);host.appendChild(legend);
+const gauge=document.getElementById('insuranceGauge');
+if(gauge){
+gauge.replaceChildren();const info=document.createElement('p');
+info.textContent='ประกันแดนพร้อมใช้ '+formatCurrency(data.insurance.available)+' / เป้าหมายรายปี '+formatCurrency(34800)+
+' • เติมสะสมปี '+month.slice(0,4)+': '+formatCurrency(data.insurance.yearIncome)+' • จ่ายจริง '+formatCurrency(data.insurance.yearExpense);
+const progress=document.createElement('progress');progress.max=100;progress.value=data.insurance.percentage;progress.setAttribute('aria-label','เงินพร้อมใช้ประกันแดนเทียบเป้าหมายรายปี');
+gauge.appendChild(info);gauge.appendChild(progress);
+}
+}
+let activePanel='home';let navigationBound=false;
+function selectAppPanel(name,focus=true){
+if(!['home','funds','analytics','history'].includes(name))return;
+activePanel=name;
+for(const panel of['home','funds','analytics','history']){
+const element=document.getElementById('panel-'+panel);if(element)element.hidden=panel!==name;
+const tab=document.getElementById('tab-'+panel);
+if(tab){tab.setAttribute('aria-selected',String(panel===name));tab.tabIndex=panel===name?0:-1;}
+}
+if(name==='analytics')renderFinancialCharts(document.getElementById('dashboardMonthPicker').value||getBangkokTodayIso().slice(0,7));
+if(focus)document.getElementById('panel-'+name)?.focus();
+}
+function bindAppNavigation(){
+if(navigationBound)return;navigationBound=true;
+const panels=['home','funds','analytics','history'];
+panels.forEach((name,i)=>{
+document.getElementById('tab-'+name)?.addEventListener('click',()=>selectAppPanel(name));
+document.getElementById('tab-'+name)?.addEventListener('keydown',event=>{
+let next=i;
+if(event.key==='ArrowRight')next=(i+1)%4;
+else if(event.key==='ArrowLeft')next=(i+3)%4;
+else if(event.key==='Home')next=0;
+else if(event.key==='End')next=3;else return;
+event.preventDefault();selectAppPanel(panels[next],false);document.getElementById('tab-'+panels[next])?.focus();
+});
+document.getElementById('shortcut-'+name)?.addEventListener('click',()=>selectAppPanel(name));
+});
+document.getElementById('heroCapture')?.addEventListener('click',()=>document.getElementById('btnChooseGallery')?.click());
+document.getElementById('shortcut-salary')?.addEventListener('click',()=>document.getElementById('btnOpenSalarySplitModal')?.click());
+document.getElementById('btnReviewLegacyInsurance')?.addEventListener('click',async()=>{
+const month=document.getElementById('dashboardMonthPicker').value||getBangkokTodayIso().slice(0,7);
+const review=await upgradeLegacyInsurance(month);
+if(!review.needs_review){_0x1c1('ไม่มีข้อมูลเก่ารอตรวจสอบ','info');return;}
+if(await _0x1c0('ตรวจการแยกประกันแดน','ยอดรายการเดิมรอตรวจ '+formatCurrency(review.pending)+' ระบบจะแยกเฉพาะ marker ที่ชัดเจนและเดือนที่ยังไม่โอนเงินเหลือใช้ ยืนยันหลังตรวจประวัติแล้วหรือไม่?')){
+const result=await upgradeLegacyInsurance(month,true);
+_0x1c1(result.upgraded?'แยกยอดแล้ว ยอดรวมคงเดิม':'ข้อมูลคลุมเครือ กรุณาแก้ไขผ่านประวัติและตรวจยอดก่อนโอน','info');
+}
+});
+document.getElementById('analyticsMonth')?.addEventListener('change',event=>{
+const month=event.target.value;
+if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return;
+document.getElementById('dashboardMonthPicker').value=month;
+_0x1b6();
+});
+selectAppPanel(activePanel,false);
+}
 async function automationPreference(name,value=undefined){
 const db=await _0x1a8();
 if(!db)throw new Error('ต้องเปิดใช้งาน IndexedDB เพื่อจำข้อมูลอย่างปลอดภัย');
@@ -2116,6 +2323,46 @@ const store=tx.objectStore('automation');
 let pending=ledger.length;
 let reason='ไม่สามารถบันทึกรายการทั้งหมดได้';
 const write=()=>{
+const scan=tx.objectStore(_0x1a2).getAll();
+scan.onsuccess=()=>{
+const existing=scan.result.filter(row=>(row.user_id||null)===owner&&!row.deleted_at&&!row.pending_delete);
+const duplicate=keys.some(key=>{
+const parts=key.split(':');
+if(parts[0]==='salary')return existing.some(row=>row.note?.includes('[SALARY_SPLIT:'+parts[1]+':'));
+if(parts[0]==='fixed')return existing.some(row=>row.transaction_date?.slice(0,7)===parts[2]&&row.note?.includes('[fixed_item:'+parts[1]+']'));
+if(parts[0]==='rollover')return existing.some(row=>row.note?.includes('[SURPLUS_ROLLOVER_OUT:'+parts[1]+':')||row.note?.includes('[SURPLUS_ROLLOVER_IN:'+parts[1]+':'));
+if(parts[0]==='insurance-upgrade')return existing.some(row=>row.note?.includes('[INSURANCE_RECLASS:'+parts[1]+':'+parts[2]+']'));
+return false;
+});
+if(duplicate){reason='รอบนี้มีรายการเดิมแล้ว กรุณาตรวจประวัติ';tx.abort();return;}
+if(keys.some(key=>key.startsWith('rollover:'))&&legacyInsuranceReview(existing,keys[0].split(':')[1]).length){reason='มีข้อมูลประกันแดนเก่ารอตรวจสอบ';tx.abort();return;}
+const upgrade=keys.find(key=>key.startsWith('insurance-upgrade:'));
+if(upgrade){
+const month=upgrade.split(':')[1];
+const latest=legacyInsuranceReview(existing,month);
+const sourceIds=keys.map(key=>key.split(':')[2]);
+const rolled=existing.some(row=>row.note?.includes('SURPLUS_ROLLOVER_')&&row.note?.includes(month));
+const unchanged=latest.length===sourceIds.length&&latest.every(row=>{
+const pair=records.filter(record=>record.note==='[INSURANCE_RECLASS:'+month+':'+row.id+']');
+const amount=row.type==='income'?2900:row.amount;
+return sourceIds.includes(row.id)&&pair.length===2&&pair.every(record=>record.amount===amount)&&
+((row.type==='income'&&[12700,14000].includes(row.amount)&&row.note?.includes('[SALARY_SPLIT:'+month+':fixed_expense]'))||
+(row.type==='expense'&&row.note?.includes('[fixed_item:dan_insurance]')));
+});
+if(rolled||!unchanged){reason='ข้อมูลเก่าเปลี่ยน กรุณาตรวจอีกครั้งก่อนแยกยอด';tx.abort();return;}
+}
+const rollover=keys.find(key=>key.startsWith('rollover:'));
+if(rollover){
+const metrics=calculateDashboardMetrics(existing,rollover.split(':')[1]);
+for(const row of records.filter(row=>row.type==='expense')){
+const balance=metrics.fundBalances.find(fund=>fund.bucket===row.fund_bucket)?.availableBalance;
+if(Math.round(Number(balance)*100)!==Math.round(row.amount*100)){reason='ยอดเปลี่ยนในแท็บอื่น กรุณาตรวจและลองโอนใหม่';tx.abort();return;}
+}
+}
+writeRecords();
+};
+};
+const writeRecords=()=>{
 if((_0x1a7.currentUser?.id||null)!==owner){reason='บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่';tx.abort();return;}
 ledger.forEach(id=>store.put({id,value:now}));
 records.forEach(record=>tx.objectStore(_0x1a2).put(record));
@@ -2174,7 +2421,7 @@ const cycle=fatherInsuranceCycle(await automationPreference('father-cycle'),mont
 if(cycle.status!=='due')throw new Error('กรุณายืนยันรอบประกันพ่อที่ถึงกำหนดก่อน');
 }
 inputs.push({...preset,amount:Number(item.amount),transaction_date:date,type:'expense',
-currency:'THB',source_type:'manual',fund_bucket:'fixed_expense',note:`[fixed_item:${item.key}]`});
+currency:'THB',source_type:'manual',fund_bucket:item.key==='dan_insurance'?'dan_insurance':'fixed_expense',note:`[fixed_item:${item.key}]`});
 }
 const existing=await _0x1a9();
 if(items.some(item=>existing.some(tx=>tx.user_id===(_0x1a7.currentUser?.id||null)&&
@@ -2317,6 +2564,7 @@ document.getElementById('fatherCycleStatus').textContent=cycle.due?`รอบถ
 host.innerHTML='';
 const all=await _0x1a9();
 for(const[key,preset]of Object.entries(BATCH_PRESETS)){
+if(key==='dan_insurance')continue;
 const paid=all.some(tx=>tx.user_id===(_0x1a7.currentUser?.id||null)&&tx.transaction_date?.slice(0,7)===date.slice(0,7)&&tx.note?.includes(`[fixed_item:${key}]`));
 const row=document.createElement('div');row.className='batch-row';
 const select=document.createElement('input');select.type='checkbox';select.id=`batch-${key}`;select.dataset.key=key;
@@ -2326,12 +2574,14 @@ const amount=document.createElement('input');amount.type='number';amount.min='0.
 row.appendChild(select);row.appendChild(label);row.appendChild(amount);host.appendChild(row);
 }
 }
+let automationBound=false;
 function bindAutomationEvents(){
 const on=(id,event,handler)=>document.getElementById(id)?.addEventListener(event,handler);
 const safe=(fn)=>async()=>{try{await fn();}catch(err){_0x1c1(err.message||'ดำเนินการไม่สำเร็จ','error');}};
 let theme='dark-red';try{theme=localStorage.getItem('slipsense_theme')??'dark-red';}catch(_){}
 if(!['light','dark','blue','dark-red'].includes(theme))theme='light';
 document.documentElement.setAttribute('data-theme',theme);document.getElementById('themeSelect').value=theme;
+if(automationBound)return;automationBound=true;
 on('themeSelect','change',event=>{document.documentElement.setAttribute('data-theme',event.target.value);try{localStorage.setItem('slipsense_theme',event.target.value);}catch(_){}});
 document.addEventListener('paste',handleReceiptPaste);
 on('btnResumeShare','click',resumeSharedReceipt);
@@ -2343,13 +2593,13 @@ on('txFormMerchant','blur',safe(suggestMerchantCategory));
 on('btnClearLearning','click',safe(async()=>{await automationPreference('learning',{merchants:{},chips:[]});await renderQuickChips();}));
 on('btnClearSalaryTemplate','click',safe(()=>automationPreference('salary',null)));
 on('btnUseSalaryTemplate','click',safe(async()=>{
-const template=await automationPreference('salary');if(!template)throw new Error('ยังไม่มีแบบเงินเดือนที่ยืนยันแล้ว');
+const template=upgradeSalaryTemplate(await automationPreference('salary'));if(!template)throw new Error('ยังไม่มีแบบเงินเดือนที่ยืนยันแล้ว');
 document.getElementById('btnOpenSalarySplitModal')?.click();
 document.getElementById('salarySplitModal').hidden=false;
-const fields={TotalInput:'total_salary',Fund1Input:'investment_stock',Fund2Input:'home_building',Fund3Input:'fixed_expense',Fund4Input:'emergency_personal',Fund5Input:'general_expense',FatherInsMode:'father_insurance_mode'};
-Object.entries(fields).forEach(([suffix,key])=>{document.getElementById(`salarySplit${suffix}`).value=String(template[key]);});
+const fields={TotalInput:'total_salary',Fund1Input:'investment_stock',Fund2Input:'home_building',Fund3Input:'fixed_expense',Fund4Input:'emergency_personal',Fund5Input:'general_expense',Fund6Input:'dan_insurance',FatherInsMode:'father_insurance_mode'};
+Object.entries(fields).forEach(([suffix,key])=>{document.getElementById(`salarySplit${suffix}`).value=String(template[key]??0);});
 document.getElementById('salarySplitDate').value=getBangkokTodayIso();
-document.getElementById('salarySplitSummaryPreview').textContent='ใช้แบบล่าสุดแล้ว กรุณาตรวจยอดรวมและวันที่ก่อนยืนยัน';
+document.getElementById('salarySplitSummaryPreview').textContent=template.needs_review?'แม่แบบเก่าหรือปรับเอง: กรุณาตรวจการแยกประกันแดน 2,900 บาท ยอดรวม และวันที่ก่อนยืนยัน':'ใช้แบบล่าสุดแล้ว กรุณาตรวจยอดรวมและวันที่ก่อนยืนยัน';
 }));
 document.getElementById('batchPayDate').value=getBangkokTodayIso();
 on('batchPayDate','change',safe(refreshAutomationUi));
@@ -2360,7 +2610,7 @@ await automationPreference('father-cycle',value);await refreshAutomationUi();
 }));
 on('btnBatchPay','click',safe(async()=>{
 const btn=document.getElementById('btnBatchPay');if(btn.disabled)return;
-const items=Object.keys(BATCH_PRESETS).filter(key=>document.getElementById(`batch-${key}`)?.checked).map(key=>({key,amount:document.getElementById(`amount-${key}`).value}));
+const items=Object.keys(BATCH_PRESETS).filter(key=>key!=='dan_insurance'&&document.getElementById(`batch-${key}`)?.checked).map(key=>({key,amount:document.getElementById(`amount-${key}`).value}));
 btn.disabled=true;
 try{await batchPayFixedExpenses(items,document.getElementById('batchPayDate').value);document.getElementById('batchPayStatus').textContent='บันทึกรายการที่เลือกแล้ว';await refreshAutomationUi();}
 finally{btn.disabled=false;}
@@ -2373,8 +2623,11 @@ if(!date){
 throw new Error('กรุณาระบุวันที่เงินเดือนออกให้ถูกต้อง (YYYY-MM-DD)');
 }
 const yearMonth=date.slice(0,7);
+for(const key of['total_salary','investment_stock','home_building','fixed_expense','emergency_personal','general_expense','dan_insurance']){
+if(options[key]!==undefined&&(!Number.isFinite(Number(options[key]))||Number(options[key])<0))throw new Error('ยอดเงินต้องไม่ติดลบและต้องเป็นตัวเลขที่มีขอบเขต');
+}
 const totalSalary=Math.round(Number(options.total_salary||0)*100)/100;
-if(!Number.isFinite(totalSalary)||totalSalary<=0){
+if(!Number.isSafeInteger(Math.round(totalSalary*100))||totalSalary<=0){
 throw new Error('กรุณาระบุยอดเงินเดือนรวมที่มากกว่า 0 บาท');
 }
 const fatherInsAmount=
@@ -2394,21 +2647,22 @@ const fund2=options.home_building!==undefined
 const fund3=options.fixed_expense!==undefined
 ?Math.round(Number(options.fixed_expense)*100)/100
 :defaultFixedTotal;
+const fund6=options.dan_insurance!==undefined?Math.round(Number(options.dan_insurance)*100)/100:2900;
 const fund4=options.emergency_personal!==undefined
 ?Math.round(Number(options.emergency_personal)*100)/100
 :0;
-const fixedFourSumCents=Math.round((fund1+fund2+fund3+fund4)*100);
+const fixedFourSumCents=[fund1,fund2,fund3,fund4,fund6].reduce((sum,amount)=>sum+Math.round(amount*100),0);
 const totalSalaryCents=Math.round(totalSalary*100);
 const fund5=options.general_expense!==undefined
 ?Math.round(Number(options.general_expense)*100)/100
 :Math.max(0,(totalSalaryCents-fixedFourSumCents)/100);
-if([fund1,fund2,fund3,fund4,fund5].some(v=>!Number.isFinite(v)||v<0)){
+if([fund1,fund2,fund3,fund4,fund5,fund6].some(v=>!Number.isSafeInteger(Math.round(v*100))||v<0)){
 throw new Error('ยอดแบ่งเงินในแต่ละส่วนต้องไม่ติดลบ');
 }
-const totalAllocatedCents=Math.round((fund1+fund2+fund3+fund4+fund5)*100);
+const totalAllocatedCents=fixedFourSumCents+Math.round(fund5*100);
 if(totalAllocatedCents!==totalSalaryCents)throw new Error('ยอดจัดสรรต้องเท่ากับเงินเดือน กรุณาตรวจส่วนต่าง');
 if(totalAllocatedCents<=0){
-throw new Error('ยอดแบ่งเงินรวมทั้ง 5 ส่วนต้องมากกว่า 0 บาท');
+throw new Error('ยอดแบ่งเงินรวมทั้ง 6 ส่วนต้องมากกว่า 0 บาท');
 }
 if(fixedFourSumCents>totalSalaryCents&&options.general_expense===undefined){
 throw new Error(
@@ -2435,7 +2689,7 @@ purpose_analysis:'เงินออมสะสมเพื่อสร้า�
 bucket:'fixed_expense',
 amount:fund3,
 merchant:'แบ่งเงินเดือน: 3. ค่าใช้จ่ายคงที่',
-items_summary:`ประกันพ่อ ${fatherInsAmount.toLocaleString('en-US')}, ประกันแดน 2,900, ให้น้อง (มายด์) 2,000, ค่าน้ำ/ไฟ/โทรศัพท์/เรียนพิเศษลูก 6,500`,
+items_summary:`ประกันพ่อ ${fatherInsAmount.toLocaleString('en-US')}, ให้น้อง (มายด์) 2,000, ค่าน้ำ/ไฟ/โทรศัพท์/เรียนพิเศษลูก 6,500`,
 purpose_analysis:`กันงบค่าใช้จ่ายคงที่รายเดือน (${yearMonth}) รวม ${formatCurrency(fund3,'THB')}`
 },
 {
@@ -2453,6 +2707,7 @@ items_summary:`งบใช้จ่ายทั่วไปประจำเ�
 purpose_analysis:'งบสำหรับใช้จ่ายในชีวิตประจำวันทั่วไปตลอดเดือน'
 }
 ];
+splitEntries.push({bucket:'dan_insurance',amount:fund6,merchant:'เงินเก็บประกันแดน',items_summary:'สะสมเบี้ยรายปี ไม่ใช่รายจ่าย',purpose_analysis:'เป้าหมาย 34,800 บาทต่อปี'});
 const inputs=splitEntries.filter(entry=>entry.amount>0).map(entry=>({
 transaction_date:date,
 type:'income',
@@ -2464,9 +2719,9 @@ fund_bucket:entry.bucket,
 source_type:'manual',
 items_summary:entry.items_summary,
 purpose_analysis:entry.purpose_analysis,
-note:`จัดสรรเงินเดือน ${yearMonth} [SALARY_SPLIT:${yearMonth}:${entry.bucket}]`
+note:`จัดสรรเงินเดือน ${yearMonth} [SALARY_SPLIT:${yearMonth}:${entry.bucket}] [SIX_FUNDS_V2]`
 }));
-const template={total_salary:totalSalary,investment_stock:fund1,home_building:fund2,
+const template={version:2,dan_insurance:fund6,total_salary:totalSalary,investment_stock:fund1,home_building:fund2,
 fixed_expense:fund3,emergency_personal:fund4,general_expense:fund5,father_insurance_mode:fatherInsAmount};
 const savedRecords=await commitAutomation(inputs,[`salary:${yearMonth}`],{id:automationKey('salary'),value:template});
 return{
@@ -2502,8 +2757,8 @@ dan_insurance:{
 merchant:'จ่ายค่าประกันแดน',
 amount:FIXED_MONTHLY_PRESETS.DAN_INSURANCE,
 category:'health_medical',
-items_summary:'ค่าเบี้ยประกันแดนประจำเดือน (Fix 2,900 บาท)',
-purpose_analysis:'ตัดจ่ายจากส่วนที่ 3 ค่าใช้จ่ายคงที่ — ประกันแดน 2,900 บาท',
+items_summary:'เบี้ยประกันแดนที่ชำระจริง ตรวจยอดตามใบเสร็จ',
+purpose_analysis:'ตัดจากกระปุก 6 เงินสะสมประกันแดนเมื่อจ่ายจริง',
 tag:'[fixed_item:dan_insurance]'
 },
 sister_mind:{
@@ -2527,7 +2782,7 @@ merchant:preset.merchant,
 amount:customAmount,
 currency:'THB',
 category:preset.category,
-fund_bucket:'fixed_expense',
+fund_bucket:itemKey==='dan_insurance'?'dan_insurance':'fixed_expense',
 source_type:'manual',
 items_summary:preset.items_summary,
 purpose_analysis:preset.purpose_analysis,
@@ -2536,71 +2791,29 @@ note:`รายการ Fix ประจำเดือน ${yearMonth} ${prese
 return saved[0];
 }
 async function rolloverMonthlySurplusToEmergency(targetYearMonth=''){
+const owner=_0x1a7.currentUser?.id||null;
 const ym=targetYearMonth||getBangkokTodayIso().slice(0,7);
-const metrics=calculateDashboardMetrics(_0x1a7.transactions,ym);
-const generalBucket=metrics.fundBalances.find((b)=>b.bucket==='general_expense');
-const fixedBucket=metrics.fundBalances.find((b)=>b.bucket==='fixed_expense');
-const generalSurplus=generalBucket&&generalBucket.availableBalance>0?generalBucket.availableBalance:0;
-const fixedSurplus=fixedBucket&&fixedBucket.availableBalance>0?fixedBucket.availableBalance:0;
-const totalSurplus=Math.round((generalSurplus+fixedSurplus)*100)/100;
-if(totalSurplus<=0){
-return{rolledOver:false,amount:0,message:`ไม่มีเงินเหลือใช้ในงบรายเดือนของเดือน ${ym} ให้โอนเข้าข้อ 4`};
+if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(ym))throw new Error('เดือนที่เลือกไม่ถูกต้อง');
+const rows=(await _0x1a9()).filter(row=>(row.user_id||null)===(_0x1a7.currentUser?.id||null));
+if(legacyInsuranceReview(rows,ym).length)throw new Error('มีข้อมูลประกันแดนเก่ารอตรวจสอบ กรุณาตรวจและยืนยันก่อนโอน');
+const metrics=calculateDashboardMetrics(rows,ym);
+const txDate=ym===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():ym+'-28';
+const inputs=[];let totalCents=0;
+const amounts={};
+for(const bucket of['fixed_expense','general_expense']){
+const cents=Math.max(0,Math.round(metrics.fundBalances.find(row=>row.bucket===bucket).availableBalance*100));
+amounts[bucket]=cents/100;
+if(!cents)continue;
+totalCents+=cents;
+inputs.push({transaction_date:txDate,type:'expense',merchant:'โอนเงินเหลือใช้เข้ากระปุกฉุกเฉิน',amount:cents/100,
+currency:'THB',category:'transfer_other',fund_bucket:bucket,source_type:'manual',note:'[SURPLUS_ROLLOVER_OUT:'+ym+':'+bucket+']'});
 }
-const txDate=ym===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${ym}-28`;
-const records=[];
-if(generalSurplus>0){
-const outGeneral=await saveTransaction({
-transaction_date:txDate,
-type:'expense',
-merchant:'โอนเงินเหลือใช้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-amount:generalSurplus,
-currency:'THB',
-category:'transfer_other',
-fund_bucket:'general_expense',
-source_type:'manual',
-items_summary:`ปิดยอดเงินเหลือใช้จากข้อ 5 ค่าใช้จ่ายทั่วไป (${ym})`,
-purpose_analysis:'โอนเงินที่เหลือใช้ของเดือนเข้าสะสมในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-note:`[SURPLUS_ROLLOVER_OUT:${ym}:general_expense]`
-});
-records.push(outGeneral);
-}
-if(fixedSurplus>0){
-const outFixed=await saveTransaction({
-transaction_date:txDate,
-type:'expense',
-merchant:'โอนงบคงที่เหลือใช้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-amount:fixedSurplus,
-currency:'THB',
-category:'transfer_other',
-fund_bucket:'fixed_expense',
-source_type:'manual',
-items_summary:`ปิดยอดเงินเหลือใช้จากข้อ 3 ค่าใช้จ่ายคงที่ (${ym})`,
-purpose_analysis:'โอนเงินที่เหลือใช้ของเดือนเข้าสะสมในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-note:`[SURPLUS_ROLLOVER_OUT:${ym}:fixed_expense]`
-});
-records.push(outFixed);
-}
-const inEmergency=await saveTransaction({
-transaction_date:txDate,
-type:'income',
-merchant:`รับเงินเหลือใช้ประจำเดือน ${ym} เข้ากระปุกฉุกเฉิน (ส่วนตัว)`,
-amount:totalSurplus,
-currency:'THB',
-category:'refund_other_income',
-fund_bucket:'emergency_personal',
-source_type:'manual',
-items_summary:`เงินเหลือใช้สะสมจากงบรายเดือน (${ym})`,
-purpose_analysis:'เก็บสะสมเงินที่เหลือใช้ในเดือนนั้นเข้าข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว) ตามกติกาที่ตั้งไว้',
-note:`[SURPLUS_ROLLOVER_IN:${ym}:emergency_personal]`
-});
-records.push(inEmergency);
-return{
-rolledOver:true,
-amount:totalSurplus,
-generalSurplus,
-fixedSurplus,
-records
-};
+if(!totalCents)return{rolledOver:false,amount:0};
+inputs.push({transaction_date:txDate,type:'income',merchant:'รับเงินเหลือใช้เข้ากระปุกฉุกเฉิน',amount:totalCents/100,
+currency:'THB',category:'refund_other_income',fund_bucket:'emergency_personal',source_type:'manual',note:'[SURPLUS_ROLLOVER_IN:'+ym+':emergency_personal]'});
+if((_0x1a7.currentUser?.id||null)!==owner)throw new Error('บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่');
+const records=await commitAutomation(inputs,['rollover:'+ym]);
+return{rolledOver:true,amount:totalCents/100,generalSurplus:amounts.general_expense,fixedSurplus:amounts.fixed_expense,records};
 }
 function _0x1b8(){
 const banner=document.getElementById('systemModeBanner');
@@ -2669,6 +2882,12 @@ monthPicker.value=getBangkokTodayIso().slice(0,7);
 }
 const selectedMonth=monthPicker?monthPicker.value:getBangkokTodayIso().slice(0,7);
 const metrics=calculateDashboardMetrics(_0x1a7.transactions,selectedMonth);
+const analyticsMonth=document.getElementById('analyticsMonth');
+if(analyticsMonth)analyticsMonth.value=selectedMonth;
+renderFinancialCharts(selectedMonth);
+const pendingInsurance=legacyInsuranceReview(_0x1a7.transactions,selectedMonth);
+const reviewStatus=document.getElementById('legacyInsuranceStatus');
+if(reviewStatus)reviewStatus.textContent=pendingInsurance.length?'มี '+pendingInsurance.length+' รายการรอตรวจสอบ ต้องตรวจให้เสร็จก่อนโอนเงินเหลือใช้':'ไม่มีข้อมูลเก่ารอตรวจสอบ';
 const elIncome=document.getElementById('kpiTotalIncome');
 const elExpense=document.getElementById('kpiTotalExpense');
 const elNet=document.getElementById('kpiNetBalance');
@@ -2759,7 +2978,7 @@ balEl.textContent=`คงเหลือ ${sign}${formatCurrency(Math.abs(f.avai
 const btnWithdraw=document.createElement('button');
 btnWithdraw.type='button';
 btnWithdraw.className='btn btn-secondary btn-sm';
-btnWithdraw.style.minHeight='26px';
+btnWithdraw.style.minHeight='44px';
 btnWithdraw.style.padding='0.15rem 0.55rem';
 btnWithdraw.style.fontSize='0.74rem';
 btnWithdraw.textContent='ถอน/ใช้จากส่วนนี้';
@@ -2780,6 +2999,14 @@ outSpan.textContent=`ถอนออกเดือนนี้: -${formatCurren
 meta.appendChild(inSpan);
 meta.appendChild(outSpan);
 card.appendChild(meta);
+if(f.bucket==='dan_insurance'){
+const pay=document.createElement('button');pay.type='button';pay.className='btn btn-primary';
+pay.textContent='บันทึกเบี้ยประกันแดนที่จ่ายจริง';
+pay.onclick=()=>{openVerificationModalForManual('manual','dan_insurance');
+document.getElementById('txFormMerchant').value='จ่ายเบี้ยประกันแดน';
+document.getElementById('txFormNote').value='[fixed_item:dan_insurance]';};
+card.appendChild(pay);
+}
 fundContainer.appendChild(card);
 }
 }
@@ -2818,7 +3045,7 @@ actFather.appendChild(bdg);
 const btn1300=document.createElement('button');
 btn1300.type='button';
 btn1300.className='btn btn-primary btn-sm';
-btn1300.style.minHeight='28px';
+btn1300.style.minHeight='44px';
 btn1300.style.padding='0.2rem 0.55rem';
 btn1300.style.fontSize='0.75rem';
 btn1300.textContent='จ่าย 1,300';
@@ -2830,7 +3057,7 @@ _0x1c1('บันทึกจ่ายค่าประกันพ่อ 1,300
 const btn2600=document.createElement('button');
 btn2600.type='button';
 btn2600.className='btn btn-secondary btn-sm';
-btn2600.style.minHeight='28px';
+btn2600.style.minHeight='44px';
 btn2600.style.padding='0.2rem 0.55rem';
 btn2600.style.fontSize='0.75rem';
 btn2600.textContent='จ่าย 2,600';
@@ -2845,44 +3072,6 @@ actFather.appendChild(btn2600);
 rowFather.appendChild(infoFather);
 rowFather.appendChild(actFather);
 checklistContainer.appendChild(rowFather);
-const rowDan=document.createElement('div');
-rowDan.className='fixed-item-row';
-const infoDan=document.createElement('div');
-infoDan.className='fixed-item-info';
-const nameDan=document.createElement('div');
-nameDan.className='fixed-item-name';
-nameDan.textContent=st.dan_insurance.label;
-const subDan=document.createElement('div');
-subDan.className='fixed-item-sub';
-subDan.textContent=st.dan_insurance.isPaid
-?`จ่ายแล้วเดือนนี้ ${formatCurrency(st.dan_insurance.paidAmount,'THB')}`
-:'ยังไม่ได้บันทึกจ่ายในเดือนนี้';
-infoDan.appendChild(nameDan);
-infoDan.appendChild(subDan);
-const actDan=document.createElement('div');
-if(st.dan_insurance.isPaid){
-const bdg=document.createElement('span');
-bdg.className='badge badge-synced';
-bdg.textContent='จ่ายแล้ว';
-actDan.appendChild(bdg);
-}else{
-const btnDan=document.createElement('button');
-btnDan.type='button';
-btnDan.className='btn btn-primary btn-sm';
-btnDan.style.minHeight='28px';
-btnDan.style.padding='0.2rem 0.55rem';
-btnDan.style.fontSize='0.75rem';
-btnDan.textContent='จ่าย 2,900';
-btnDan.onclick=async()=>{
-const txDate=selectedMonth===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():`${selectedMonth}-01`;
-await recordFixedExpenseItem('dan_insurance',{transaction_date:txDate});
-_0x1c1('บันทึกจ่ายค่าประกันแดน 2,900 บาท (ตัดจากข้อ 3 ค่าใช้จ่ายคงที่) แล้ว','success');
-};
-actDan.appendChild(btnDan);
-}
-rowDan.appendChild(infoDan);
-rowDan.appendChild(actDan);
-checklistContainer.appendChild(rowDan);
 const rowMind=document.createElement('div');
 rowMind.className='fixed-item-row';
 const infoMind=document.createElement('div');
@@ -2907,7 +3096,7 @@ actMind.appendChild(bdg);
 const btnMind=document.createElement('button');
 btnMind.type='button';
 btnMind.className='btn btn-primary btn-sm';
-btnMind.style.minHeight='28px';
+btnMind.style.minHeight='44px';
 btnMind.style.padding='0.2rem 0.55rem';
 btnMind.style.fontSize='0.75rem';
 btnMind.textContent='จ่าย 2,000';
@@ -2937,7 +3126,7 @@ const actUtil=document.createElement('div');
 const btnUtil=document.createElement('button');
 btnUtil.type='button';
 btnUtil.className='btn btn-secondary btn-sm';
-btnUtil.style.minHeight='28px';
+btnUtil.style.minHeight='44px';
 btnUtil.style.padding='0.2rem 0.55rem';
 btnUtil.style.fontSize='0.75rem';
 btnUtil.textContent='+ บันทึกบิล/เรียนลูก';
@@ -3149,7 +3338,7 @@ defaultFundBucket='general_expense',
 defaultCategory='food_drink'
 ){
 clearUncertainHighlights();
-document.getElementById('verificationModalTitle').textContent='เพิ่มรายการรายรับ-รายจ่าย (เลือกตัดจาก 5 ส่วน)';
+document.getElementById('verificationModalTitle').textContent='เพิ่มรายการรายรับ-รายจ่าย (เลือกตัดจาก 6 ส่วน)';
 document.getElementById('txFormId').value='';
 document.getElementById('txFormDate').value=getBangkokTodayIso();
 document.getElementById('txFormType').value='expense';
@@ -3275,7 +3464,10 @@ if(btnReanalyze)btnReanalyze.disabled=false;
 if(progressBox)progressBox.hidden=true;
 }
 }
+let uiBound=false;
 function _0x1c4(){
+if(uiBound)return;uiBound=true;
+bindAppNavigation();
 bindAutomationEvents();
 document.getElementById('btnStartScanCamera')?.addEventListener('click',()=>{
 document.getElementById('inputCameraCapture')?.click();
@@ -3395,7 +3587,8 @@ const f3=Number((document.getElementById('salarySplitFund3Input'))?.value||0);
 const f4=Number((document.getElementById('salarySplitFund4Input'))?.value||0);
 const f5El=document.getElementById('salarySplitFund5Input');
 const previewBox=document.getElementById('salarySplitSummaryPreview');
-const fixedSum=Math.round((f1+f2+f3+f4)*100)/100;
+const f6=Number((document.getElementById('salarySplitFund6Input'))?.value||0);
+const fixedSum=[f1,f2,f3,f4,f6].reduce((sum,value)=>sum+Math.round(value*100),0)/100;
 const remainForF5=totalVal>0?Math.max(0,Math.round((totalVal-fixedSum)*100)/100):0;
 if(f5El&&totalVal>0){
 f5El.value=String(remainForF5);
@@ -3403,10 +3596,10 @@ f5El.value=String(remainForF5);
 if(previewBox){
 if(totalVal>0&&totalVal<fixedSum){
 previewBox.className='alert-box alert-warning';
-previewBox.textContent=`ยอดเงินเดือนรวม (${formatCurrency(totalVal,'THB')}) น้อยกว่ายอด Fix ข้อ 1–4 (${formatCurrency(fixedSum,'THB')}) ขาดอีก ${formatCurrency(fixedSum-totalVal,'THB')}`;
+previewBox.textContent=`ยอดเงินเดือนรวม (${formatCurrency(totalVal,'THB')}) น้อยกว่ายอดกันเงินข้อ 1–4 และ 6 (${formatCurrency(fixedSum,'THB')}) ขาดอีก ${formatCurrency(fixedSum-totalVal,'THB')}`;
 }else{
 previewBox.className='alert-box alert-success';
-previewBox.textContent=`ยอดรวม Fix (ข้อ 1–4) = ${formatCurrency(fixedSum,'THB')} | คงเหลือเข้าข้อ 5 ค่าใช้จ่ายทั่วไป = ${formatCurrency(remainForF5,'THB')}`;
+previewBox.textContent=`ยอดกันเงิน (ข้อ 1–4 และ 6) = ${formatCurrency(fixedSum,'THB')} | คงเหลือเข้าข้อ 5 ค่าใช้จ่ายทั่วไป = ${formatCurrency(remainForF5,'THB')}`;
 }
 }
 };
@@ -3446,7 +3639,7 @@ for(const id of[
 'salarySplitFund1Input',
 'salarySplitFund2Input',
 'salarySplitFund3Input',
-'salarySplitFund4Input'
+'salarySplitFund4Input','salarySplitFund6Input'
 ]){
 document.getElementById(id)?.addEventListener('input',recalculateSalarySplitPreview);
 }
@@ -3459,13 +3652,14 @@ transaction_date:(document.getElementById('salarySplitDate'))?.value,
 total_salary:Number((document.getElementById('salarySplitTotalInput'))?.value||0),
 investment_stock:Number((document.getElementById('salarySplitFund1Input'))?.value||0),
 home_building:Number((document.getElementById('salarySplitFund2Input'))?.value||0),
+dan_insurance:Number((document.getElementById('salarySplitFund6Input'))?.value||0),
 fixed_expense:Number((document.getElementById('salarySplitFund3Input'))?.value||0),
 father_insurance_mode:Number((document.getElementById('salarySplitFatherInsMode'))?.value||1300),
 emergency_personal:Number((document.getElementById('salarySplitFund4Input'))?.value||0),
 general_expense:Number((document.getElementById('salarySplitFund5Input'))?.value||0)
 });
 closeSalarySplitModal();
-_0x1c1(`แบ่งเงินเดือนประจำเดือน ${res.yearMonth} เข้าทั้ง 5 ส่วนเรียบร้อยแล้ว`,'success');
+_0x1c1(`แบ่งเงินเดือนประจำเดือน ${res.yearMonth} เข้าทั้ง 6 ส่วนเรียบร้อยแล้ว`,'success');
 }catch(err){
 if(errBox){
 errBox.hidden=false;
@@ -3744,6 +3938,8 @@ await resumeSharedReceipt();
 const SlipSenseApp={
 init:_0x1cb,
 automationPreference,commitAutomation,batchPayFixedExpenses,fatherInsuranceCycle,
+upgradeSalaryTemplate,legacyInsuranceReview,upgradeLegacyInsurance,
+aggregateFinancialCharts,renderFinancialCharts,selectAppPanel,bindAppNavigation,
 normalizeMerchant,learnConfirmedRecord,suggestMerchantCategory,applyQuickChip,
 startVoiceEntry,validReceiptFile,handleReceiptPaste,handleImageFileSelected,
 resumeSharedReceipt,releaseSharedReceipt,shareInboxChange,bindAutomationEvents,
