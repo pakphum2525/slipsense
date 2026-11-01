@@ -90,8 +90,11 @@ function assertEqual(actual, expected, message) {
 
 async function runTest(suiteName, testName, fn) {
   totalTests += 1;
+  let timeout;
   try {
-    await fn();
+    await Promise.race([fn(), new Promise((_, reject) => {
+      timeout = setTimeout(() => reject(new Error('Test timed out after 30 seconds')), 30000);
+    })]);
     passedTests += 1;
     console.log(`  [PASS] ${testName}`);
   } catch (err) {
@@ -99,6 +102,8 @@ async function runTest(suiteName, testName, fn) {
     const msg = err && err.message ? err.message : String(err);
     failures.push({ suiteName, testName, error: msg });
     console.error(`  [FAIL] ${testName} -> ${msg}`);
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -150,6 +155,7 @@ function createBrowserSandbox() {
       checked: false,
       disabled: false,
       hidden: false,
+      open: false,
       textContent: '',
       innerHTML: '',
       files: [],
@@ -185,10 +191,17 @@ function createBrowserSandbox() {
         listeners.get(ev).push(cb);
       },
       removeEventListener: () => {},
-      dispatchEvent: (evObj) => {
+      dispatchEvent(evObj) {
+        evObj.target ||= this;
+        evObj.currentTarget = this;
+        evObj.preventDefault ||= () => {};
         const list = listeners.get(evObj?.type) || [];
-        list.forEach((cb) => cb(evObj));
+        this.pendingEvents = Promise.all(list.map((cb) => cb(evObj)));
         return true;
+      },
+      async emit(type, properties = {}) {
+        this.dispatchEvent({ type, ...properties });
+        await this.pendingEvents;
       },
       appendChild: (child) => {
         children.push(child);

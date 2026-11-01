@@ -2,20 +2,32 @@
 const assert = require('node:assert/strict');
 const { loadApp } = require('./app_harness');
 module.exports = async function () {
-  const { api, el, context } = loadApp();
-  const record = { merchant: '  ร้าน กาแฟ  ', category: 'food_drink', amount: 60, type: 'expense', source_type: 'manual' };
+  for (const variant of ['source', 'built']) {
+  const { api, el, context } = loadApp(undefined, variant);
+  const record = { merchant: '  ร้าน กาแฟ  ', category: 'food_drink', fund_bucket: 'fixed_expense', amount: 60, type: 'expense', source_type: 'manual' };
   api.applyQuickChip(record);
   assert.equal(api.getState().transactions.length, 0);
   assert.equal(el('txFormAmount').value, '60');
+  assert.equal(el('txFormFundBucket').value, 'fixed_expense');
   assert.equal(await api.automationPreference('learning'), undefined, 'cancelled drafts are never learned');
   await api.learnConfirmedRecord(record);
+  assert.equal((await api.automationPreference('learning')).merchants['ร้าน กาแฟ'].fund_bucket, 'fixed_expense');
+  api.openVerificationModalForManual();
   el('txFormMerchant').value = 'ร้าน กาแฟ'; el('txFormCategory').value = 'unknown';
   await api.suggestMerchantCategory(); assert.equal(el('txFormCategory').value, 'food_drink');
+  assert.equal(el('txFormFundBucket').value, 'fixed_expense');
   el('txFormCategory').value = 'transport'; await api.suggestMerchantCategory();
   assert.equal(el('txFormCategory').value, 'transport');
   await api.learnConfirmedRecord({ ...record, category: 'shopping_general' });
+  api.openVerificationModalForManual();
+  el('txFormMerchant').value = 'ร้าน กาแฟ';
   el('txFormCategory').value = 'unknown'; await api.suggestMerchantCategory();
   assert.equal(el('txFormCategory').value, 'shopping_general');
+  await api.automationPreference('learning', { merchants: { legacy: 'transport' }, chips: [] });
+  api.openVerificationModalForManual(); el('txFormMerchant').value = 'LEGACY';
+  await api.suggestMerchantCategory();
+  assert.equal(el('txFormCategory').value, 'transport');
+  assert.equal(el('txFormFundBucket').value, 'general_expense');
   api.getState().currentUser = { id: 'another' };
   assert.equal(await api.automationPreference('learning'), undefined);
   api.getState().currentUser = null;
@@ -30,4 +42,5 @@ module.exports = async function () {
   assert.equal(el('txFormAmount').value, ''); assert.equal(el('txFormDate').value, '');
   assert.equal(api.getState().transactions.length, 0);
   recognition.onerror({ error: 'not-allowed' }); assert.match(el('voiceStatus').textContent, /พิมพ์/);
+  }
 };

@@ -36,7 +36,7 @@ function createIndexedDB() {
                   if (op === 'delete') store.delete(key);
                   if (op === 'clear') store.clear();
                   r.onsuccess?.({ target: r });
-                } catch (error) { tx.error = error; r.onerror?.(); tx.abort(); }
+                } catch (error) { tx.error = error; r.onerror?.(); tx.onerror?.(); tx.abort(); }
                 pending--; check();
               });
               if (started) run(); else operations.push(run);

@@ -1298,34 +1298,6 @@
         <div id="txFormValidationErrorsBox" class="alert-box alert-error" hidden></div>
 
         <div class="form-grid two-col">
-          <div class="form-group" id="groupTxDate">
-            <label for="txFormDate" class="form-label">
-              <span>วันที่รายการ *</span>
-              <span id="badgeUncertainDate" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
-            </label>
-            <input type="date" id="txFormDate" class="form-control" required>
-          </div>
-
-          <div class="form-group" id="groupTxType">
-            <label for="txFormType" class="form-label">
-              <span>ประเภท: รายรับ / รายจ่าย *</span>
-              <span id="badgeUncertainType" class="uncertain-badge" hidden>ต้องเลือกเอง</span>
-            </label>
-            <select id="txFormType" class="form-control" required>
-              <option value="unknown">-- กรุณาเลือกประเภทรายการ --</option>
-              <option value="expense">รายจ่าย (Expense)</option>
-              <option value="income">รายรับ (Income)</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
-            <label for="txFormMerchant" class="form-label">
-              <span>ร้านค้า หรือ คู่รายการ *</span>
-              <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
-            </label>
-            <input type="text" id="txFormMerchant" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
-          </div>
-
           <div class="form-group" id="groupTxAmount">
             <label for="txFormAmount" class="form-label">
               <span>ยอดเงิน (ค่าบวก) *</span>
@@ -1334,11 +1306,14 @@
             <input type="number" id="txFormAmount" class="form-control" step="0.01" min="0.01" max="9999999999.99" placeholder="0.00" required>
           </div>
 
-          <div class="form-group" id="groupTxCurrency">
-            <label for="txFormCurrency" class="form-label">
-              <span>สกุลเงิน *</span>
+          <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
+            <label for="txFormMerchant" class="form-label">
+              <span>ร้านค้า / รายการ *</span>
+              <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
             </label>
-            <input type="text" id="txFormCurrency" class="form-control" value="THB" maxlength="3" pattern="[A-Za-z]{3}" required>
+            <input type="text" id="txFormMerchant" list="txMerchantHistory" aria-describedby="txMerchantHistoryHelp" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
+            <datalist id="txMerchantHistory"></datalist>
+            <p id="txMerchantHistoryHelp" class="text-muted">เลือกหรือพิมพ์ชื่อเดิมเต็มชื่อเพื่อเติมหมวดหมู่และกระปุกเงินจากประวัติ หรือพิมพ์ชื่อใหม่ได้ ตรวจสอบและแก้ไขได้ก่อนบันทึก</p>
           </div>
 
           <div class="form-group" id="groupTxCategory">
@@ -1364,17 +1339,6 @@
             </select>
           </div>
 
-          <div class="form-group" id="groupTxSourceType">
-            <label for="txFormSourceType" class="form-label">
-              <span>แหล่งที่มาของข้อมูล</span>
-            </label>
-            <select id="txFormSourceType" class="form-control">
-              <option value="manual">กรอกด้วยตนเอง (Manual)</option>
-              <option value="receipt">ใบเสร็จรับเงิน (Receipt)</option>
-              <option value="transfer_slip">สลิปโอนเงิน (Transfer Slip)</option>
-            </select>
-          </div>
-
           <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
             <label for="txFormFundBucket" class="form-label">
               <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
@@ -1389,6 +1353,46 @@
             </select>
           </div>
 
+          <div class="form-group" id="groupTxDate">
+            <label for="txFormDate" class="form-label">
+              <span>วันที่รายการ *</span>
+              <span id="badgeUncertainDate" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
+            </label>
+            <input type="date" id="txFormDate" class="form-control" required>
+          </div>
+
+          <div class="form-group" id="groupTxType">
+            <label for="txFormType" class="form-label">
+              <span>ประเภท: รายรับ / รายจ่าย *</span>
+              <span id="badgeUncertainType" class="uncertain-badge" hidden>ต้องเลือกเอง</span>
+            </label>
+            <select id="txFormType" class="form-control" required>
+              <option value="unknown">-- กรุณาเลือกประเภทรายการ --</option>
+              <option value="expense">รายจ่าย (Expense)</option>
+              <option value="income">รายรับ (Income)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupTxCurrency">
+            <label for="txFormCurrency" class="form-label">
+              <span>สกุลเงิน *</span>
+            </label>
+            <input type="text" id="txFormCurrency" class="form-control" value="THB" maxlength="3" pattern="[A-Za-z]{3}" required>
+          </div>
+
+          <div class="form-group" id="groupTxSourceType">
+            <label for="txFormSourceType" class="form-label">
+              <span>แหล่งที่มาของข้อมูล</span>
+            </label>
+            <select id="txFormSourceType" class="form-control">
+              <option value="manual">กรอกด้วยตนเอง (Manual)</option>
+              <option value="receipt">ใบเสร็จรับเงิน (Receipt)</option>
+              <option value="transfer_slip">สลิปโอนเงิน (Transfer Slip)</option>
+            </select>
+          </div>
+
+          <details id="txFormOptionalDetails" style="grid-column: 1 / -1;">
+            <summary>+ รายละเอียดเพิ่มเติม</summary>
           <div class="form-group" style="grid-column: 1 / -1;">
             <label for="txFormItemsSummary" class="form-label">
               <span>สรุปรายการสินค้า / บริการ</span>
@@ -1398,10 +1402,12 @@
 
           <div class="form-group" style="grid-column: 1 / -1;">
             <label for="txFormPurposeAnalysis" class="form-label">
-              <span>วัตถุประสงค์ของการซื้อ (purpose_analysis)</span>
+              <span>วัตถุประสงค์ของการซื้อ (ถ้ามี)</span>
             </label>
             <textarea id="txFormPurposeAnalysis" class="form-control" rows="2" maxlength="2000" placeholder="เช่น ซื้ออุปกรณ์ฮาร์ดแวร์ คาดว่าใช้สำหรับซ่อมบำรุงภายในบ้าน"></textarea>
           </div>
+
+          </details>
 
           <div class="form-group" style="grid-column: 1 / -1;">
             <label for="txFormNote" class="form-label">

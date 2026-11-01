@@ -2,7 +2,23 @@
 
 **วันที่อัปเดตล่าสุด:** 1 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-008 ผ่านการทดสอบ (35/35 รายการ), Antigravity QA Review (Gate 12), ได้รับอนุมัติ Release (Gate 16), รวมโค้ดเข้า main และพุชขึ้น GitHub เรียบร้อยแล้ว
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-009 พัฒนาใน worktree `agent-task/TASK-SLIPSENSE-V4-009` และ self-test ผ่าน 36/36 รายการ รอ Antigravity ตรวจที่ Gate 12 ยังไม่ได้รับอนุมัติ QA หรือ release สำหรับงานนี้
+
+## ผลงาน TASK-SLIPSENSE-V4-009
+
+ปรับฟอร์มให้เน้นยอดเงินและร้านค้า / รายการ หมวดหมู่กับกระปุกเงินยังมองเห็นได้ วันที่และข้อมูลรองยังแก้ไขได้ ย้ายสรุปรายการกับวัตถุประสงค์เข้า native details ที่ปิดทุกครั้งเมื่อเปิดฟอร์ม คงข้อมูล AI/รายการแก้ไขและคำเตือน ไม่เดาวันที่หรือยอดเงินที่อ่านไม่ได้ รายการ manual ที่เว้นรายละเอียดใช้ชื่อเป็นสรุปและข้อความวัตถุประสงค์กลาง โดยไม่แก้ schema หรือ migration
+
+ประวัติจับคู่ชื่อเต็มหลัง normalize Unicode NFC ช่องว่างและตัวพิมพ์ กรองเจ้าของ รายการลบและ pending_delete จัดล่าสุดจาก created_at แล้ว updated_at และ id ดึงหมวดหมู่กับกระปุกจากแถวเดียว รองรับ cache เก่า/ใหม่และ quick chip ป้องกันผล async เก่าทับค่าที่ผู้ใช้เลือก ชื่อใหม่ ฟอร์มรอบใหม่หรือบัญชีใหม่ เรียนรู้หลังบันทึกสำเร็จเท่านั้น
+
+### หลักฐาน self-test ของงาน 009
+
+- คำสั่ง `npm test` ด้วย System Node.js `v24.16.0`: ผ่าน **36/36** รายการระดับ suite/test case ล้มเหลว **0**, exit code **0** รวม assertions ย่อยใน regression suites
+- `tests/transaction_entry.test.js` ตรวจ markup จริงร่วมกับ input/change/click handlers ทั้ง source และ built: details/datalist, ชื่อซ้ำและเวลาล่าสุด/เวลาเท่ากัน/เวลาหาย, บันทึกสองช่องลง IndexedDB, payload Supabase mock, ข้อมูล AI/แก้ไข, validation, เขียน IndexedDB ล้มเหลว, legacy cache/Unicode, การแยกบัญชีและการแข่งขัน async
+- `tests/daily_entry_learning.test.js` ตรวจ cache เก่า/ใหม่ หมวดหมู่พร้อมกระปุก ทางลัด ผู้ใช้แก้เอง แบบร่างยกเลิกและเสียง ทั้ง source และ built
+- Build ผ่าน `createMemoryBuild` ในหน่วยความจำจาก source ปัจจุบัน ไม่มีการเขียน generated artifact ลงดิสก์ เพิ่ม transaction error event ใน IndexedDB harness และ timeout เพื่อป้องกันผลผ่านจาก Promise ค้าง
+- ข้อจำกัด: browser sandbox จำลอง DOM/events/IndexedDB ไม่ใช่ browser layout engine ไม่ได้ตรวจ datalist popup, native details ด้วยคีย์บอร์ด, responsive layout หรือหน้าจอมือถือจริงในงานนี้ และไม่ได้เรียก Supabase/Gemini จริง
+- ขอบเขตที่แก้: `src/app.ts`, `src/index.template.html`, `scripts/run_tests.js`, `tests/app_harness.js`, `tests/idb_harness.js`, `tests/daily_entry_learning.test.js`, `tests/transaction_entry.test.js`, `README.md`, `STATUS.md`; บันทึก UTF-8 without BOM
+- รอ Antigravity ที่ **Gate 12** เพื่อตรวจแผนและ QA/diff ตามขั้นตอน ผู้พัฒนาไม่ได้ออก RELEASE_MANIFEST หรือ merge เข้า main และไม่ได้แก้ไฟล์สถานะ/อนุมัติที่ถูกป้องกัน
 
 ---
 

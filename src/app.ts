@@ -351,8 +351,8 @@ interface DashboardMetrics {
             category,
             fund_bucket,
             source_type,
-            items_summary: itemsSummaryClean,
-            purpose_analysis: purposeAnalysisClean,
+            items_summary: itemsSummaryClean || (source_type === 'manual' ? merchant : ''),
+            purpose_analysis: purposeAnalysisClean || (source_type === 'manual' ? 'ไม่ได้ระบุวัตถุประสงค์เพิ่มเติม' : ''),
             note: noteClean
           } : null
         };
@@ -1018,6 +1018,10 @@ interface DashboardMetrics {
             const prevUserId = appState.currentUser?.id || null;
             const nextUser = session?.user || null;
             appState.currentUser = nextUser;
+            if (prevUserId !== (nextUser?.id || null)) {
+              suggestionRequest++; historyRequest++;
+              document.getElementById('txMerchantHistory').replaceChildren();
+            }
 
             if (nextUser && nextUser.id !== prevUserId) {
               await setupRealtimeSubscription();
@@ -1178,6 +1182,7 @@ interface DashboardMetrics {
         });
 
         appState.transactions = visible;
+        await refreshMerchantHistory().catch(() => {});
         renderDashboardAndHistory();
         updateStatusBannersAndPills();
         return visible;
@@ -2104,37 +2109,120 @@ interface DashboardMetrics {
 
       function normalizeMerchant(value: string) { return String(value || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('th-TH'); }
 
+      let entryRound = 0, suggestionRequest = 0, historyRequest = 0;
+      let entryMerchant = '', entryOwner = '';
+      let entryDefaults: Record<string, string> = {};
+      let entryFields: Record<string, { origin: string; value: string }> = {};
+      const entryIds = { category: 'txFormCategory', fund_bucket: 'txFormFundBucket' };
+      const validEntryValue = (field: string, value: any) => Object.prototype.hasOwnProperty.call(
+        field === 'category' ? CATEGORY_LABELS : FUND_BUCKET_LABELS, value) && value !== 'unknown';
+
+      function resetEntrySuggestions(protectedValues = false) {
+        entryRound++; suggestionRequest++;
+        entryOwner = automationKey('owner');
+        entryMerchant = normalizeMerchant(document.getElementById('txFormMerchant').value);
+        document.getElementById('txFormOptionalDetails').open = false;
+        entryFields = {};
+        for (const [field, id] of Object.entries(entryIds)) {
+          const value = document.getElementById(id).value;
+          entryFields[field] = { origin: protectedValues ? 'protected' : 'default', value };
+          entryDefaults[field] = protectedValues ? (field === 'category' ? 'food_drink' : 'general_expense') : value;
+        }
+        void refreshMerchantHistory().catch(() => {});
+      }
+
+      async function readMerchantHistory() {
+        const owner = appState.currentUser?.id || null;
+        const rows = (await dbGetAllTransactions()).filter(tx => (tx.user_id || null) === owner);
+        if (owner !== (appState.currentUser?.id || null)) return new Map<string, any>();
+        const stamp = (value: any) => Number.isFinite(Date.parse(value)) ? Date.parse(value) : 0;
+        rows.sort((a, b) => stamp(b.created_at) - stamp(a.created_at) ||
+          stamp(b.updated_at) - stamp(a.updated_at) || String(b.id || '').localeCompare(String(a.id || '')));
+        const records = new Map<string, any>(), knownNames = new Set<string>();
+        for (const tx of rows) {
+          const name = normalizeMerchant(tx.merchant);
+          if (name) knownNames.add(name);
+          if (!name || tx.deleted_at || tx.pending_delete || records.has(name)) continue;
+          records.set(name, tx);
+        }
+        const learning = await automationPreference('learning');
+        if (owner !== (appState.currentUser?.id || null)) return new Map<string, any>();
+        for (const [name, cached] of Object.entries(learning?.merchants || {})) {
+          const key = normalizeMerchant(name);
+          if (!key || knownNames.has(key) || records.has(key)) continue;
+          records.set(key, { merchant: name, ...(typeof cached === 'string' ? { category: cached } : cached as any) });
+        }
+        return records;
+      }
+
+      async function refreshMerchantHistory() {
+        const request = ++historyRequest, owner = automationKey('owner'), round = entryRound;
+        const host = document.getElementById('txMerchantHistory');
+        if (entryOwner !== owner) { suggestionRequest++; host.replaceChildren(); }
+        const records = await readMerchantHistory();
+        if (request !== historyRequest || owner !== automationKey('owner') || round !== entryRound) return;
+        host.replaceChildren();
+        for (const tx of records.values()) {
+          const option = document.createElement('option');
+          option.value = String(tx.merchant).normalize('NFC').trim().replace(/\s+/g, ' ');
+          option.textContent = option.value;
+          host.appendChild(option);
+        }
+      }
+
       async function learnConfirmedRecord(record: any) {
         const owner = automationKey('owner');
+        if ((record.user_id || null) !== (appState.currentUser?.id || null)) return;
         const learning = await automationPreference('learning') || { merchants: {}, chips: [] };
         if (automationKey('owner') !== owner) return;
         const name = normalizeMerchant(record.merchant);
-        learning.merchants[name] = record.category;
+        learning.merchants ||= {};
+        learning.merchants[name] = { category: record.category, fund_bucket: record.fund_bucket };
         if (record.type === 'expense' && record.source_type === 'manual') {
-          learning.chips = [ { merchant: record.merchant, category: record.category, amount: record.amount },
-            ...learning.chips.filter(c => normalizeMerchant(c.merchant) !== name) ].slice(0, 8);
+          learning.chips = [ { merchant: record.merchant, category: record.category, fund_bucket: record.fund_bucket, amount: record.amount },
+            ...(learning.chips || []).filter(c => normalizeMerchant(c.merchant) !== name) ].slice(0, 8);
         }
         await automationPreference('learning', learning);
         await renderQuickChips();
+        await refreshMerchantHistory();
       }
 
       async function suggestMerchantCategory() {
-        const merchant = document.getElementById('txFormMerchant').value;
-        const category = document.getElementById('txFormCategory');
-        const before = category.value;
-        const owner = automationKey('owner');
-        if (before && before !== 'unknown') return;
-        const learning = await automationPreference('learning');
-        if (owner === automationKey('owner') && category.value === before && document.getElementById('txFormMerchant').value === merchant) {
-          const suggested = learning?.merchants?.[normalizeMerchant(merchant)];
-          if (suggested && CATEGORY_LABELS[suggested]) category.value = suggested;
+        const merchant = normalizeMerchant(document.getElementById('txFormMerchant').value);
+        const owner = automationKey('owner'), round = entryRound, request = ++suggestionRequest;
+        if (entryOwner !== owner) return;
+        const changed = merchant !== entryMerchant;
+        entryMerchant = merchant;
+        const before: Record<string, string> = {};
+        for (const [field, id] of Object.entries(entryIds)) {
+          const el = document.getElementById(id), state = entryFields[field];
+          if (!state) continue;
+          if (el.value !== state.value && el.value !== 'unknown') state.origin = 'user';
+          if (changed && state.origin === 'protected') state.origin = 'default';
+          if (changed && ['history', 'default'].includes(state.origin)) {
+            el.value = entryDefaults[field]; state.origin = 'default';
+          }
+          state.value = el.value; before[field] = el.value;
+        }
+        const records = await readMerchantHistory();
+        if (owner !== automationKey('owner') || round !== entryRound || request !== suggestionRequest ||
+          merchant !== normalizeMerchant(document.getElementById('txFormMerchant').value)) return;
+        const tx = records.get(merchant);
+        for (const [field, id] of Object.entries(entryIds)) {
+          const state = entryFields[field], el = document.getElementById(id);
+          if (!state || !tx || !['default', 'history'].includes(state.origin) || el.value !== before[field]) continue;
+          if (validEntryValue(field, tx[field])) {
+            el.value = tx[field]; state.value = el.value; state.origin = 'history';
+          }
         }
       }
 
       function applyQuickChip(chip: any) {
-        openVerificationModalForManual('manual', 'general_expense', chip.category);
+        openVerificationModalForManual('manual', validEntryValue('fund_bucket', chip.fund_bucket) ? chip.fund_bucket : 'general_expense',
+          validEntryValue('category', chip.category) ? chip.category : 'food_drink');
         document.getElementById('txFormMerchant').value = chip.merchant;
         document.getElementById('txFormAmount').value = String(chip.amount);
+        resetEntrySuggestions(true);
       }
 
       async function renderQuickChips() {
@@ -2242,6 +2330,7 @@ interface DashboardMetrics {
       }
 
       async function refreshAutomationUi() {
+        await refreshMerchantHistory().catch(() => {});
         await renderQuickChips();
         const host = document.getElementById('batchPayItems'); if (!host) return;
         const date = document.getElementById('batchPayDate').value || getBangkokTodayIso();
@@ -2276,7 +2365,12 @@ interface DashboardMetrics {
         const supported = Boolean(globalScope.SpeechRecognition || globalScope.webkitSpeechRecognition);
         document.getElementById('btnVoiceEntry').disabled = !supported;
         if (!supported) document.getElementById('voiceStatus').textContent = 'ไม่รองรับเสียงบนเบราว์เซอร์นี้ สามารถพิมพ์รายการได้';
-        on('txFormMerchant', 'blur', safe(suggestMerchantCategory));
+        for (const event of ['input', 'change']) on('txFormMerchant', event, safe(suggestMerchantCategory));
+        for (const [field, id] of Object.entries(entryIds)) {
+          for (const event of ['input', 'change']) on(id, event, () => {
+            entryFields[field] = { origin: 'user', value: document.getElementById(id).value };
+          });
+        }
         on('btnClearLearning', 'click', safe(async () => { await automationPreference('learning', { merchants: {}, chips: [] }); await renderQuickChips(); }));
         on('btnClearSalaryTemplate', 'click', safe(() => automationPreference('salary', null)));
         on('btnUseSalaryTemplate', 'click', safe(async () => {
@@ -3130,6 +3224,7 @@ interface DashboardMetrics {
         document.getElementById('btnReanalyzeCurrentImage').hidden = !hasTempImage;
         document.getElementById('btnRemoveImageFromModal').hidden = !hasTempImage;
         document.getElementById('verificationModal').hidden = false;
+        resetEntrySuggestions(true);
       }
 
       function openVerificationModalForManual(
@@ -3159,6 +3254,7 @@ interface DashboardMetrics {
         document.getElementById('btnReanalyzeCurrentImage').hidden = !hasTempImage;
         document.getElementById('btnRemoveImageFromModal').hidden = !hasTempImage;
         document.getElementById('verificationModal').hidden = false;
+        resetEntrySuggestions();
       }
 
       function openVerificationModalForEdit(tx: any) {
@@ -3186,6 +3282,7 @@ interface DashboardMetrics {
         document.getElementById('btnReanalyzeCurrentImage').hidden = true;
         document.getElementById('btnRemoveImageFromModal').hidden = true;
         document.getElementById('verificationModal').hidden = false;
+        resetEntrySuggestions(true);
       }
 
       function clearTemporaryReceiptImage() {
@@ -3326,6 +3423,7 @@ interface DashboardMetrics {
 
         // ปุ่มปิด/ยกเลิก Verification Modal
         const closeVerification = () => {
+          suggestionRequest++;
           document.getElementById('verificationModal').hidden = true;
           releaseSharedReceipt().catch(() => {});
         };
@@ -3827,6 +3925,8 @@ interface DashboardMetrics {
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
         upgradeSalaryTemplate, legacyInsuranceReview, upgradeLegacyInsurance,
         aggregateFinancialCharts, renderFinancialCharts, selectAppPanel, bindAppNavigation,
+        openVerificationModalForManual, openVerificationModalFromAiResult, openVerificationModalForEdit,
+        refreshMerchantHistory, readMerchantHistory, 'bindUiEvents': bindUiEvents,
         normalizeMerchant, learnConfirmedRecord, suggestMerchantCategory, applyQuickChip,
         startVoiceEntry, validReceiptFile, handleReceiptPaste, handleImageFileSelected,
         resumeSharedReceipt, releaseSharedReceipt, shareInboxChange, bindAutomationEvents,
