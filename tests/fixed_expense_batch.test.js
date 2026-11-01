@@ -12,6 +12,8 @@ module.exports = async function () {
   const results = await Promise.allSettled(requests);
   assert.equal(results.filter(r => r.status === 'fulfilled').length, 1, 'only one tab commits');
   assert.equal(results.find(r => r.status === 'fulfilled').value[0].sync_status, 'local_only');
+  assert.equal(results.find(r => r.status === 'fulfilled').value[0].fund_bucket, 'dan_insurance');
+  await assert.rejects(b.recordFixedExpenseItem('dan_insurance', { transaction_date: '2026-10-01' }));
   await assert.rejects(a.batchPayFixedExpenses([{ key: 'dan_insurance', amount: 2900 }], '2026-10-01'));
   idb.failWrites = true;
   await assert.rejects(a.batchPayFixedExpenses([{ key: 'sister_mind', amount: 2000 }], '2026-10-01'));
@@ -30,4 +32,36 @@ module.exports = async function () {
   a.getState().currentUser = { id: 'other' };
   const other = await a.batchPayFixedExpenses([{ key: 'dan_insurance', amount: 2900 }], '2026-10-01');
   assert.equal(other[0].user_id, 'other'); assert.equal(other[0].sync_status, 'pending_sync');
+  const salaryRace = await Promise.allSettled([a, b].map(api => api.allocateMonthlySalary({ transaction_date: '2027-02-01', total_salary: 45000 })));
+  assert.equal(salaryRace.filter(row => row.status === 'fulfilled').length, 2, 'different users have independent salary ledgers');
+  const shared = createIndexedDB(); let injectFailure = false;
+  const originalOpen = shared.open.bind(shared);
+  shared.open = (...args) => {
+    const request = originalOpen(...args);
+    let callback;
+    Object.defineProperty(request, 'onsuccess', { set(fn) { callback = fn; }, get() { return event => {
+      const db = request.result; const originalTransaction = db.transaction.bind(db);
+      db.transaction = (...params) => {
+        const tx = originalTransaction(...params); const originalStore = tx.objectStore.bind(tx); let writes = 0;
+        tx.objectStore = name => { const store = originalStore(name); if (name === 'transactions' && params[1] === 'readwrite') {
+          const put = store.put; store.put = value => { const result = put(value); if (++writes === 1 && injectFailure) setImmediate(() => { shared.failWrites = true; }); return result; };
+        } return store; }; return tx;
+      }; callback?.(event);
+    }; } });
+    return request;
+  };
+  const one = loadApp(shared).api, two = loadApp(shared).api;
+  const concurrent = await Promise.allSettled([one, two].map(api => api.allocateMonthlySalary({ transaction_date: '2027-03-01', total_salary: 45000 })));
+  assert.equal(concurrent.filter(row => row.status === 'fulfilled').length, 1, 'salary serialized');
+  injectFailure = true;
+  const before = one.getState().transactions.length;
+  await assert.rejects(one.rolloverMonthlySurplusToEmergency('2027-03'));
+  assert.equal(one.getState().transactions.length, before, 'failed rollover does not update visible state');
+  shared.failWrites = false; injectFailure = false;
+  const retry = await one.rolloverMonthlySurplusToEmergency('2027-03');
+  assert.equal(retry.amount, 22600, 'aborted transfer leaves neither partial rows nor ledger');
+  assert.equal((await two.rolloverMonthlySurplusToEmergency('2027-03')).rolledOver, false, 'repeat transfer creates no additional rows');
+  const premium = await two.recordFixedExpenseItem('dan_insurance', { transaction_date: '2027-04-01', amount: 100 });
+  assert.equal(premium.fund_bucket, 'dan_insurance');
+  await assert.rejects(one.batchPayFixedExpenses([{ key: 'dan_insurance', amount: 100 }], '2027-04-01'));
 };

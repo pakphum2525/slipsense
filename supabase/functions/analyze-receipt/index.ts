@@ -207,10 +207,12 @@ function normalizeAndValidateAiResult(raw: Record<string, unknown>) {
       ? raw.purpose_analysis.trim().slice(0, 1000)
       : 'ไม่สามารถระบุวัตถุประสงค์ที่ชัดเจนจากภาพเพียงอย่างเดียว กรุณาตรวจสอบหรือระบุเพิ่มเติม';
 
-  // 9. แนะนำกระปุกเงินเดือน 5 ส่วน (fund_bucket) เบื้องต้นตามประเภทใบเสร็จและคำสำคัญ
+  // 9. แนะนำกระปุกเงินเดือน 6 ส่วน (fund_bucket) เบื้องต้นตามประเภทใบเสร็จและคำสำคัญ
   const combinedText = `${merchant || ''} ${items_summary} ${purpose_analysis}`.toLowerCase();
   let fund_bucket = 'general_expense';
-  if (/หุ้น|หลักทรัพย์|กองทุน|ปันผล|ตลาดหลักทรัพย์|streaming|settrade|innovestx|dime|ks\b/.test(combinedText)) {
+  if (/ประกัน\s*แดน|\[fixed_item:dan_insurance\]/.test(combinedText)) {
+    fund_bucket = 'dan_insurance';
+  } else if (/หุ้น|หลักทรัพย์|กองทุน|ปันผล|ตลาดหลักทรัพย์|streaming|settrade|innovestx|dime|ks\b/.test(combinedText)) {
     fund_bucket = 'investment_stock';
   } else if (category === 'home_repair' || /สร้างบ้าน|วัสดุก่อสร้าง|ปูน|เหล็ก|ไทวัสดุ|โฮมโปร|ดูโฮม|เมกาโฮม|ผู้รับเหมา|ช่างบ้าน/.test(combinedText)) {
     fund_bucket = 'home_building';

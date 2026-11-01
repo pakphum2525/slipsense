@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   currency VARCHAR(3) NOT NULL DEFAULT 'THB' CHECK (currency ~ '^[A-Z]{3}$'),
   type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
   category TEXT NOT NULL CHECK (char_length(btrim(category)) >= 1 AND char_length(category) <= 100),
-  fund_bucket TEXT NOT NULL DEFAULT 'general_expense' CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense')),
+  fund_bucket TEXT NOT NULL DEFAULT 'general_expense' CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance')),
   items_summary TEXT NOT NULL DEFAULT '' CHECK (char_length(items_summary) <= 2000),
   purpose_analysis TEXT NOT NULL DEFAULT '' CHECK (char_length(purpose_analysis) <= 2000),
   source_type TEXT NOT NULL DEFAULT 'manual' CHECK (source_type IN ('receipt', 'transfer_slip', 'manual')),
@@ -31,17 +31,35 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
 );
 
--- รองรับการอัปเกรดตารางที่มีอยู่เดิมแบบ Idempotent (เพิ่มคอลัมน์ fund_bucket สำหรับกระปุกเงินเดือน 5 ส่วน)
+-- รองรับการอัปเกรดตารางที่มีอยู่เดิมแบบ Idempotent (เพิ่มคอลัมน์ fund_bucket สำหรับกระปุกเงินเดือน 6 ส่วน)
 ALTER TABLE public.transactions
   ADD COLUMN IF NOT EXISTS fund_bucket TEXT NOT NULL DEFAULT 'general_expense'
-  CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense'));
+  CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance'));
+
+-- แทนที่ CHECK กระปุกเดิมภายใต้ transaction
+DO $$
+DECLARE bucket_constraint RECORD;
+BEGIN
+  FOR bucket_constraint IN
+    SELECT c.conname FROM pg_constraint c
+    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
+    WHERE c.conrelid = 'public.transactions'::regclass AND c.contype = 'c' AND a.attname = 'fund_bucket'
+      AND c.conkey = ARRAY[a.attnum]::smallint[]
+      AND pg_get_constraintdef(c.oid) LIKE '%investment_stock%'
+      AND pg_get_constraintdef(c.oid) LIKE '%general_expense%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.transactions DROP CONSTRAINT %I', bucket_constraint.conname);
+  END LOOP;
+  ALTER TABLE public.transactions ADD CONSTRAINT transactions_fund_bucket_check
+    CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance'));
+END $$;
 
 COMMENT ON TABLE public.transactions IS 'ตารางธุรกรรมรายรับ-รายจ่ายของผู้ใช้แต่ละบัญชีในระบบ SlipSense';
 COMMENT ON COLUMN public.transactions.id IS 'UUID ประจำรายการ (สร้างจากฝั่ง Client เพื่อรองรับ Idempotent Upsert เมื่อซิงก์ซ้ำ)';
 COMMENT ON COLUMN public.transactions.user_id IS 'รหัสผู้ใช้เจ้าของข้อมูล อ้างอิง auth.users(id)';
 COMMENT ON COLUMN public.transactions.transaction_date IS 'วันที่เกิดรายการตามเขตเวลาประเทศไทย (YYYY-MM-DD)';
 COMMENT ON COLUMN public.transactions.amount IS 'จำนวนเงินเป็นค่าบวกเสมอ (ใช้คอลัมน์ type แยกรายรับ/รายจ่าย)';
-COMMENT ON COLUMN public.transactions.fund_bucket IS 'กระปุกเงินเดือน 5 ส่วน (investment_stock, home_building, fixed_expense, emergency_personal, general_expense)';
+COMMENT ON COLUMN public.transactions.fund_bucket IS 'กระปุกเงินเดือน 6 ส่วน (investment_stock, home_building, fixed_expense, emergency_personal, general_expense, dan_insurance)';
 COMMENT ON COLUMN public.transactions.purpose_analysis IS 'ผลการวิเคราะห์วัตถุประสงค์ของการซื้อจาก AI ที่ผู้ใช้ตรวจสอบแล้ว';
 
 -- ============================================================================

@@ -15,6 +15,62 @@ const crypto = require('crypto');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
+
+// Execute the original builder using a closed, in-memory filesystem.
+function createMemoryBuild() {
+  const files = new Map(), dirs = new Set();
+  const absolute = p => path.resolve(PROJECT_ROOT, String(p));
+  const virtualOnly = p => p === path.join(PROJECT_ROOT, 'dist') || p.startsWith(path.join(PROJECT_ROOT, 'dist') + path.sep) || ['index.html', 'sw.js'].some(n => p === path.join(PROJECT_ROOT, n));
+  const missing = p => Object.assign(new Error('ENOENT: ' + p), { code: 'ENOENT' });
+  const io = {
+    existsSync(p) { p = absolute(p); return files.has(p) || dirs.has(p) || (!virtualOnly(p) && fs.existsSync(p)); },
+    readFileSync(p, encoding) { p = absolute(p); const b = files.get(p); if (b) return encoding ? b.toString(typeof encoding === 'string' ? encoding : encoding.encoding) : Buffer.from(b); if (virtualOnly(p)) throw missing(p); return fs.readFileSync(p, encoding); },
+    writeFileSync(p, data, encoding) { p = absolute(p); if (!virtualOnly(p)) throw new Error('Unexpected build output: ' + p); files.set(p, Buffer.from(data, encoding)); },
+    mkdirSync(p) { p = absolute(p); if (!virtualOnly(p)) throw new Error('Unexpected build directory: ' + p); dirs.add(p); },
+    rmSync(p) { p = absolute(p); if (p !== path.join(PROJECT_ROOT, 'dist')) throw new Error('Unexpected build removal: ' + p); for (const k of files.keys()) if (k.startsWith(p + path.sep)) files.delete(k); for (const k of dirs) if (k === p || k.startsWith(p + path.sep)) dirs.delete(k); },
+    copyFileSync(a, b) { io.writeFileSync(b, io.readFileSync(a)); },
+    statSync(p) { p = absolute(p); if (files.has(p)) return { size: files.get(p).length, isDirectory: () => false, isFile: () => true }; if (dirs.has(p)) return { size: 0, isDirectory: () => true, isFile: () => false }; if (virtualOnly(p)) throw missing(p); return fs.statSync(p); },
+    readdirSync(p, options) { p = absolute(p); if (!virtualOnly(p)) return fs.readdirSync(p, options); const entries = [...new Set([...files.keys(), ...dirs].filter(k => path.dirname(k) === p))]; return entries.map(k => options?.withFileTypes ? { name: path.basename(k), isDirectory: () => dirs.has(k), isFile: () => files.has(k) } : path.basename(k)); },
+    stat(p, cb) { setImmediate(() => { try { cb(null, io.statSync(p)); } catch (e) { cb(e); } }); },
+    readFile(p, cb) { setImmediate(() => { try { cb(null, io.readFileSync(p)); } catch (e) { cb(e); } }); }
+  };
+  const adapter = new Proxy(io, { get(target, key) { if (!(key in target)) throw new Error('Unsupported filesystem operation: ' + String(key)); return target[key]; } });
+  function build() {
+    const filename = path.join(PROJECT_ROOT, 'scripts/build_prod.js');
+    const mod = { exports: {} };
+    const buildRequire = name => name === 'fs' || name === 'node:fs' ? adapter : require(name);
+    vm.runInNewContext(fs.readFileSync(filename, 'utf8'), { require: buildRequire, module: mod, exports: mod.exports, __dirname: path.dirname(filename), Buffer, process, console }, { filename });
+    mod.exports.main();
+    const manifest = JSON.parse(io.readFileSync('dist/BUILD_MANIFEST.json', 'utf8'));
+    const source = ['src/app.ts', 'src/sw.ts', 'src/index.template.html', 'manifest.json'].map(p => fs.readFileSync(path.join(PROJECT_ROOT, p), 'utf8'));
+    assertEqual(manifest.source_sha256, crypto.createHash('sha256').update(JSON.stringify(source)).digest('hex'), 'build uses current sources');
+    for (const artifact of manifest.artifacts) assertEqual(crypto.createHash('sha256').update(io.readFileSync('dist/' + artifact.path)).digest('hex'), artifact.sha256, 'artifact hash');
+    return manifest;
+  }
+  // All discovered suites keep their assertions; their filesystem and build calls use this adapter.
+  const cache = new Map();
+  function load(filename) {
+    filename = require.resolve(filename);
+    if (filename === __filename) return module.exports;
+    if (cache.has(filename)) return cache.get(filename).exports;
+    const mod = { exports: {} }; cache.set(filename, mod);
+    const localRequire = name => {
+      if (name === 'fs' || name === 'node:fs') return adapter;
+      if (name === 'child_process') return { spawnSync(executable, args) {
+        assertEqual(executable, process.execPath, 'only Node build subprocess allowed');
+        assertEqual(JSON.stringify(args), JSON.stringify(['scripts/build_prod.js']), 'only real build script allowed');
+        try { build(); return { status: 0, stderr: '' }; } catch (e) { return { status: 1, stderr: e.stack }; }
+      } };
+      if (name.startsWith('.')) return load(path.resolve(path.dirname(filename), name));
+      return require(name);
+    };
+    vm.runInThisContext('(function(require,module,exports,__dirname,__filename){' + fs.readFileSync(filename, 'utf8') + '\n})', { filename })(localRequire, mod, mod.exports, path.dirname(filename), filename);
+    return mod.exports;
+  }
+  build();
+  return { fs: adapter, build, load };
+}
+
 let totalTests = 0;
 let passedTests = 0;
 let failedTests = 0;
@@ -150,9 +206,9 @@ function createBrowserSandbox() {
       querySelector: () => createDomElement('div'),
       querySelectorAll: () => [],
       closest: () => null,
-      focus: () => {},
+      focus() { documentMock.activeElement = this; },
       blur: () => {},
-      click: () => {},
+      click() { this.dispatchEvent({ type: 'click', target: this }); if (this.onclick) this.onclick(); },
       reset: () => {},
       scrollIntoView: () => {},
       getContext: () => ({
@@ -171,6 +227,7 @@ function createBrowserSandbox() {
     head: createDomElement('head'),
     body: createDomElement('body'),
     createElement: (tag) => createDomElement(tag),
+    createElementNS: (_namespace, tag) => createDomElement(tag),
     createTextNode: (text) => ({ nodeType: 3, textContent: String(text) }),
     createDocumentFragment: () => createDomElement('fragment'),
     getElementById: (id) => {
@@ -512,6 +569,8 @@ const ReferenceEngine = {
 };
 
 async function main() {
+  const memoryBuild = createMemoryBuild();
+  const fs = memoryBuild.fs;
   console.log('======================================================================');
   console.log(' SlipSense Automated Verification & Security Test Suite');
   console.log('======================================================================');
@@ -1172,7 +1231,7 @@ async function main() {
     );
   });
 
-  await runTest('Suite 7', '7.5 ทดสอบระบบแบ่งเงินเดือน 5 ส่วน (Fix รายเดือน: สร้างบ้าน 13,000 / หุ้น 6,500 / คงที่ 12,700|14,000), ตัดจ่ายจาก 5 ส่วน และโอนเงินเหลือใช้เข้าข้อ 4', async () => {
+  await runTest('Suite 7', '7.5 ทดสอบระบบแบ่งเงินเดือน 6 ส่วน (Fix รายเดือน: สร้างบ้าน 13,000 / หุ้น 6,500 / คงที่ 9,800|11,100), ตัดจ่ายจาก 6 ส่วน และโอนเงินเหลือใช้เข้าข้อ 4', async () => {
     assert(appApi && typeof appApi.allocateMonthlySalary === 'function', 'ต้องมีฟังก์ชัน allocateMonthlySalary');
     assert(typeof appApi.recordFixedExpenseItem === 'function', 'ต้องมีฟังก์ชัน recordFixedExpenseItem');
     assert(typeof appApi.rolloverMonthlySurplusToEmergency === 'function', 'ต้องมีฟังก์ชัน rolloverMonthlySurplusToEmergency');
@@ -1197,7 +1256,7 @@ async function main() {
 
     assertEqual(getBucket('investment_stock').availableBalance, 6500, 'ข้อ 1 เงินลงทุน (หุ้น) ต้องได้ 6,500 บาท');
     assertEqual(getBucket('home_building').availableBalance, 13000, 'ข้อ 2 เงินเก็บสร้างบ้าน ต้องได้ 13,000 บาท');
-    assertEqual(getBucket('fixed_expense').availableBalance, 12700, 'ข้อ 3 ค่าใช้จ่ายคงที่ (รอบ 1,300) ต้องได้ 12,700 บาท');
+    assertEqual(getBucket('fixed_expense').availableBalance, 9800, 'ข้อ 3 ค่าใช้จ่ายคงที่ (รอบ 1,300) ต้องได้ 9,800 บาท');
     assertEqual(getBucket('emergency_personal').availableBalance, 0, 'ข้อ 4 ค่าใช้จ่ายฉุกเฉินเริ่มต้นเป็น 0 บาท');
     assertEqual(getBucket('general_expense').availableBalance, 12800, 'ข้อ 5 ค่าใช้จ่ายทั่วไป ต้องเหลือ 12,800 บาท (45,000 - 32,200)');
 
@@ -1230,7 +1289,7 @@ async function main() {
 
     m = appApi.calculateDashboardMetrics(state.transactions, '2026-11');
     assertEqual(m.fixedChecklistStatus.father_insurance.isPaid, true, 'สถานะประกันพ่อต้องเป็นจ่ายแล้ว');
-    assertEqual(m.fixedChecklistStatus.dan_insurance.isPaid, true, 'สถานะประกันแดนต้องเป็นจ่ายแล้ว');
+    assertEqual(m.insurancePaymentStatus.paidAmount, 2900, 'สถานะประกันแดนต้องเป็นจ่ายแล้ว');
     assertEqual(m.fixedChecklistStatus.sister_mind.isPaid, true, 'สถานะให้น้อง (มายด์) ต้องเป็นจ่ายแล้ว');
     assertEqual(m.fixedChecklistStatus.utilities_tuition.remainingBudget, 500, 'งบน้ำ/ไฟ/โทร/เรียนลูก 6,500 ใช้ไป 6,000 ต้องเหลือ 500');
     assertEqual(getBucket('fixed_expense').availableBalance, 500, 'ข้อ 3 ค่าใช้จ่ายคงที่ ต้องเหลือ 500 บาท');
@@ -1250,8 +1309,59 @@ async function main() {
   // =========================================================================
   // SUMMARY
   // =========================================================================
+
+  for (const variant of ['source', 'built']) {
+    await runTest('Six funds', variant + ': charts, isolation, calendar, safe SVG and navigation', async () => {
+      const sandbox = createBrowserSandbox(); sandbox.document.readyState = 'loading';
+      const code = variant === 'source' ? require('node:module').stripTypeScriptTypes(fs.readFileSync(path.join(PROJECT_ROOT, 'src/app.ts'), 'utf8')) : [...fs.readFileSync(path.join(PROJECT_ROOT, 'dist/index.html'), 'utf8').matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]).join('\n');
+      vm.runInContext(code, sandbox);
+      const api = sandbox.SlipSenseApp, state = api.getState();
+      const row = (id, amount, date, extra = {}) => ({ id, amount, transaction_date: date, user_id: null, type: 'income', fund_bucket: 'dan_insurance', category: 'salary_income', ...extra });
+      const rows = [row('prior', 34800, '2026-01-01'), row('new', 2900, '2027-01-01'), row('boundary', 25, '2026-12-31T18:00:00Z', { type: 'expense', category: '<script>unsafe</script>' }), row('future', 900, '2027-02-01'), row('other', 500, '2027-01-01', { user_id: 'other' }), row('deleted', 500, '2027-01-01', { deleted_at: 'yes' }), row('bad', Infinity, '2027-01-01'), row('boolean', true, '2027-01-01'), row('empty', '', '2027-01-01'), row('date', 500, '2027-02-30'), row('transfer-in', 500, '2027-01-03', { note: '[SURPLUS_ROLLOVER_IN:2027-01:emergency_personal]', fund_bucket: 'emergency_personal' }), row('transfer-out', 500, '2027-01-03', { type: 'expense', note: '[SURPLUS_ROLLOVER_OUT:2027-01:general_expense]', fund_bucket: 'general_expense' })];
+      rows.push(rows[1]);
+      let chart = api.aggregateFinancialCharts(rows, '2027-01');
+      assertEqual(chart.months.length, 6); assertEqual(chart.months[0].month, '2026-08');
+      assertEqual(chart.months[0].incomeCents, 0); assertEqual(chart.months[5].incomeCents, 290000);
+      assertEqual(chart.months[5].expenseCents, 2500);
+      assertEqual(chart.insurance.available, 37675); assertEqual(chart.insurance.percentage, 100);
+      assertEqual(chart.insurance.yearIncome, 2900); assertEqual(chart.insurance.yearExpense, 25);
+      assertEqual(chart.categories.length, 1);
+      state.transactions = rows;
+      api.renderFinancialCharts('2027-01');
+      const host = sandbox.document.getElementById('financialCharts');
+      assertEqual(host.children.filter(node => node.tagName === 'SVG').length, 2);
+      const serialized = JSON.stringify(host.children);
+      assert(!serialized.includes('NaN') && !serialized.includes('Infinity'), 'finite SVG coordinates');
+      assert(host.children.find(node => node.tagName === 'UL').children[0].textContent.includes('<script>unsafe</script>'), 'untrusted label remains text');
+      state.transactions = []; api.renderFinancialCharts('2027-01');
+      assertEqual(api.aggregateFinancialCharts([], '2027-01').insurance.percentage, 0);
+      await api.allocateMonthlySalary({ transaction_date: '2027-01-01', total_salary: 45000 });
+      assertEqual(api.aggregateFinancialCharts(state.transactions, '2027-01').months[5].incomeCents, 4500000, 'salary counted once');
+      const el = id => sandbox.document.getElementById(id);
+      el('dashboardMonthPicker').value = '2027-01'; el('filterSearchInput').value = 'retained'; el('txFormMerchant').value = 'draft';
+      api.bindAppNavigation(); api.bindAppNavigation();
+      el('tab-funds').click(); assertEqual(el('panel-funds').hidden, false); assertEqual(el('panel-home').hidden, true);
+      assertEqual(el('tab-funds').getAttribute('aria-selected'), 'true'); assertEqual(sandbox.document.activeElement, el('panel-funds'));
+      el('tab-funds').dispatchEvent({ type: 'keydown', key: 'ArrowRight', preventDefault() {} });
+      assertEqual(el('tab-analytics').getAttribute('aria-selected'), 'true'); assertEqual(sandbox.document.activeElement, el('tab-analytics'));
+      el('tab-home').click(); assertEqual(el('filterSearchInput').value, 'retained'); assertEqual(el('txFormMerchant').value, 'draft');
+      let captures = 0; el('btnChooseGallery').addEventListener('click', () => captures++); el('heroCapture').click(); assertEqual(captures, 1, 'single navigation binding');
+      sandbox.navigator.onLine = false; api.renderFinancialCharts('2027-01');
+      assertEqual(host.children.length, 4, 'offline render needs no network');
+    });
+  }
+  await runTest('Six funds', 'Edge suggestions use the same six buckets', () => {
+    const source = fs.readFileSync(path.join(PROJECT_ROOT, 'supabase/functions/analyze-receipt/index.ts'), 'utf8');
+    const start = source.indexOf('  const combinedText ='); const end = source.indexOf('  const uncertain_fields', start);
+    assert(start > 0 && end > start, 'suggestion function present');
+    for (const [merchant, category, expected] of [['ประกันแดน', 'health_medical', 'dan_insurance'], ['ประกัน แดน', 'utilities_bills', 'dan_insurance'], ['ประกันพ่อ', 'health_medical', 'fixed_expense'], ['อาหาร', 'food_drink', 'general_expense']]) {
+      const actual = vm.runInNewContext('(function(){' + source.slice(start, end) + '; return fund_bucket; })()', { merchant, category, items_summary: '', purpose_analysis: '' });
+      assertEqual(actual, expected);
+    }
+  });
+
   for (const file of fs.readdirSync(path.join(PROJECT_ROOT, 'tests')).filter(file => file.endsWith('.test.js'))) {
-    await runTest('Automation', file, () => require(path.join(PROJECT_ROOT, 'tests', file))());
+    await runTest('Automation', file, () => memoryBuild.load(path.join(PROJECT_ROOT, 'tests', file))());
   }
 
   console.log('\n======================================================================');
@@ -1269,7 +1379,7 @@ async function main() {
   process.exit(0);
 }
 
-module.exports = { createBrowserSandbox };
+module.exports = { createBrowserSandbox, createMemoryBuild };
 
 if (require.main === module) main().catch((err) => {
   console.error('เกิดข้อผิดพลาดร้ายแรงในการรันชุดทดสอบ:', err);

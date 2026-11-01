@@ -16,7 +16,8 @@ type FundBucket =
   | 'home_building'
   | 'fixed_expense'
   | 'emergency_personal'
-  | 'general_expense';
+  | 'general_expense'
+  | 'dan_insurance';
 
 interface TransactionRecord {
   id: string;
@@ -110,7 +111,8 @@ interface DashboardMetrics {
         home_building: '2. เงินเก็บสร้างบ้าน',
         fixed_expense: '3. ค่าใช้จ่ายคงที่',
         emergency_personal: '4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-        general_expense: '5. ค่าใช้จ่ายทั่วไป'
+        general_expense: '5. ค่าใช้จ่ายทั่วไป',
+        dan_insurance: '6. เงินเก็บประกันแดน'
       };
 
       const FUND_BUCKET_ORDER: FundBucket[] = [
@@ -118,7 +120,8 @@ interface DashboardMetrics {
         'home_building',
         'fixed_expense',
         'emergency_personal',
-        'general_expense'
+        'general_expense',
+        'dan_insurance'
       ];
 
       const FIXED_MONTHLY_PRESETS = {
@@ -127,10 +130,11 @@ interface DashboardMetrics {
         FATHER_INSURANCE_NORMAL: 1300,
         FATHER_INSURANCE_EVERY_3RD: 2600,
         DAN_INSURANCE: 2900,
+        DAN_INSURANCE_ANNUAL_TARGET: 34800,
         SISTER_MIND: 2000,
         UTILITIES_TUITION_BUDGET: 6500,
-        FIXED_EXPENSE_TOTAL_NORMAL: 12700,
-        FIXED_EXPENSE_TOTAL_EVERY_3RD: 14000
+        FIXED_EXPENSE_TOTAL_NORMAL: 9800,
+        FIXED_EXPENSE_TOTAL_EVERY_3RD: 11100
       };
 
       // สถานะหลักของแอปพลิเคชัน
@@ -251,7 +255,7 @@ interface DashboardMetrics {
       }
 
       /**
-       * วิเคราะห์และจับคู่ส่วนของเงิน (1 ใน 5 ส่วน) อัตโนมัติจากหมวดหมู่ ชื่อร้านค้า และรายละเอียดรายการ
+       * วิเคราะห์และจับคู่ส่วนของเงิน (1 ใน 6 ส่วน) อัตโนมัติจากหมวดหมู่ ชื่อร้านค้า และรายละเอียดรายการ
        */
       function inferDefaultFundBucket(
         category: string = '',
@@ -261,6 +265,7 @@ interface DashboardMetrics {
         note: string = ''
       ): FundBucket {
         const text = `${merchant} ${itemsSummary} ${purposeAnalysis} ${note}`.toLowerCase();
+        if (/ประกัน\s*แดน|\[fixed_item:dan_insurance\]/.test(text)) return 'dan_insurance';
         if (/(หุ้น|กองทุน|ปันผล|หลักทรัพย์|พอร์ต|dime|innovestx|streaming|settrade|stock)/.test(text)) {
           return 'investment_stock';
         }
@@ -464,7 +469,7 @@ interface DashboardMetrics {
       }
 
       /**
-       * คำนวณยอดสรุปทางการเงินประจำเดือน พร้อมยอดคงเหลือกระปุกเงินเดือน 5 ส่วน และสถานะรายการ Fix ประจำเดือน
+       * คำนวณยอดสรุปทางการเงินประจำเดือน พร้อมยอดคงเหลือกระปุกเงินเดือน 6 ส่วน และสถานะรายการ Fix ประจำเดือน
        */
       function calculateDashboardMetrics(transactions: any[] = [], targetYearMonth: string = '') {
         let totalIncomeCents = 0;
@@ -486,7 +491,8 @@ interface DashboardMetrics {
           home_building: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
           fixed_expense: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
           emergency_personal: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
-          general_expense: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 }
+          general_expense: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
+          dan_insurance: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 }
         };
 
         let fatherInsPaidCents = 0;
@@ -499,14 +505,15 @@ interface DashboardMetrics {
         const filtered = [];
 
         for (const tx of transactions) {
-          if (!tx || tx.deleted_at) continue;
+          if (!tx || tx.deleted_at || tx.pending_delete || (tx.user_id || null) !== (appState.currentUser?.id || null)) continue;
           const id = String(tx.id || '');
           if (id && seenIds.has(id)) continue; // ป้องกันการนับรายการเดียวกันซ้ำ
           if (id) seenIds.add(id);
 
-          const d = String(tx.transaction_date || tx.date || '');
-          const cents = Math.round(Number(tx.amount || 0) * 100);
-          if (!Number.isFinite(cents) || cents <= 0) continue;
+          const d = transactionCalendarDate(tx.transaction_date || tx.date);
+          if (!d) continue;
+          const cents = transactionAmountCents(tx.amount);
+          if (!Number.isSafeInteger(cents) || cents <= 0) continue;
 
           const rawBucket = typeof tx.fund_bucket === 'string' ? tx.fund_bucket.trim() : '';
           const bucket: FundBucket = (FUND_BUCKET_LABELS as Record<string, string>)[rawBucket]
@@ -533,6 +540,7 @@ interface DashboardMetrics {
             }
           } else if (tx.type === 'expense') {
             fundStatsCents[bucket].monthExpenseCents += cents;
+            if (isInternalTransfer(tx)) continue;
             const hay = `${tx.merchant || ''} ${tx.items_summary || ''} ${tx.purpose_analysis || ''} ${tx.note || ''}`.toLowerCase();
             if (hay.includes('ประกันพ่อ') || hay.includes('[fixed_item:father_insurance]')) {
               fatherInsPaidCents += cents;
@@ -555,9 +563,10 @@ interface DashboardMetrics {
         }
 
         for (const tx of filtered) {
-          const cents = Math.round(Number(tx.amount || 0) * 100);
-          if (!Number.isFinite(cents) || cents <= 0) continue;
+          const cents = transactionAmountCents(tx.amount);
+          if (!Number.isSafeInteger(cents) || cents <= 0) continue;
 
+          if (isInternalTransfer(tx)) continue;
           const status = tx.sync_status || 'local_only';
 
           if (tx.type === 'income') {
@@ -593,7 +602,7 @@ interface DashboardMetrics {
           }))
           .sort((a, b) => b.amount - a.amount);
 
-        const cumulativeBuckets = new Set<FundBucket>(['investment_stock', 'home_building', 'emergency_personal']);
+        const cumulativeBuckets = new Set<FundBucket>(['investment_stock', 'home_building', 'emergency_personal', 'dan_insurance']);
         const fundBalances = FUND_BUCKET_ORDER.map((bucket) => {
           const st = fundStatsCents[bucket];
           const isCumulative = cumulativeBuckets.has(bucket);
@@ -627,13 +636,6 @@ interface DashboardMetrics {
             targetAmount: detectedFatherInsTarget,
             isPaid: fatherInsPaidCents >= FIXED_MONTHLY_PRESETS.FATHER_INSURANCE_NORMAL * 100
           },
-          dan_insurance: {
-            key: 'dan_insurance',
-            label: 'ประกันแดน (Fix 2,900/เดือน)',
-            paidAmount: danInsPaidCents / 100,
-            targetAmount: FIXED_MONTHLY_PRESETS.DAN_INSURANCE,
-            isPaid: danInsPaidCents >= FIXED_MONTHLY_PRESETS.DAN_INSURANCE * 100
-          },
           sister_mind: {
             key: 'sister_mind',
             label: 'ให้น้อง (มายด์) (Fix 2,000/เดือน)',
@@ -663,7 +665,8 @@ interface DashboardMetrics {
           failedCount,
           categoryBreakdown,
           fundBalances,
-          fixedChecklistStatus
+          fixedChecklistStatus,
+          insurancePaymentStatus: { paidAmount: danInsPaidCents / 100 }
         };
       }
 
@@ -1186,6 +1189,10 @@ interface DashboardMetrics {
           throw new Error(validation.errors.join('\n'));
         }
 
+        const fixedMarker = String(txInput.note || '').match(/\[fixed_item:(dan_insurance)\]/);
+        if (!txInput.id && txInput.type === 'expense' && fixedMarker) {
+          return (await commitAutomation([{ ...validation.normalized, fund_bucket: 'dan_insurance' }], ['fixed:dan_insurance:' + validation.normalized.transaction_date.slice(0, 7)]))[0];
+        }
         const nowIso = new Date().toISOString();
         const existingId = typeof txInput.id === 'string' && txInput.id.trim() ? txInput.id.trim() : null;
         const id = existingId || generateUuid();
@@ -1744,7 +1751,212 @@ interface DashboardMetrics {
       // =====================================================================
       // 5-FUND SALARY ENVELOPE & FIXED MONTHLY ALLOCATION WORKFLOW
       // =====================================================================
+      function upgradeSalaryTemplate(template: any) {
+        if (!template || template.version === 2) return template;
+        const next = { ...template, needs_review: true };
+        // Only explicitly versioned standard templates can be upgraded automatically.
+        if (template.version === 1 && [12700, 14000].includes(template.fixed_expense) &&
+            template.investment_stock === 6500 && template.home_building === 13000 &&
+            template.emergency_personal === 0 &&
+            Number.isFinite(template.total_salary) && template.general_expense >= 0 &&
+            Math.round((template.investment_stock + template.home_building + template.fixed_expense + template.emergency_personal + template.general_expense) * 100) === Math.round(template.total_salary * 100)) {
+          next.fixed_expense = (Math.round(template.fixed_expense * 100) - 290000) / 100;
+          next.dan_insurance = 2900; next.version = 2; next.needs_review = false;
+        } else { next.dan_insurance = template.dan_insurance ?? 0; }
+        return next;
+      }
+
+      function legacyInsuranceReview(rows: any[], month: string) {
+        const migrated = new Set(rows.filter(row => (row.user_id || null) === (appState.currentUser?.id || null) && !row.deleted_at && !row.pending_delete).flatMap(row => [...String(row.note || '').matchAll(/\[INSURANCE_RECLASS:([^:]+):([^\]]+)\]/g)].filter(m => m[1] === month).map(m => m[2])));
+        return rows.filter(row => !migrated.has(row.id) && !row.deleted_at && !row.pending_delete &&
+          (row.user_id || null) === (appState.currentUser?.id || null) && row.transaction_date?.slice(0, 7) === month &&
+          row.fund_bucket === 'fixed_expense' && !row.note?.includes('[SIX_FUNDS_V2]') &&
+          (row.note?.includes('[SALARY_SPLIT:' + month + ':fixed_expense]') ||
+           row.note?.includes('[fixed_item:dan_insurance]') || /ประกัน\s*แดน/.test(`${row.merchant} ${row.items_summary} ${row.note}`)));
+      }
+
+      // Reclassification uses balanced transfer pairs. Original records stay available for audit.
+      async function upgradeLegacyInsurance(month: string, confirmed = false) {
+        const owner = appState.currentUser?.id || null;
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('เดือนที่เลือกไม่ถูกต้อง');
+        const rows = (await dbGetAllTransactions()).filter(row => (row.user_id || null) === (appState.currentUser?.id || null));
+        const candidates = legacyInsuranceReview(rows, month);
+        if (!candidates.length) return { upgraded: false, pending: 0 };
+        const rolled = rows.some(row => row.note?.includes('SURPLUS_ROLLOVER_') && row.note?.includes(month));
+        const safe = !rolled && candidates.every(row => (row.type === 'expense' && row.note?.includes('[fixed_item:dan_insurance]')) ||
+          (row.type === 'income' && [12700, 14000].includes(row.amount) && row.note?.includes('[SALARY_SPLIT:' + month + ':fixed_expense]')));
+        if (!safe || !confirmed) return { upgraded: false, pending: candidates.reduce((sum, row) => sum + Math.round(row.amount * 100), 0) / 100, needs_review: true };
+        const inputs = [];
+        for (const row of candidates) {
+          const amount = row.type === 'income' ? 2900 : row.amount;
+          for (const bucket of ['fixed_expense', 'dan_insurance']) inputs.push({
+            transaction_date: row.transaction_date, merchant: 'แยกเงินเก็บประกันแดนจากข้อมูลเดิม', amount,
+            type: bucket === 'fixed_expense' ? (row.type === 'income' ? 'expense' : 'income') : row.type,
+            currency: 'THB', category: 'transfer_other', fund_bucket: bucket, source_type: 'manual',
+            note: '[INSURANCE_RECLASS:' + month + ':' + row.id + ']'
+          });
+        }
+        if ((appState.currentUser?.id || null) !== owner) throw new Error('บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่');
+        const records = await commitAutomation(inputs, candidates.map(row => 'insurance-upgrade:' + month + ':' + row.id));
+        return { upgraded: true, pending: 0, records };
+      }
+
       function automationKey(name: string): string { return `${appState.currentUser?.id || 'local'}:${name}`; }
+
+      function transactionAmountCents(value: any) {
+        if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+(?:\.\d+)?$/.test(value))) return 0;
+        const amount = Number(value);
+        const cents = Math.round(amount * 100);
+        return Number.isSafeInteger(cents) && amount > 0 && amount <= 9999999999.99 ? cents : 0;
+      }
+
+      function transactionCalendarDate(value: any) {
+        if (typeof value !== 'string') return null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return normalizeIsoDate(value).date;
+        if (!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !normalizeIsoDate(value.slice(0, 10)).date) return null;
+        const instant = new Date(value);
+        if (!Number.isFinite(instant.getTime())) return null;
+        return new Date(instant.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+      }
+
+      function isInternalTransfer(row: any) {
+        return /\[(?:SURPLUS_ROLLOVER_(?:IN|OUT)|INSURANCE_RECLASS):/.test(row.note || '');
+      }
+
+      function aggregateFinancialCharts(rows: any[], month: string) {
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('เดือนที่เลือกไม่ถูกต้อง');
+        const [year, mon] = month.split('-').map(Number);
+        const months = Array.from({ length: 6 }, (_, i) => ({
+          month: new Date(Date.UTC(year, mon - 6 + i, 1)).toISOString().slice(0, 7), incomeCents: 0, expenseCents: 0
+        }));
+        const categories = new Map(); const seen = new Set();
+        let availableCents = 0, yearIncomeCents = 0, yearExpenseCents = 0;
+        for (const row of rows) {
+          if (!row || row.deleted_at || row.pending_delete || (row.user_id || null) !== (appState.currentUser?.id || null)) continue;
+          const date = transactionCalendarDate(row.transaction_date);
+          const cents = transactionAmountCents(row.amount);
+          if (!row.id || !date || !Number.isSafeInteger(cents) || cents <= 0 || !['income', 'expense'].includes(row.type) || seen.has(row.id)) continue;
+          seen.add(row.id);
+          const ym = date.slice(0, 7);
+          if (row.fund_bucket === 'dan_insurance' && ym <= month) {
+            availableCents += row.type === 'income' ? cents : -cents;
+            if (date.slice(0, 4) === month.slice(0, 4)) {
+              if (row.type === 'income') yearIncomeCents += cents; else yearExpenseCents += cents;
+            }
+          }
+          if (isInternalTransfer(row)) continue;
+          const target = months.find(entry => entry.month === ym);
+          if (target) target[row.type === 'income' ? 'incomeCents' : 'expenseCents'] += cents;
+          if (ym === month && row.type === 'expense') {
+            const category = String(row.category || 'unknown');
+            categories.set(category, (categories.get(category) || 0) + cents);
+          }
+        }
+        return { months, categories: Array.from(categories, ([category, cents]) => ({ category, label: CATEGORY_LABELS[category] || category, amount: cents / 100 })),
+          insurance: { available: availableCents / 100, yearIncome: yearIncomeCents / 100, yearExpense: yearExpenseCents / 100,
+            target: 34800, percentage: Math.max(0, Math.min(100, availableCents / 34800)) } };
+      }
+
+      function renderFinancialCharts(month: string) {
+        const host = document.getElementById('financialCharts'); if (!host) return;
+        const data = aggregateFinancialCharts(appState.transactions, month);
+        host.replaceChildren();
+        const svgNode = (tag, attrs = {}, text = '') => {
+          const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+          Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
+          if (text) node.textContent = text; return node;
+        };
+        const bars = svgNode('svg', { viewBox: '0 0 360 210', role: 'img', 'aria-labelledby': 'cashflowTitle cashflowDesc' });
+        bars.appendChild(svgNode('title', { id: 'cashflowTitle' }, 'รายรับเทียบรายจ่ายย้อนหลัง 6 เดือน'));
+        bars.appendChild(svgNode('desc', { id: 'cashflowDesc' }, 'สีเขียวคือรายรับ สีชมพูคือรายจ่าย ไม่รวมการโอนระหว่างกระปุก ดูยอดครบถ้วนในตารางด้านล่าง'));
+        const max = Math.max(1, ...data.months.flatMap(row => [row.incomeCents, row.expenseCents]));
+        const table = document.createElement('table'); table.className = 'chart-table';
+        const caption = document.createElement('caption'); caption.textContent = 'รายรับ (สีเขียว) / รายจ่าย (สีชมพู) หน่วยบาท'; table.appendChild(caption);
+        const heading = document.createElement('tr');
+        for (const label of ['เดือน', 'รายรับ', 'รายจ่าย']) { const cell = document.createElement('th'); cell.scope = 'col'; cell.textContent = label; heading.appendChild(cell); } table.appendChild(heading);
+        data.months.forEach((row, i) => {
+          [row.incomeCents, row.expenseCents].forEach((cents, j) => {
+            const height = cents / max * 150;
+            bars.appendChild(svgNode('rect', { x: i * 59 + 10 + j * 20, y: 170 - height, width: 17, height, rx: 3, fill: j ? '#d44977' : '#168065' }));
+          });
+          bars.appendChild(svgNode('text', { x: i * 59 + 28, y: 193, 'text-anchor': 'middle', fill: 'currentColor', 'font-size': 11 }, row.month.slice(2)));
+          const tr = document.createElement('tr');
+          for (const value of [row.month, formatCurrency(row.incomeCents / 100), formatCurrency(row.expenseCents / 100)]) { const td = document.createElement('td'); td.textContent = value; tr.appendChild(td); }
+          table.appendChild(tr);
+        });
+        host.appendChild(bars); host.appendChild(table);
+        const donut = svgNode('svg', { viewBox: '0 0 240 200', role: 'img', 'aria-labelledby': 'expenseDonutTitle' });
+        donut.appendChild(svgNode('title', { id: 'expenseDonutTitle' }, 'สัดส่วนหมวดรายจ่ายเดือน ' + month));
+        const sum = data.categories.reduce((total, row) => total + row.amount, 0);
+        const colors = ['#168065', '#d44977', '#406bd5', '#a45813', '#7549be', '#007c91']; let offset = 0;
+        donut.appendChild(svgNode('circle', { cx: 120, cy: 100, r: 65, fill: 'none', stroke: '#ced4df', 'stroke-width': 25 }));
+        const legend = document.createElement('ul'); legend.className = 'chart-legend';
+        data.categories.forEach((row, i) => {
+          const percent = sum > 0 ? row.amount / sum * 100 : 0;
+          donut.appendChild(svgNode('circle', { cx: 120, cy: 100, r: 65, fill: 'none', stroke: colors[i % colors.length], 'stroke-width': 25,
+            pathLength: 100, 'stroke-dasharray': percent + ' ' + (100 - percent), 'stroke-dashoffset': -offset, transform: 'rotate(-90 120 100)' })); offset += percent;
+          const li = document.createElement('li'); li.textContent = row.label + ': ' + formatCurrency(row.amount) + ' (' + percent.toFixed(1) + '%)';
+          li.style.borderLeft = '5px solid ' + colors[i % colors.length]; legend.appendChild(li);
+        });
+        donut.appendChild(svgNode('text', { x: 120, y: 104, 'text-anchor': 'middle', fill: 'currentColor', 'font-size': 13 }, sum ? formatCurrency(sum) : 'ยังไม่มีรายจ่าย'));
+        host.appendChild(donut); host.appendChild(legend);
+        const gauge = document.getElementById('insuranceGauge');
+        if (gauge) {
+          gauge.replaceChildren(); const info = document.createElement('p');
+          info.textContent = 'ประกันแดนพร้อมใช้ ' + formatCurrency(data.insurance.available) + ' / เป้าหมายรายปี ' + formatCurrency(34800) +
+            ' • เติมสะสมปี ' + month.slice(0, 4) + ': ' + formatCurrency(data.insurance.yearIncome) + ' • จ่ายจริง ' + formatCurrency(data.insurance.yearExpense);
+          const progress = document.createElement('progress'); progress.max = 100; progress.value = data.insurance.percentage; progress.setAttribute('aria-label', 'เงินพร้อมใช้ประกันแดนเทียบเป้าหมายรายปี');
+          gauge.appendChild(info); gauge.appendChild(progress);
+        }
+      }
+
+      let activePanel = 'home'; let navigationBound = false;
+      function selectAppPanel(name: string, focus = true) {
+        if (!['home', 'funds', 'analytics', 'history'].includes(name)) return;
+        activePanel = name;
+        for (const panel of ['home', 'funds', 'analytics', 'history']) {
+          const element = document.getElementById('panel-' + panel); if (element) element.hidden = panel !== name;
+          const tab = document.getElementById('tab-' + panel);
+          if (tab) { tab.setAttribute('aria-selected', String(panel === name)); tab.tabIndex = panel === name ? 0 : -1; }
+        }
+        if (name === 'analytics') renderFinancialCharts(document.getElementById('dashboardMonthPicker').value || getBangkokTodayIso().slice(0, 7));
+        if (focus) document.getElementById('panel-' + name)?.focus();
+      }
+
+      function bindAppNavigation() {
+        if (navigationBound) return; navigationBound = true;
+        const panels = ['home', 'funds', 'analytics', 'history'];
+        panels.forEach((name, i) => {
+          document.getElementById('tab-' + name)?.addEventListener('click', () => selectAppPanel(name));
+          document.getElementById('tab-' + name)?.addEventListener('keydown', event => {
+            let next = i;
+            if (event.key === 'ArrowRight') next = (i + 1) % 4;
+            else if (event.key === 'ArrowLeft') next = (i + 3) % 4;
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = 3; else return;
+            event.preventDefault(); selectAppPanel(panels[next], false); document.getElementById('tab-' + panels[next])?.focus();
+          });
+          document.getElementById('shortcut-' + name)?.addEventListener('click', () => selectAppPanel(name));
+        });
+        document.getElementById('heroCapture')?.addEventListener('click', () => document.getElementById('btnChooseGallery')?.click());
+        document.getElementById('shortcut-salary')?.addEventListener('click', () => document.getElementById('btnOpenSalarySplitModal')?.click());
+        document.getElementById('btnReviewLegacyInsurance')?.addEventListener('click', async () => {
+          const month = document.getElementById('dashboardMonthPicker').value || getBangkokTodayIso().slice(0, 7);
+          const review = await upgradeLegacyInsurance(month);
+          if (!review.needs_review) { showToast('ไม่มีข้อมูลเก่ารอตรวจสอบ', 'info'); return; }
+          if (await showConfirmDialog('ตรวจการแยกประกันแดน', 'ยอดรายการเดิมรอตรวจ ' + formatCurrency(review.pending) + ' ระบบจะแยกเฉพาะ marker ที่ชัดเจนและเดือนที่ยังไม่โอนเงินเหลือใช้ ยืนยันหลังตรวจประวัติแล้วหรือไม่?')) {
+            const result = await upgradeLegacyInsurance(month, true);
+            showToast(result.upgraded ? 'แยกยอดแล้ว ยอดรวมคงเดิม' : 'ข้อมูลคลุมเครือ กรุณาแก้ไขผ่านประวัติและตรวจยอดก่อนโอน', 'info');
+          }
+        });
+        document.getElementById('analyticsMonth')?.addEventListener('change', event => {
+          const month = event.target.value;
+          if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return;
+          document.getElementById('dashboardMonthPicker').value = month;
+          renderDashboardAndHistory();
+        });
+        selectAppPanel(activePanel, false);
+      }
 
       async function automationPreference(name: string, value: any = undefined) {
         const db = await openLocalDatabase();
@@ -1780,6 +1992,46 @@ interface DashboardMetrics {
           let pending = ledger.length;
           let reason = 'ไม่สามารถบันทึกรายการทั้งหมดได้';
           const write = () => {
+            const scan = tx.objectStore(STORE_TRANSACTIONS).getAll();
+            scan.onsuccess = () => {
+              const existing = scan.result.filter(row => (row.user_id || null) === owner && !row.deleted_at && !row.pending_delete);
+              const duplicate = keys.some(key => {
+                const parts = key.split(':');
+                if (parts[0] === 'salary') return existing.some(row => row.note?.includes('[SALARY_SPLIT:' + parts[1] + ':'));
+                if (parts[0] === 'fixed') return existing.some(row => row.transaction_date?.slice(0,7) === parts[2] && row.note?.includes('[fixed_item:' + parts[1] + ']'));
+                if (parts[0] === 'rollover') return existing.some(row => row.note?.includes('[SURPLUS_ROLLOVER_OUT:' + parts[1] + ':') || row.note?.includes('[SURPLUS_ROLLOVER_IN:' + parts[1] + ':'));
+                if (parts[0] === 'insurance-upgrade') return existing.some(row => row.note?.includes('[INSURANCE_RECLASS:' + parts[1] + ':' + parts[2] + ']'));
+                return false;
+              });
+              if (duplicate) { reason = 'รอบนี้มีรายการเดิมแล้ว กรุณาตรวจประวัติ'; tx.abort(); return; }
+              if (keys.some(key => key.startsWith('rollover:')) && legacyInsuranceReview(existing, keys[0].split(':')[1]).length) { reason = 'มีข้อมูลประกันแดนเก่ารอตรวจสอบ'; tx.abort(); return; }
+              const upgrade = keys.find(key => key.startsWith('insurance-upgrade:'));
+              if (upgrade) {
+                const month = upgrade.split(':')[1];
+                const latest = legacyInsuranceReview(existing, month);
+                const sourceIds = keys.map(key => key.split(':')[2]);
+                const rolled = existing.some(row => row.note?.includes('SURPLUS_ROLLOVER_') && row.note?.includes(month));
+                const unchanged = latest.length === sourceIds.length && latest.every(row => {
+                  const pair = records.filter(record => record.note === '[INSURANCE_RECLASS:' + month + ':' + row.id + ']');
+                  const amount = row.type === 'income' ? 2900 : row.amount;
+                  return sourceIds.includes(row.id) && pair.length === 2 && pair.every(record => record.amount === amount) &&
+                    ((row.type === 'income' && [12700, 14000].includes(row.amount) && row.note?.includes('[SALARY_SPLIT:' + month + ':fixed_expense]')) ||
+                     (row.type === 'expense' && row.note?.includes('[fixed_item:dan_insurance]')));
+                });
+                if (rolled || !unchanged) { reason = 'ข้อมูลเก่าเปลี่ยน กรุณาตรวจอีกครั้งก่อนแยกยอด'; tx.abort(); return; }
+              }
+              const rollover = keys.find(key => key.startsWith('rollover:'));
+              if (rollover) {
+                const metrics = calculateDashboardMetrics(existing, rollover.split(':')[1]);
+                for (const row of records.filter(row => row.type === 'expense')) {
+                  const balance = metrics.fundBalances.find(fund => fund.bucket === row.fund_bucket)?.availableBalance;
+                  if (Math.round(Number(balance) * 100) !== Math.round(row.amount * 100)) { reason = 'ยอดเปลี่ยนในแท็บอื่น กรุณาตรวจและลองโอนใหม่'; tx.abort(); return; }
+                }
+              }
+              writeRecords();
+            };
+          };
+          const writeRecords = () => {
             if ((appState.currentUser?.id || null) !== owner) { reason = 'บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่'; tx.abort(); return; }
             ledger.forEach(id => store.put({ id, value: now }));
             records.forEach(record => tx.objectStore(STORE_TRANSACTIONS).put(record));
@@ -1841,7 +2093,7 @@ interface DashboardMetrics {
             if (cycle.status !== 'due') throw new Error('กรุณายืนยันรอบประกันพ่อที่ถึงกำหนดก่อน');
           }
           inputs.push({ ...preset, amount: Number(item.amount), transaction_date: date, type: 'expense',
-            currency: 'THB', source_type: 'manual', fund_bucket: 'fixed_expense', note: `[fixed_item:${item.key}]` });
+            currency: 'THB', source_type: 'manual', fund_bucket: item.key === 'dan_insurance' ? 'dan_insurance' : 'fixed_expense', note: `[fixed_item:${item.key}]` });
         }
         // Include legacy confirmed fixed payments in duplicate detection.
         const existing = await dbGetAllTransactions();
@@ -1998,6 +2250,7 @@ interface DashboardMetrics {
         host.innerHTML = '';
         const all = await dbGetAllTransactions();
         for (const [key, preset] of Object.entries(BATCH_PRESETS)) {
+          if (key === 'dan_insurance') continue;
           const paid = all.some(tx => tx.user_id === (appState.currentUser?.id || null) && tx.transaction_date?.slice(0, 7) === date.slice(0, 7) && tx.note?.includes(`[fixed_item:${key}]`));
           const row = document.createElement('div'); row.className = 'batch-row';
           const select = document.createElement('input'); select.type = 'checkbox'; select.id = `batch-${key}`; select.dataset.key = key;
@@ -2008,12 +2261,14 @@ interface DashboardMetrics {
         }
       }
 
+      let automationBound = false;
       function bindAutomationEvents() {
         const on = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         const safe = (fn) => async () => { try { await fn(); } catch (err) { showToast(err.message || 'ดำเนินการไม่สำเร็จ', 'error'); } };
         let theme = 'dark-red'; try { theme = localStorage.getItem('slipsense_theme') ?? 'dark-red'; } catch (_) {}
         if (!['light', 'dark', 'blue', 'dark-red'].includes(theme)) theme = 'light';
         document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeSelect').value = theme;
+        if (automationBound) return; automationBound = true;
         on('themeSelect', 'change', event => { document.documentElement.setAttribute('data-theme', event.target.value); try { localStorage.setItem('slipsense_theme', event.target.value); } catch (_) {} });
         document.addEventListener('paste', handleReceiptPaste);
         on('btnResumeShare', 'click', resumeSharedReceipt);
@@ -2025,13 +2280,13 @@ interface DashboardMetrics {
         on('btnClearLearning', 'click', safe(async () => { await automationPreference('learning', { merchants: {}, chips: [] }); await renderQuickChips(); }));
         on('btnClearSalaryTemplate', 'click', safe(() => automationPreference('salary', null)));
         on('btnUseSalaryTemplate', 'click', safe(async () => {
-          const template = await automationPreference('salary'); if (!template) throw new Error('ยังไม่มีแบบเงินเดือนที่ยืนยันแล้ว');
+          const template = upgradeSalaryTemplate(await automationPreference('salary')); if (!template) throw new Error('ยังไม่มีแบบเงินเดือนที่ยืนยันแล้ว');
           document.getElementById('btnOpenSalarySplitModal')?.click();
           document.getElementById('salarySplitModal').hidden = false;
-          const fields = { TotalInput: 'total_salary', Fund1Input: 'investment_stock', Fund2Input: 'home_building', Fund3Input: 'fixed_expense', Fund4Input: 'emergency_personal', Fund5Input: 'general_expense', FatherInsMode: 'father_insurance_mode' };
-          Object.entries(fields).forEach(([suffix, key]) => { document.getElementById(`salarySplit${suffix}`).value = String(template[key]); });
+          const fields = { TotalInput: 'total_salary', Fund1Input: 'investment_stock', Fund2Input: 'home_building', Fund3Input: 'fixed_expense', Fund4Input: 'emergency_personal', Fund5Input: 'general_expense', Fund6Input: 'dan_insurance', FatherInsMode: 'father_insurance_mode' };
+          Object.entries(fields).forEach(([suffix, key]) => { document.getElementById(`salarySplit${suffix}`).value = String(template[key] ?? 0); });
           document.getElementById('salarySplitDate').value = getBangkokTodayIso();
-          document.getElementById('salarySplitSummaryPreview').textContent = 'ใช้แบบล่าสุดแล้ว กรุณาตรวจยอดรวมและวันที่ก่อนยืนยัน';
+          document.getElementById('salarySplitSummaryPreview').textContent = template.needs_review ? 'แม่แบบเก่าหรือปรับเอง: กรุณาตรวจการแยกประกันแดน 2,900 บาท ยอดรวม และวันที่ก่อนยืนยัน' : 'ใช้แบบล่าสุดแล้ว กรุณาตรวจยอดรวมและวันที่ก่อนยืนยัน';
         }));
         document.getElementById('batchPayDate').value = getBangkokTodayIso();
         on('batchPayDate', 'change', safe(refreshAutomationUi));
@@ -2042,7 +2297,7 @@ interface DashboardMetrics {
         }));
         on('btnBatchPay', 'click', safe(async () => {
           const btn = document.getElementById('btnBatchPay'); if (btn.disabled) return;
-          const items = Object.keys(BATCH_PRESETS).filter(key => document.getElementById(`batch-${key}`)?.checked).map(key => ({ key, amount: document.getElementById(`amount-${key}`).value }));
+          const items = Object.keys(BATCH_PRESETS).filter(key => key !== 'dan_insurance' && document.getElementById(`batch-${key}`)?.checked).map(key => ({ key, amount: document.getElementById(`amount-${key}`).value }));
           btn.disabled = true;
           try { await batchPayFixedExpenses(items, document.getElementById('batchPayDate').value); document.getElementById('batchPayStatus').textContent = 'บันทึกรายการที่เลือกแล้ว'; await refreshAutomationUi(); }
           finally { btn.disabled = false; }
@@ -2057,8 +2312,11 @@ interface DashboardMetrics {
         }
         const yearMonth = date.slice(0, 7);
 
+        for (const key of ['total_salary', 'investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance']) {
+          if (options[key] !== undefined && (!Number.isFinite(Number(options[key])) || Number(options[key]) < 0)) throw new Error('ยอดเงินต้องไม่ติดลบและต้องเป็นตัวเลขที่มีขอบเขต');
+        }
         const totalSalary = Math.round(Number(options.total_salary || 0) * 100) / 100;
-        if (!Number.isFinite(totalSalary) || totalSalary <= 0) {
+        if (!Number.isSafeInteger(Math.round(totalSalary * 100)) || totalSalary <= 0) {
           throw new Error('กรุณาระบุยอดเงินเดือนรวมที่มากกว่า 0 บาท');
         }
 
@@ -2081,25 +2339,26 @@ interface DashboardMetrics {
         const fund3 = options.fixed_expense !== undefined
           ? Math.round(Number(options.fixed_expense) * 100) / 100
           : defaultFixedTotal;
+        const fund6 = options.dan_insurance !== undefined ? Math.round(Number(options.dan_insurance) * 100) / 100 : 2900;
         const fund4 = options.emergency_personal !== undefined
           ? Math.round(Number(options.emergency_personal) * 100) / 100
           : 0;
 
-        const fixedFourSumCents = Math.round((fund1 + fund2 + fund3 + fund4) * 100);
+        const fixedFourSumCents = [fund1, fund2, fund3, fund4, fund6].reduce((sum, amount) => sum + Math.round(amount * 100), 0);
         const totalSalaryCents = Math.round(totalSalary * 100);
 
         const fund5 = options.general_expense !== undefined
           ? Math.round(Number(options.general_expense) * 100) / 100
           : Math.max(0, (totalSalaryCents - fixedFourSumCents) / 100);
 
-        if ([fund1, fund2, fund3, fund4, fund5].some(v => !Number.isFinite(v) || v < 0)) {
+        if ([fund1, fund2, fund3, fund4, fund5, fund6].some(v => !Number.isSafeInteger(Math.round(v * 100)) || v < 0)) {
           throw new Error('ยอดแบ่งเงินในแต่ละส่วนต้องไม่ติดลบ');
         }
 
-        const totalAllocatedCents = Math.round((fund1 + fund2 + fund3 + fund4 + fund5) * 100);
+        const totalAllocatedCents = fixedFourSumCents + Math.round(fund5 * 100);
         if (totalAllocatedCents !== totalSalaryCents) throw new Error('ยอดจัดสรรต้องเท่ากับเงินเดือน กรุณาตรวจส่วนต่าง');
         if (totalAllocatedCents <= 0) {
-          throw new Error('ยอดแบ่งเงินรวมทั้ง 5 ส่วนต้องมากกว่า 0 บาท');
+          throw new Error('ยอดแบ่งเงินรวมทั้ง 6 ส่วนต้องมากกว่า 0 บาท');
         }
         if (fixedFourSumCents > totalSalaryCents && options.general_expense === undefined) {
           throw new Error(
@@ -2132,7 +2391,7 @@ interface DashboardMetrics {
             bucket: 'fixed_expense',
             amount: fund3,
             merchant: 'แบ่งเงินเดือน: 3. ค่าใช้จ่ายคงที่',
-            items_summary: `ประกันพ่อ ${fatherInsAmount.toLocaleString('en-US')}, ประกันแดน 2,900, ให้น้อง (มายด์) 2,000, ค่าน้ำ/ไฟ/โทรศัพท์/เรียนพิเศษลูก 6,500`,
+            items_summary: `ประกันพ่อ ${fatherInsAmount.toLocaleString('en-US')}, ให้น้อง (มายด์) 2,000, ค่าน้ำ/ไฟ/โทรศัพท์/เรียนพิเศษลูก 6,500`,
             purpose_analysis: `กันงบค่าใช้จ่ายคงที่รายเดือน (${yearMonth}) รวม ${formatCurrency(fund3, 'THB')}`
           },
           {
@@ -2151,6 +2410,7 @@ interface DashboardMetrics {
           }
         ];
 
+        splitEntries.push({ bucket: 'dan_insurance', amount: fund6, merchant: 'เงินเก็บประกันแดน', items_summary: 'สะสมเบี้ยรายปี ไม่ใช่รายจ่าย', purpose_analysis: 'เป้าหมาย 34,800 บาทต่อปี' });
         const inputs = splitEntries.filter(entry => entry.amount > 0).map(entry => ({
             transaction_date: date,
             type: 'income',
@@ -2162,9 +2422,9 @@ interface DashboardMetrics {
             source_type: 'manual',
             items_summary: entry.items_summary,
             purpose_analysis: entry.purpose_analysis,
-            note: `จัดสรรเงินเดือน ${yearMonth} [SALARY_SPLIT:${yearMonth}:${entry.bucket}]`
+            note: `จัดสรรเงินเดือน ${yearMonth} [SALARY_SPLIT:${yearMonth}:${entry.bucket}] [SIX_FUNDS_V2]`
           }));
-        const template = { total_salary: totalSalary, investment_stock: fund1, home_building: fund2,
+        const template = { version: 2, dan_insurance: fund6, total_salary: totalSalary, investment_stock: fund1, home_building: fund2,
           fixed_expense: fund3, emergency_personal: fund4, general_expense: fund5, father_insurance_mode: fatherInsAmount };
         const savedRecords = await commitAutomation(inputs, [`salary:${yearMonth}`], { id: automationKey('salary'), value: template });
 
@@ -2209,8 +2469,8 @@ interface DashboardMetrics {
             merchant: 'จ่ายค่าประกันแดน',
             amount: FIXED_MONTHLY_PRESETS.DAN_INSURANCE,
             category: 'health_medical',
-            items_summary: 'ค่าเบี้ยประกันแดนประจำเดือน (Fix 2,900 บาท)',
-            purpose_analysis: 'ตัดจ่ายจากส่วนที่ 3 ค่าใช้จ่ายคงที่ — ประกันแดน 2,900 บาท',
+            items_summary: 'เบี้ยประกันแดนที่ชำระจริง ตรวจยอดตามใบเสร็จ',
+            purpose_analysis: 'ตัดจากกระปุก 6 เงินสะสมประกันแดนเมื่อจ่ายจริง',
             tag: '[fixed_item:dan_insurance]'
           },
           sister_mind: {
@@ -2236,7 +2496,7 @@ interface DashboardMetrics {
           amount: customAmount,
           currency: 'THB',
           category: preset.category,
-          fund_bucket: 'fixed_expense',
+          fund_bucket: itemKey === 'dan_insurance' ? 'dan_insurance' : 'fixed_expense',
           source_type: 'manual',
           items_summary: preset.items_summary,
           purpose_analysis: preset.purpose_analysis,
@@ -2247,78 +2507,29 @@ interface DashboardMetrics {
       }
 
       async function rolloverMonthlySurplusToEmergency(targetYearMonth: string = '') {
+        const owner = appState.currentUser?.id || null;
         const ym = targetYearMonth || getBangkokTodayIso().slice(0, 7);
-        const metrics = calculateDashboardMetrics(appState.transactions, ym);
-        const generalBucket = metrics.fundBalances.find((b) => b.bucket === 'general_expense');
-        const fixedBucket = metrics.fundBalances.find((b) => b.bucket === 'fixed_expense');
-
-        const generalSurplus = generalBucket && generalBucket.availableBalance > 0 ? generalBucket.availableBalance : 0;
-        const fixedSurplus = fixedBucket && fixedBucket.availableBalance > 0 ? fixedBucket.availableBalance : 0;
-        const totalSurplus = Math.round((generalSurplus + fixedSurplus) * 100) / 100;
-
-        if (totalSurplus <= 0) {
-          return { rolledOver: false, amount: 0, message: `ไม่มีเงินเหลือใช้ในงบรายเดือนของเดือน ${ym} ให้โอนเข้าข้อ 4` };
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(ym)) throw new Error('เดือนที่เลือกไม่ถูกต้อง');
+        const rows = (await dbGetAllTransactions()).filter(row => (row.user_id || null) === (appState.currentUser?.id || null));
+        if (legacyInsuranceReview(rows, ym).length) throw new Error('มีข้อมูลประกันแดนเก่ารอตรวจสอบ กรุณาตรวจและยืนยันก่อนโอน');
+        const metrics = calculateDashboardMetrics(rows, ym);
+        const txDate = ym === getBangkokTodayIso().slice(0, 7) ? getBangkokTodayIso() : ym + '-28';
+        const inputs = []; let totalCents = 0;
+        const amounts = {};
+        for (const bucket of ['fixed_expense', 'general_expense']) {
+          const cents = Math.max(0, Math.round(metrics.fundBalances.find(row => row.bucket === bucket).availableBalance * 100));
+          amounts[bucket] = cents / 100;
+          if (!cents) continue;
+          totalCents += cents;
+          inputs.push({ transaction_date: txDate, type: 'expense', merchant: 'โอนเงินเหลือใช้เข้ากระปุกฉุกเฉิน', amount: cents / 100,
+            currency: 'THB', category: 'transfer_other', fund_bucket: bucket, source_type: 'manual', note: '[SURPLUS_ROLLOVER_OUT:' + ym + ':' + bucket + ']' });
         }
-
-        const txDate = ym === getBangkokTodayIso().slice(0, 7) ? getBangkokTodayIso() : `${ym}-28`;
-        const records = [];
-
-        if (generalSurplus > 0) {
-          const outGeneral = await saveTransaction({
-            transaction_date: txDate,
-            type: 'expense',
-            merchant: 'โอนเงินเหลือใช้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-            amount: generalSurplus,
-            currency: 'THB',
-            category: 'transfer_other',
-            fund_bucket: 'general_expense',
-            source_type: 'manual',
-            items_summary: `ปิดยอดเงินเหลือใช้จากข้อ 5 ค่าใช้จ่ายทั่วไป (${ym})`,
-            purpose_analysis: 'โอนเงินที่เหลือใช้ของเดือนเข้าสะสมในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-            note: `[SURPLUS_ROLLOVER_OUT:${ym}:general_expense]`
-          });
-          records.push(outGeneral);
-        }
-
-        if (fixedSurplus > 0) {
-          const outFixed = await saveTransaction({
-            transaction_date: txDate,
-            type: 'expense',
-            merchant: 'โอนงบคงที่เหลือใช้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-            amount: fixedSurplus,
-            currency: 'THB',
-            category: 'transfer_other',
-            fund_bucket: 'fixed_expense',
-            source_type: 'manual',
-            items_summary: `ปิดยอดเงินเหลือใช้จากข้อ 3 ค่าใช้จ่ายคงที่ (${ym})`,
-            purpose_analysis: 'โอนเงินที่เหลือใช้ของเดือนเข้าสะสมในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-            note: `[SURPLUS_ROLLOVER_OUT:${ym}:fixed_expense]`
-          });
-          records.push(outFixed);
-        }
-
-        const inEmergency = await saveTransaction({
-          transaction_date: txDate,
-          type: 'income',
-          merchant: `รับเงินเหลือใช้ประจำเดือน ${ym} เข้ากระปุกฉุกเฉิน (ส่วนตัว)`,
-          amount: totalSurplus,
-          currency: 'THB',
-          category: 'refund_other_income',
-          fund_bucket: 'emergency_personal',
-          source_type: 'manual',
-          items_summary: `เงินเหลือใช้สะสมจากงบรายเดือน (${ym})`,
-          purpose_analysis: 'เก็บสะสมเงินที่เหลือใช้ในเดือนนั้นเข้าข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว) ตามกติกาที่ตั้งไว้',
-          note: `[SURPLUS_ROLLOVER_IN:${ym}:emergency_personal]`
-        });
-        records.push(inEmergency);
-
-        return {
-          rolledOver: true,
-          amount: totalSurplus,
-          generalSurplus,
-          fixedSurplus,
-          records
-        };
+        if (!totalCents) return { rolledOver: false, amount: 0 };
+        inputs.push({ transaction_date: txDate, type: 'income', merchant: 'รับเงินเหลือใช้เข้ากระปุกฉุกเฉิน', amount: totalCents / 100,
+          currency: 'THB', category: 'refund_other_income', fund_bucket: 'emergency_personal', source_type: 'manual', note: '[SURPLUS_ROLLOVER_IN:' + ym + ':emergency_personal]' });
+        if ((appState.currentUser?.id || null) !== owner) throw new Error('บัญชีผู้ใช้เปลี่ยน กรุณาลองใหม่');
+        const records = await commitAutomation(inputs, ['rollover:' + ym]);
+        return { rolledOver: true, amount: totalCents / 100, generalSurplus: amounts.general_expense, fixedSurplus: amounts.fixed_expense, records };
       }
 
       // =====================================================================
@@ -2402,6 +2613,12 @@ interface DashboardMetrics {
         const selectedMonth = monthPicker ? monthPicker.value : getBangkokTodayIso().slice(0, 7);
 
         const metrics = calculateDashboardMetrics(appState.transactions, selectedMonth);
+        const analyticsMonth = document.getElementById('analyticsMonth');
+        if (analyticsMonth) analyticsMonth.value = selectedMonth;
+        renderFinancialCharts(selectedMonth);
+        const pendingInsurance = legacyInsuranceReview(appState.transactions, selectedMonth);
+        const reviewStatus = document.getElementById('legacyInsuranceStatus');
+        if (reviewStatus) reviewStatus.textContent = pendingInsurance.length ? 'มี ' + pendingInsurance.length + ' รายการรอตรวจสอบ ต้องตรวจให้เสร็จก่อนโอนเงินเหลือใช้' : 'ไม่มีข้อมูลเก่ารอตรวจสอบ';
 
         const elIncome = document.getElementById('kpiTotalIncome');
         const elExpense = document.getElementById('kpiTotalExpense');
@@ -2506,7 +2723,7 @@ interface DashboardMetrics {
             const btnWithdraw = document.createElement('button');
             btnWithdraw.type = 'button';
             btnWithdraw.className = 'btn btn-secondary btn-sm';
-            btnWithdraw.style.minHeight = '26px';
+            btnWithdraw.style.minHeight = '44px';
             btnWithdraw.style.padding = '0.15rem 0.55rem';
             btnWithdraw.style.fontSize = '0.74rem';
             btnWithdraw.textContent = 'ถอน/ใช้จากส่วนนี้';
@@ -2531,6 +2748,14 @@ interface DashboardMetrics {
             meta.appendChild(outSpan);
             card.appendChild(meta);
 
+            if (f.bucket === 'dan_insurance') {
+              const pay = document.createElement('button'); pay.type = 'button'; pay.className = 'btn btn-primary';
+              pay.textContent = 'บันทึกเบี้ยประกันแดนที่จ่ายจริง';
+              pay.onclick = () => { openVerificationModalForManual('manual', 'dan_insurance');
+                document.getElementById('txFormMerchant').value = 'จ่ายเบี้ยประกันแดน';
+                document.getElementById('txFormNote').value = '[fixed_item:dan_insurance]'; };
+              card.appendChild(pay);
+            }
             fundContainer.appendChild(card);
           }
         }
@@ -2574,7 +2799,7 @@ interface DashboardMetrics {
             const btn1300 = document.createElement('button');
             btn1300.type = 'button';
             btn1300.className = 'btn btn-primary btn-sm';
-            btn1300.style.minHeight = '28px';
+            btn1300.style.minHeight = '44px';
             btn1300.style.padding = '0.2rem 0.55rem';
             btn1300.style.fontSize = '0.75rem';
             btn1300.textContent = 'จ่าย 1,300';
@@ -2587,7 +2812,7 @@ interface DashboardMetrics {
             const btn2600 = document.createElement('button');
             btn2600.type = 'button';
             btn2600.className = 'btn btn-secondary btn-sm';
-            btn2600.style.minHeight = '28px';
+            btn2600.style.minHeight = '44px';
             btn2600.style.padding = '0.2rem 0.55rem';
             btn2600.style.fontSize = '0.75rem';
             btn2600.textContent = 'จ่าย 2,600';
@@ -2603,47 +2828,6 @@ interface DashboardMetrics {
           rowFather.appendChild(infoFather);
           rowFather.appendChild(actFather);
           checklistContainer.appendChild(rowFather);
-
-          // 2. ประกันแดน (2,900)
-          const rowDan = document.createElement('div');
-          rowDan.className = 'fixed-item-row';
-          const infoDan = document.createElement('div');
-          infoDan.className = 'fixed-item-info';
-          const nameDan = document.createElement('div');
-          nameDan.className = 'fixed-item-name';
-          nameDan.textContent = st.dan_insurance.label;
-          const subDan = document.createElement('div');
-          subDan.className = 'fixed-item-sub';
-          subDan.textContent = st.dan_insurance.isPaid
-            ? `จ่ายแล้วเดือนนี้ ${formatCurrency(st.dan_insurance.paidAmount, 'THB')}`
-            : 'ยังไม่ได้บันทึกจ่ายในเดือนนี้';
-          infoDan.appendChild(nameDan);
-          infoDan.appendChild(subDan);
-
-          const actDan = document.createElement('div');
-          if (st.dan_insurance.isPaid) {
-            const bdg = document.createElement('span');
-            bdg.className = 'badge badge-synced';
-            bdg.textContent = 'จ่ายแล้ว';
-            actDan.appendChild(bdg);
-          } else {
-            const btnDan = document.createElement('button');
-            btnDan.type = 'button';
-            btnDan.className = 'btn btn-primary btn-sm';
-            btnDan.style.minHeight = '28px';
-            btnDan.style.padding = '0.2rem 0.55rem';
-            btnDan.style.fontSize = '0.75rem';
-            btnDan.textContent = 'จ่าย 2,900';
-            btnDan.onclick = async () => {
-              const txDate = selectedMonth === getBangkokTodayIso().slice(0, 7) ? getBangkokTodayIso() : `${selectedMonth}-01`;
-              await recordFixedExpenseItem('dan_insurance', { transaction_date: txDate });
-              showToast('บันทึกจ่ายค่าประกันแดน 2,900 บาท (ตัดจากข้อ 3 ค่าใช้จ่ายคงที่) แล้ว', 'success');
-            };
-            actDan.appendChild(btnDan);
-          }
-          rowDan.appendChild(infoDan);
-          rowDan.appendChild(actDan);
-          checklistContainer.appendChild(rowDan);
 
           // 3. ให้น้อง (มายด์) 2,000
           const rowMind = document.createElement('div');
@@ -2671,7 +2855,7 @@ interface DashboardMetrics {
             const btnMind = document.createElement('button');
             btnMind.type = 'button';
             btnMind.className = 'btn btn-primary btn-sm';
-            btnMind.style.minHeight = '28px';
+            btnMind.style.minHeight = '44px';
             btnMind.style.padding = '0.2rem 0.55rem';
             btnMind.style.fontSize = '0.75rem';
             btnMind.textContent = 'จ่าย 2,000';
@@ -2704,7 +2888,7 @@ interface DashboardMetrics {
           const btnUtil = document.createElement('button');
           btnUtil.type = 'button';
           btnUtil.className = 'btn btn-secondary btn-sm';
-          btnUtil.style.minHeight = '28px';
+          btnUtil.style.minHeight = '44px';
           btnUtil.style.padding = '0.2rem 0.55rem';
           btnUtil.style.fontSize = '0.75rem';
           btnUtil.textContent = '+ บันทึกบิล/เรียนลูก';
@@ -2954,7 +3138,7 @@ interface DashboardMetrics {
         defaultCategory: string = 'food_drink'
       ) {
         clearUncertainHighlights();
-        document.getElementById('verificationModalTitle').textContent = 'เพิ่มรายการรายรับ-รายจ่าย (เลือกตัดจาก 5 ส่วน)';
+        document.getElementById('verificationModalTitle').textContent = 'เพิ่มรายการรายรับ-รายจ่าย (เลือกตัดจาก 6 ส่วน)';
         document.getElementById('txFormId').value = '';
         document.getElementById('txFormDate').value = getBangkokTodayIso();
         document.getElementById('txFormType').value = 'expense';
@@ -3098,7 +3282,10 @@ interface DashboardMetrics {
         }
       }
 
+      let uiBound = false;
       function bindUiEvents() {
+        if (uiBound) return; uiBound = true;
+        bindAppNavigation();
         bindAutomationEvents();
         // ปุ่มกล้องและอัลบั้ม
         document.getElementById('btnStartScanCamera')?.addEventListener('click', () => {
@@ -3227,7 +3414,7 @@ interface DashboardMetrics {
           renderFilteredTransactionList();
         });
 
-        // ปุ่มแบ่งเงินเดือนเข้า 5 ส่วน และปุ่มโอนเงินเหลือใช้เข้าข้อ 4
+        // ปุ่มแบ่งเงินเดือนเข้า 6 ส่วน และปุ่มโอนเงินเหลือใช้เข้าข้อ 4
         const recalculateSalarySplitPreview = () => {
           const totalVal = Number((document.getElementById('salarySplitTotalInput') as HTMLInputElement | null)?.value || 0);
           const f1 = Number((document.getElementById('salarySplitFund1Input') as HTMLInputElement | null)?.value || 0);
@@ -3237,7 +3424,8 @@ interface DashboardMetrics {
           const f5El = document.getElementById('salarySplitFund5Input') as HTMLInputElement | null;
           const previewBox = document.getElementById('salarySplitSummaryPreview');
 
-          const fixedSum = Math.round((f1 + f2 + f3 + f4) * 100) / 100;
+          const f6 = Number((document.getElementById('salarySplitFund6Input') as HTMLInputElement | null)?.value || 0);
+          const fixedSum = [f1, f2, f3, f4, f6].reduce((sum, value) => sum + Math.round(value * 100), 0) / 100;
           const remainForF5 = totalVal > 0 ? Math.max(0, Math.round((totalVal - fixedSum) * 100) / 100) : 0;
           if (f5El && totalVal > 0) {
             f5El.value = String(remainForF5);
@@ -3246,10 +3434,10 @@ interface DashboardMetrics {
           if (previewBox) {
             if (totalVal > 0 && totalVal < fixedSum) {
               previewBox.className = 'alert-box alert-warning';
-              previewBox.textContent = `ยอดเงินเดือนรวม (${formatCurrency(totalVal, 'THB')}) น้อยกว่ายอด Fix ข้อ 1–4 (${formatCurrency(fixedSum, 'THB')}) ขาดอีก ${formatCurrency(fixedSum - totalVal, 'THB')}`;
+              previewBox.textContent = `ยอดเงินเดือนรวม (${formatCurrency(totalVal, 'THB')}) น้อยกว่ายอดกันเงินข้อ 1–4 และ 6 (${formatCurrency(fixedSum, 'THB')}) ขาดอีก ${formatCurrency(fixedSum - totalVal, 'THB')}`;
             } else {
               previewBox.className = 'alert-box alert-success';
-              previewBox.textContent = `ยอดรวม Fix (ข้อ 1–4) = ${formatCurrency(fixedSum, 'THB')} | คงเหลือเข้าข้อ 5 ค่าใช้จ่ายทั่วไป = ${formatCurrency(remainForF5, 'THB')}`;
+              previewBox.textContent = `ยอดกันเงิน (ข้อ 1–4 และ 6) = ${formatCurrency(fixedSum, 'THB')} | คงเหลือเข้าข้อ 5 ค่าใช้จ่ายทั่วไป = ${formatCurrency(remainForF5, 'THB')}`;
             }
           }
         };
@@ -3295,7 +3483,7 @@ interface DashboardMetrics {
           'salarySplitFund1Input',
           'salarySplitFund2Input',
           'salarySplitFund3Input',
-          'salarySplitFund4Input'
+          'salarySplitFund4Input', 'salarySplitFund6Input'
         ]) {
           document.getElementById(id)?.addEventListener('input', recalculateSalarySplitPreview);
         }
@@ -3309,13 +3497,14 @@ interface DashboardMetrics {
               total_salary: Number((document.getElementById('salarySplitTotalInput') as HTMLInputElement | null)?.value || 0),
               investment_stock: Number((document.getElementById('salarySplitFund1Input') as HTMLInputElement | null)?.value || 0),
               home_building: Number((document.getElementById('salarySplitFund2Input') as HTMLInputElement | null)?.value || 0),
+              dan_insurance: Number((document.getElementById('salarySplitFund6Input') as HTMLInputElement | null)?.value || 0),
               fixed_expense: Number((document.getElementById('salarySplitFund3Input') as HTMLInputElement | null)?.value || 0),
               father_insurance_mode: Number((document.getElementById('salarySplitFatherInsMode') as HTMLSelectElement | null)?.value || 1300),
               emergency_personal: Number((document.getElementById('salarySplitFund4Input') as HTMLInputElement | null)?.value || 0),
               general_expense: Number((document.getElementById('salarySplitFund5Input') as HTMLInputElement | null)?.value || 0)
             });
             closeSalarySplitModal();
-            showToast(`แบ่งเงินเดือนประจำเดือน ${res.yearMonth} เข้าทั้ง 5 ส่วนเรียบร้อยแล้ว`, 'success');
+            showToast(`แบ่งเงินเดือนประจำเดือน ${res.yearMonth} เข้าทั้ง 6 ส่วนเรียบร้อยแล้ว`, 'success');
           } catch (err: any) {
             if (errBox) {
               errBox.hidden = false;
@@ -3636,6 +3825,8 @@ interface DashboardMetrics {
       const SlipSenseApp = {
         init: initApp,
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
+        upgradeSalaryTemplate, legacyInsuranceReview, upgradeLegacyInsurance,
+        aggregateFinancialCharts, renderFinancialCharts, selectAppPanel, bindAppNavigation,
         normalizeMerchant, learnConfirmedRecord, suggestMerchantCategory, applyQuickChip,
         startVoiceEntry, validReceiptFile, handleReceiptPaste, handleImageFileSelected,
         resumeSharedReceipt, releaseSharedReceipt, shareInboxChange, bindAutomationEvents,

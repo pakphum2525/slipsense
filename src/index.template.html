@@ -766,7 +766,7 @@
     .toast.error { background: #b91c1c; }
     .toast.warning { background: #b45309; }
 
-    /* การ์ดกระปุกเงินเดือน 5 ส่วน และรายการ Fix รายเดือน */
+    /* การ์ดกระปุกเงินเดือน 6 ส่วน และรายการ Fix รายเดือน */
     .fund-grid {
       display: flex;
       flex-direction: column;
@@ -970,6 +970,35 @@
       .btn-danger { background:var(--expense-bg); color:var(--expense-color); }
     }
     @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; transform:none !important; scroll-behavior:auto !important; } }
+      /* หน้าจอแอป: คงสองคอลัมน์ที่ความกว้าง 320px และรองรับขอบจอ */
+    [hidden] { display:none !important; }
+    body { padding-bottom:calc(92px + env(safe-area-inset-bottom,0px)); }
+    .app-panels { display:block; max-width:900px; margin:auto; padding:12px; }
+    .app-panels > section { min-width:0; }
+    .app-panels .card { margin-bottom:16px; min-width:0; }
+    .hero-action { border-radius:24px; padding:24px; margin:0 0 18px; background:linear-gradient(135deg,#244780,#5c318a); color:#fff; }
+    .hero-action h1 { font-size:clamp(1.3rem,5vw,2rem); margin:12px 0; }
+    .hero-action p { color:#fff; margin-bottom:12px; }
+    .app-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+    .app-shortcut { min-height:118px; padding:16px 8px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-main); display:flex; align-items:center; flex-direction:column; gap:10px; font:inherit; }
+    .shortcut-icon { border-radius:50%; background:#406bd5; color:white; width:48px; height:48px; display:grid; place-items:center; font-size:26px; }
+    .app-shortcut:nth-child(2) .shortcut-icon { background:#168065; }
+    .app-shortcut:nth-child(3) .shortcut-icon { background:#a45813; }
+    .app-shortcut:nth-child(4) .shortcut-icon { background:#a13878; }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px)); background:var(--bg-surface); border-top:1px solid var(--border-color); z-index:40; }
+    .bottom-nav button { display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; min-height:52px; border:0; background:transparent; color:var(--text-main); font:inherit; }
+    .bottom-nav [aria-selected="true"] { background:#244780; color:#fff; border-radius:14px; }
+    button, .btn, input, select, summary { min-height:44px !important; }
+    :focus-visible { outline:3px solid #efac24; outline-offset:3px; }
+    .app-panels svg { display:block; width:100%; max-height:320px; }
+    .chart-table { width:100%; font-size:.78rem; border-collapse:collapse; margin:12px 0 24px; }
+    .chart-table td,.chart-table th { padding:6px 2px; text-align:right; }
+    .chart-legend { list-style:none; padding:0; }
+    .chart-legend li { padding:6px 10px; overflow-wrap:anywhere; }
+    progress { width:100%; height:20px; accent-color:#168065; }
+    .fund-card-header { flex-wrap:wrap; }
+    @media (max-width:400px) { .app-panels .card { padding:14px; } .fund-grid,.kpi-grid { grid-template-columns:1fr; } .filters-grid { grid-template-columns:1fr; } .batch-row { flex-wrap:wrap; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
@@ -1011,40 +1040,10 @@
   </header>
 
   <!-- พื้นที่ทำงานหลัก -->
-  <main class="app-container">
-    <section class="card automation-panel" aria-labelledby="automationTitle">
-      <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
-      <div class="automation-bar">
-        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
-        <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
-        <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
-        <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
-      </div>
-      <p id="captureStatus" role="status" aria-live="polite">วางภาพด้วย Ctrl+V / Cmd+V หรือแชร์ภาพมายังแอป หากไม่รองรับให้เลือกภาพจากอัลบั้ม</p>
-      <button id="btnResumeShare" type="button" class="btn btn-secondary">รับภาพแชร์ที่ค้างไว้</button>
-      <p id="voiceStatus" role="status" aria-live="polite"></p>
-      <div id="dailyQuickChips" class="automation-bar" aria-label="รายจ่ายที่เคยยืนยัน"></div>
-      <button id="btnClearLearning" type="button" class="btn btn-secondary">ล้างร้านค้าและชิปที่จำไว้</button>
-      <div class="automation-grid">
-      <div class="glass-subcard" role="group" aria-labelledby="batchPayTitle">
-        <h3 id="batchPayTitle">จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</h3>
-        <label for="batchPayDate">วันที่ชำระ</label><input id="batchPayDate" type="date" required>
-        <div id="batchPayItems"></div>
-        <button id="btnBatchPay" type="button" class="btn btn-primary">ยืนยันจ่ายรายการที่เลือก</button>
-        <p id="batchPayStatus" role="status" aria-live="polite"></p>
-      </div>
-      <div class="glass-subcard" role="group" aria-labelledby="fatherCycleTitle">
-        <h3 id="fatherCycleTitle">รอบประกันพ่อที่ยืนยันเอง</h3>
-        <label for="fatherAnchor">วันที่อ้างอิง</label><input id="fatherAnchor" type="date">
-        <label for="fatherInterval">ห่างกันกี่เดือน</label><input id="fatherInterval" type="number" min="1" max="120" step="1">
-        <button id="btnSaveFatherCycle" type="button" class="btn btn-secondary">ยืนยันรอบประกันพ่อ</button>
-        <p id="fatherCycleStatus" role="status" aria-live="polite">ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ</p>
-      </div>
-      </div>
-    </section>
-    <!-- คอลัมน์ซ้าย: สแกนใบเสร็จด้วย AI + สรุปภาพรวมประจำเดือน -->
-    <div class="col-stack">
-      <!-- การ์ดที่ 1: ปุ่มด่วนและสแกนใบเสร็จ/สลิป -->
+  <main class="app-container app-panels">
+    <section id="panel-home" role="tabpanel" aria-labelledby="tab-home" tabindex="-1">
+      <div class="hero-action"><p>สลิปเซนส์ • ผู้ช่วยการเงินของคุณ</p><h1>บันทึกวันนี้ วางแผนวันหน้า</h1><p>สแกนและตรวจข้อมูลก่อนบันทึกทุกครั้ง</p><button id="heroCapture" class="btn btn-primary" type="button">ถ่ายภาพ / เลือกสลิป</button></div>
+      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">◉</span>กระปุก 6 ส่วน</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">▥</span>กราฟการเงิน</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">≡</span>ประวัติรายการ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">฿</span>แบ่งเงินเดือน</button></div>
       <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
           <h2 id="scanSectionTitle" class="card-title">สแกนใบเสร็จ / สลิปโอนเงิน</h2>
@@ -1095,8 +1094,6 @@
         </div>
         <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
       </section>
-
-      <!-- การ์ดที่ 2: สรุปยอดรายเดือนและสัดส่วนหมวดหมู่ (Dashboard) -->
       <section class="card" aria-labelledby="dashboardSectionTitle">
         <div class="card-header">
           <h2 id="dashboardSectionTitle" class="card-title">สรุปการเงินประจำเดือน</h2>
@@ -1133,24 +1130,24 @@
           </div>
         </div>
       </section>
-
-      <!-- การ์ดที่ 3: กระปุกเงินเดือน 5 ส่วน & รายการ Fix รายเดือน -->
+    </section>
+    <section id="panel-funds" role="tabpanel" aria-labelledby="tab-funds" tabindex="-1" hidden>
       <section class="card" aria-labelledby="fundBucketsSectionTitle">
         <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
           <div>
-            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 5 ส่วน & รายการ Fix</h2>
+            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 6 ส่วน & รายการ Fix</h2>
             <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">
-              เลือกถอน/ตัดจ่ายจาก 5 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
+              เลือกถอน/ตัดจ่ายจาก 6 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
             </p>
           </div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-            <button type="button" id="btnOpenSalarySplitModal" class="btn btn-primary btn-sm">แบ่งเงินเดือนเข้า 5 ส่วน</button>
+            <button type="button" id="btnOpenSalarySplitModal" class="btn btn-primary btn-sm">แบ่งเงินเดือนเข้า 6 ส่วน</button>
             <button type="button" id="btnRolloverSurplusToEmergency" class="btn btn-secondary btn-sm" title="โอนเงินเหลือใช้ของเดือนนี้ไปเก็บในข้อ 4 ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)">เก็บเงินเหลือใช้เข้าข้อ 4</button>
           </div>
         </div>
 
         <div id="fundBucketsContainer" class="fund-grid">
-          <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 5 ส่วน...</p>
+          <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 6 ส่วน...</p>
         </div>
 
         <div style="margin-top:0.9rem;">
@@ -1163,11 +1160,43 @@
           <div id="fixedMonthlyChecklistContainer" class="fixed-checklist"></div>
         </div>
       </section>
-    </div>
-
-    <!-- คอลัมน์ขวา: ตัวกรอง การค้นหา และรายการธุรกรรมย้อนหลัง -->
-    <div class="col-stack">
-      <section class="card" aria-labelledby="historySectionTitle">
+      <div class="card" id="insuranceGauge" aria-live="polite"></div>
+      <div class="card"><h2>ตรวจข้อมูลประกันแดนเดิม</h2><p id="legacyInsuranceStatus" role="status"></p><button id="btnReviewLegacyInsurance" class="btn btn-secondary" type="button">ตรวจและยืนยันการแยกยอดเดิม</button></div>
+      <details class="card"><summary>ผู้ช่วยและรายการจ่ายประจำเดือน</summary><section class="card automation-panel" aria-labelledby="automationTitle">
+      <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
+      <div class="automation-bar">
+        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
+        <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
+        <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
+        <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
+      </div>
+      <p id="captureStatus" role="status" aria-live="polite">วางภาพด้วย Ctrl+V / Cmd+V หรือแชร์ภาพมายังแอป หากไม่รองรับให้เลือกภาพจากอัลบั้ม</p>
+      <button id="btnResumeShare" type="button" class="btn btn-secondary">รับภาพแชร์ที่ค้างไว้</button>
+      <p id="voiceStatus" role="status" aria-live="polite"></p>
+      <div id="dailyQuickChips" class="automation-bar" aria-label="รายจ่ายที่เคยยืนยัน"></div>
+      <button id="btnClearLearning" type="button" class="btn btn-secondary">ล้างร้านค้าและชิปที่จำไว้</button>
+      <div class="automation-grid">
+      <div class="glass-subcard" role="group" aria-labelledby="batchPayTitle">
+        <h3 id="batchPayTitle">จ่ายรายการประจำเดือน — ตรวจยอดและเลือกก่อนบันทึก</h3>
+        <label for="batchPayDate">วันที่ชำระ</label><input id="batchPayDate" type="date" required>
+        <div id="batchPayItems"></div>
+        <button id="btnBatchPay" type="button" class="btn btn-primary">ยืนยันจ่ายรายการที่เลือก</button>
+        <p id="batchPayStatus" role="status" aria-live="polite"></p>
+      </div>
+      <div class="glass-subcard" role="group" aria-labelledby="fatherCycleTitle">
+        <h3 id="fatherCycleTitle">รอบประกันพ่อที่ยืนยันเอง</h3>
+        <label for="fatherAnchor">วันที่อ้างอิง</label><input id="fatherAnchor" type="date">
+        <label for="fatherInterval">ห่างกันกี่เดือน</label><input id="fatherInterval" type="number" min="1" max="120" step="1">
+        <button id="btnSaveFatherCycle" type="button" class="btn btn-secondary">ยืนยันรอบประกันพ่อ</button>
+        <p id="fatherCycleStatus" role="status" aria-live="polite">ต้องตรวจสอบวันที่และความถี่ก่อนคำนวณรอบ</p>
+      </div>
+      </div>
+    </section></details>
+    </section>
+    <section id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" tabindex="-1" hidden>
+      <div class="card"><h2>วิเคราะห์การเงิน</h2><label for="analyticsMonth">เดือนสุดท้ายของช่วง 6 เดือน</label><input id="analyticsMonth" class="form-control" type="month"><p>ไม่รวมการโอนภายใน เงินเดือนนับจากยอดจัดสรรรวมเพียงครั้งเดียว</p><div id="financialCharts" aria-live="polite"></div></div>
+    </section>
+    <section id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="-1" hidden><section class="card" aria-labelledby="historySectionTitle">
         <div class="card-header">
           <div>
             <h2 id="historySectionTitle" class="card-title">รายการธุรกรรมและวิเคราะห์วัตถุประสงค์</h2>
@@ -1215,7 +1244,7 @@
           </div>
 
           <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 5 ส่วน)</label>
+            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 6 ส่วน)</label>
             <select id="filterFundSelect" class="form-control">
               <option value="all">ทุกส่วนของเงิน (1–5)</option>
               <option value="investment_stock">1. เงินลงทุน (หุ้น)</option>
@@ -1223,6 +1252,7 @@
               <option value="fixed_expense">3. ค่าใช้จ่ายคงที่</option>
               <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)</option>
               <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
+              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
             </select>
           </div>
 
@@ -1241,9 +1271,14 @@
         <div id="transactionListContainer" class="tx-list" aria-live="polite">
           <div class="empty-state">ยังไม่มีรายการบันทึก เริ่มต้นด้วยการสแกนใบเสร็จหรือกดปุ่ม "+ เพิ่มรายการใหม่"</div>
         </div>
-      </section>
-    </div>
+      </section></section>
   </main>
+  <nav class="bottom-nav" role="tablist" aria-label="เมนูหลัก">
+    <button id="tab-home" type="button" role="tab" aria-controls="panel-home" aria-selected="true">⌂<span>หน้าหลัก</span></button>
+    <button id="tab-funds" type="button" role="tab" aria-controls="panel-funds" aria-selected="false" tabindex="-1">◉<span>กระปุก</span></button>
+    <button id="tab-analytics" type="button" role="tab" aria-controls="panel-analytics" aria-selected="false" tabindex="-1">▥<span>กราฟ</span></button>
+    <button id="tab-history" type="button" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1">≡<span>ประวัติ</span></button>
+  </nav>
 
   <!-- ======================================================================= -->
   <!-- MODAL 1: ฟอร์มตรวจสอบผลการวิเคราะห์ AI และเพิ่ม/แก้ไขธุรกรรม (Verification Form) -->
@@ -1342,11 +1377,12 @@
 
           <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
             <label for="txFormFundBucket" class="form-label">
-              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 5 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
+              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
             </label>
             <select id="txFormFundBucket" class="form-control" required>
               <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
-              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ประกันแดน/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
+              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
+              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
               <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — เก็บสะสมเงินเหลือใช้)</option>
               <option value="home_building">2. เงินเก็บสร้างบ้าน (Fix 13,000/เดือน)</option>
               <option value="investment_stock">1. เงินลงทุน (หุ้น — Fix 6,500/เดือน)</option>
@@ -1528,18 +1564,18 @@
   </div>
 
   <!-- ======================================================================= -->
-  <!-- MODAL 5: แบ่งเงินเดือนออกเป็น 5 ส่วนตามสูตร Fix ประจำเดือน -->
+  <!-- MODAL 5: แบ่งเงินเดือนออกเป็น 6 ส่วนตามสูตร Fix ประจำเดือน -->
   <!-- ======================================================================= -->
   <div id="salarySplitModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="salarySplitModalTitle" hidden>
     <div class="modal-panel" style="max-width:600px;">
       <div class="modal-header">
-        <h2 id="salarySplitModalTitle" class="card-title">แบ่งเงินเดือนออกเป็น 5 ส่วน (Fix ประจำเดือน)</h2>
+        <h2 id="salarySplitModalTitle" class="card-title">แบ่งเงินเดือนออกเป็น 6 ส่วน (Fix ประจำเดือน)</h2>
         <button type="button" id="btnCloseSalarySplitModal" class="btn btn-secondary btn-sm">ปิด</button>
       </div>
 
       <form id="salarySplitForm" class="modal-body" novalidate>
         <div class="alert-box alert-info" style="font-size:0.82rem;">
-          ระบบตั้งค่ายอด Fix รายเดือนตามสูตรของคุณไว้ให้แล้ว (เก็บสร้างบ้าน 13,000 / ลงทุนหุ้น 6,500 / ประกันพ่อ 1,300 หรือ 2,600 / ประกันแดน 2,900 / ให้น้องมายด์ 2,000 / น้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500) สามารถปรับแก้ตัวเลขก่อนยืนยันได้
+          ระบบตั้งค่ายอด Fix รายเดือนตามสูตรของคุณไว้ให้แล้ว (เก็บสร้างบ้าน 13,000 / ลงทุนหุ้น 6,500 / ประกันพ่อ 1,300 หรือ 2,600 / เงินสะสมประกันแดน 2,900 แยกที่กระปุก 6 / ให้น้องมายด์ 2,000 / น้ำ-ไฟ-โทรศัพท์-เรียนพิเศษลูก 6,500) สามารถปรับแก้ตัวเลขก่อนยืนยันได้
         </div>
 
         <div id="salarySplitErrorBox" class="alert-box alert-error" hidden></div>
@@ -1569,13 +1605,13 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
               <label for="salarySplitFund3Input" class="form-label" style="margin:0;">3. ค่าใช้จ่ายคงที่รวม (บาท)</label>
               <select id="salarySplitFatherInsMode" class="form-control" style="width:auto;min-height:32px;padding:0.2rem 0.5rem;font-size:0.8rem;">
-                <option value="1300">รอบปกติ: ประกันพ่อ 1,300 บาท (รวมคงที่ 12,700)</option>
-                <option value="2600">รอบเดือนที่ 3: ประกันพ่อ 2,600 บาท (รวมคงที่ 14,000)</option>
+                <option value="1300">รอบปกติ: ประกันพ่อ 1,300 บาท (รวมคงที่ 9,800)</option>
+                <option value="2600">รอบเดือนที่ 3: ประกันพ่อ 2,600 บาท (รวมคงที่ 11,100)</option>
               </select>
             </div>
-            <input type="number" id="salarySplitFund3Input" class="form-control" step="0.01" min="0" value="12700" required>
+            <input type="number" id="salarySplitFund3Input" class="form-control" step="0.01" min="0" value="9800" required>
             <p style="font-size:0.76rem;color:var(--text-muted);margin-top:0.35rem;">
-              ประกอบด้วย: ประกันพ่อ (<span id="labelFatherInsAmount">1,300</span>) + ประกันแดน (2,900) + ให้น้องมายด์ (2,000) + ค่าน้ำ/ค่าไฟ/ค่าโทรศัพท์/ค่าเรียนพิเศษลูก (6,500)
+              ประกอบด้วย: ประกันพ่อ (<span id="labelFatherInsAmount">1,300</span>) + ให้น้องมายด์ (2,000) + ค่าน้ำ/ค่าไฟ/ค่าโทรศัพท์/ค่าเรียนพิเศษลูก (6,500)
             </p>
           </div>
 
@@ -1584,6 +1620,7 @@
             <input type="number" id="salarySplitFund4Input" class="form-control" step="0.01" min="0" value="0" required>
           </div>
 
+          <div class="form-group"><label for="salarySplitFund6Input" class="form-label">6. เงินเก็บประกันแดน — สะสม 2,900 ต่อเดือน / 34,800 ต่อปี</label><input id="salarySplitFund6Input" class="form-control" type="number" min="0" step="0.01" value="2900" required></div>
           <div class="form-group">
             <label for="salarySplitFund5Input" class="form-label">5. ค่าใช้จ่ายทั่วไป (ส่วนที่เหลือใช้จ่าย)</label>
             <input type="number" id="salarySplitFund5Input" class="form-control" step="0.01" min="0" value="0" required>
@@ -1591,13 +1628,13 @@
         </div>
 
         <div id="salarySplitSummaryPreview" class="alert-box alert-success" style="margin-top:0.85rem;margin-bottom:0;font-size:0.84rem;">
-          ยอดรวม Fix (ข้อ 1 + 2 + 3) = ฿32,200.00 | กรอกยอดเงินเดือนรวมเพื่อคำนวณข้อ 5 อัตโนมัติ
+          ยอดกันเงิน (ข้อ 1 + 2 + 3 + 6) = ฿32,200.00 | กรอกยอดเงินเดือนรวมเพื่อคำนวณข้อ 5 อัตโนมัติ
         </div>
       </form>
 
       <div class="modal-footer">
         <button type="button" id="btnCancelSalarySplit" class="btn btn-secondary">ยกเลิก</button>
-        <button type="button" id="btnConfirmSalarySplit" class="btn btn-primary">ยืนยันแบ่งเงินเดือนทั้ง 5 ส่วน</button>
+        <button type="button" id="btnConfirmSalarySplit" class="btn btn-primary">ยืนยันแบ่งเงินเดือนทั้ง 6 ส่วน</button>
       </div>
     </div>
   </div>

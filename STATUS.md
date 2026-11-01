@@ -1,10 +1,55 @@
 # รายงานสถานะโปรเจกต์ (STATUS.md) — SlipSense (`slipsense-expense-tracker`)
 
-**วันที่อัปเดตล่าสุด:** 27 ตุลาคม 2026  
+**วันที่อัปเดตล่าสุด:** 1 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** พร้อมใช้งานและพร้อม Deploy ขึ้น GitHub Pages / Supabase Production (รองรับระบบแบ่งเงินเดือน 5 ส่วน & รายการ Fix รายเดือนครบถ้วน)
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-008 พัฒนาและ self-test แล้ว รอ Independent QA และ Antigravity Gate 12; ยังไม่อนุมัติ release
 
 ---
+
+## ผลงาน TASK-SLIPSENSE-V4-008
+
+ปรับระบบเป็น 6 กระปุก โดยแยกเงินสะสมประกันแดน 2,900 บาท/เดือน เป้าหมายรายปี 34,800 บาท ค่าใช้จ่ายคงที่ใหม่ 9,800/11,100 บาท และเงินทั่วไป 12,800/11,500 บาทเมื่อเงินเดือน 45,000 บาท ยอดประกันแดนสะสมข้ามเดือนและข้ามปี ไม่ถูกกวาดโดย rollover และจ่ายจริงผ่านฟอร์มยืนยันแยกจากการสะสม
+
+เพิ่ม 4 panels, Home แบบ Hero/กริด 2 คอลัมน์, Bottom Navigation, กราฟแท่งย้อนหลัง 6 เดือน, donut หมวดรายจ่าย และเกจประกันแดน พร้อมตาราง/ข้อความอ่านยอด เพิ่มเส้นทางตรวจข้อมูลเก่าที่มี marker ชัดเจนด้วยคู่ปรับกระปุกแบบ atomic; ข้อมูลคลุมเครือหรือเดือนที่ rollover แล้วต้องตรวจเองก่อน ไม่เดาและไม่ย้ายย้อนหลังด้วย SQL
+
+### หลักฐาน self-test
+
+- คำสั่ง: `node scripts/run_tests.js` ด้วย System Node.js `v24.16.0`
+- ผลล่าสุด: ผ่าน **35/35** รายการระดับ suite/test case, ล้มเหลว **0**, exit code **0** (รวม assertions ย่อยใน regression suites)
+- Regression ครอบคลุมเงินเดือนทั้งสองรอบ, 6 กระปุก, ทศนิยม, เงินไม่พอ/ติดลบ/ไม่จำกัด, แม่แบบเก่า/ปรับเอง, ผู้ใช้ต่างกัน, แบ่งซ้ำข้ามแท็บ, การจ่ายเบี้ยจริง, เงินสะสมข้ามปี, rollover ที่เว้นประกันแดน และการย้ายข้อมูลซ้ำโดยยอดสุทธิคงเดิม
+- ทดสอบ IndexedDB ล้มเหลวหลังเริ่มเขียนขาโอน แล้วตรวจว่าการลองใหม่โอนครบยอด ไม่มีขาโอนหรือ ledger บางส่วนตกค้าง
+- กราฟทดสอบทั้ง source และโค้ดหลัง build: เดือนว่าง, Bangkok timestamp ข้ามปี, รายการลบ/ผู้ใช้อื่น/ID ซ้ำ/วันที่ผิด/ยอดผิด, โอนภายใน, เงินเดือนรวม 45,000 ไม่บวกซ้ำ, เกจเกินเป้า, ไม่มีข้อมูล และข้อความหมวดที่มี markup ถูกใส่เป็น text
+- Section 17 เรียก main ของ builder เดิมใน VM พร้อม filesystem adapter ในหน่วยความจำทั้งหมด รวม suite build เดิมที่ค้นพบอัตโนมัติ ตรวจ source/artifact SHA-256, minify/mangle 44 identifiers และไม่มี source map/secret ไม่ใช้ artifacts เก่า ไม่เขียน dist หรือไฟล์รากจริง operation ที่ไม่รองรับทำให้ล้มเหลว
+- Build ที่ทดสอบล่าสุด: app source 210,799 bytes → compiled 150,219 bytes; HTML 222,400 bytes (เป็น artifacts ในหน่วยความจำ)
+
+### หลักฐาน mobile และ keyboard
+
+ตรวจด้วย Microsoft Edge headless ผ่าน CDP บน 127.0.0.1 โดยเสิร์ฟ HTML ที่ build ใหม่ในหน่วยความจำและใช้โปรไฟล์ชั่วคราวที่ล้างหลังทดสอบ ผลเป็นการตรวจ DOM/layout และ interaction ไม่ใช่การเทียบภาพ:
+
+| ความกว้าง viewport | scrollWidth ทุกแท็บ | คอลัมน์ Home | Bottom Navigation |
+| ---: | ---: | --- | --- |
+| 320px | 320px | 142px + 142px | ปุ่มสูงอย่างน้อย 44px |
+| 375px | 375px | 169.5px + 169.5px | ปุ่มสูงอย่างน้อย 44px |
+| 390px | 390px | 177px + 177px | ปุ่มสูงอย่างน้อย 44px |
+| 768px | 768px | 366px + 366px | ปุ่มสูงอย่างน้อย 44px |
+
+ทั้งสี่แท็บมี aria-selected ตรงกันและย้าย focus ไป panel ที่เปิด ปุ่มลูกศรขวาจากหน้าหลักเลือกแท็บกระปุกพร้อม focus และ outline แบบ solid การทดสอบ VM ตรวจการคงตัวกรอง/แบบร่างและการ bind ซ้ำแล้ว Hero ทำงานเพียงครั้งเดียว
+
+จำลอง Network offline ใน Edge แล้วแบ่งเงินเดือนลง IndexedDB สำเร็จ กราฟยังมี SVG 2 รูป ยอดรายรับเดือนที่เลือก 4,500,000 สตางค์ และมีรายการเติมประกันแดน 1 รายการ ไม่ต้องเรียกเครือข่ายเพื่อคำนวณกราฟ การทดสอบนี้ไม่ได้ยืนยัน cold-start offline หรืออุปกรณ์มือถือจริง
+
+Safe-area: มี viewport-fit=cover และ env(safe-area-inset-bottom) พร้อมค่ากันพื้นที่ body ใน desktop emulation ค่า paddingBottom ของ navigation เท่ากับ 8px (safe-area inset เป็นศูนย์) ยังไม่ได้ตรวจอุปกรณ์ iOS/Android ที่มีรอยบากจริงหรือโปรแกรมอ่านหน้าจอจริง ไม่มีภาพอ้างอิงแนบ จึงยังไม่ตรวจความเหมือนภาพ
+
+### Schema, ขอบเขต และการส่งต่อ
+
+SQL แทนที่ CHECK เดิมแบบ transaction/รันซ้ำได้ และคง RLS/ownership/index ไม่ได้รัน migration กับฐานจริงหรือฐานทดสอบ PostgreSQL จึงยังต้องให้ Independent QA ตรวจ migration ก่อนเปิดซิงก์รุ่นนี้ JWT/rate limit และ Gemini secret ยังคงอยู่ฝั่ง Edge Function
+
+แก้เฉพาะ 9 ไฟล์ใน allowlist: src/app.ts, src/index.template.html, supabase.sql, supabase/functions/analyze-receipt/index.ts, scripts/run_tests.js, tests/salary_template.test.js, tests/fixed_expense_batch.test.js, README.md และ STATUS.md ทุกไฟล์บันทึก UTF-8 without BOM ตรวจ git diff --check และขอบเขต git status อีกครั้งก่อนส่งรายงาน
+
+ส่ง DEV_REPORT เป็น JSON ในผลตอบกลับให้ runner รับต่อ เพราะไฟล์ DEV_REPORT.json และ .agent_loop อยู่นอก write allowlist ของ Developer นี้ ไม่สร้าง/แก้ state หรือเอกสาร Gate เอง ขั้นต่อไปคือ Independent QARunner และหยุดให้ Antigravity ตรวจแผน/QA/diff ที่ Gate 12 ตาม failover protocol (สถานะที่ runner ต้องจัดการ: QA_RUNNING, active_agent Antigravity) ผลนี้เป็น self-test ของ Developer เท่านั้น ยังไม่ใช่ Independent QA/การอนุมัติ release ไม่สร้าง RELEASE_MANIFEST และไม่ merge main
+
+---
+
+## บันทึกสถานะก่อนงานนี้ (ข้อมูลประวัติ ไม่ใช่ผล QA ของ TASK-SLIPSENSE-V4-008)
 
 ## 1. สิ่งที่ดำเนินการเสร็จสมบูรณ์แล้ว (Completed Deliverables)
 
