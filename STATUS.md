@@ -2,7 +2,7 @@
 
 **วันที่อัปเดตล่าสุด:** 2 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-012 งาน Developer เสร็จใน isolated worktree; self-test ผ่าน 37/37 (exit code 0) รอ Independent QA และการตรวจ Antigravity ที่ Gate 12 ตาม Runner ยังไม่ใช่การอนุมัติ release ของงานนี้
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-012 ผ่านการอนุมัติ Release Gate (Gate 16: `RELEASE_APPROVED`) รวมเข้าสาขา `main` และ Deploy Edge Function `analyze-receipt` (v8 ACTIVE) บน Supabase เรียบร้อยแล้ว; ชุดทดสอบอัตโนมัติผ่านครบ 37/37 รายการ (exit code 0)
 
 ## ผลงาน TASK-SLIPSENSE-V4-012
 
