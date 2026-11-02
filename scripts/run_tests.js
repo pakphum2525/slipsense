@@ -1239,7 +1239,7 @@ async function main() {
     const state = appApi.getState();
     const deletedOnCloudIds = [];
     const mockCloudClient = {
-      from: () => ({
+      from: (table) => table !== 'transactions' ? { select: () => ({ eq: async () => ({ data: [], error: null }) }), upsert: async () => ({ error: null }) } : ({
         select: () => ({
           eq: () => ({
             maybeSingle: async () => ({ data: null, error: null }),
@@ -1315,7 +1315,7 @@ async function main() {
 
     // กรณี 4a: Partial response (count = 2 แต่ส่งมาแค่ 1 แถว) -> ห้ามลบ remoteDeletedTx
     state.supabaseClient = {
-      from: () => ({
+      from: (table) => table !== 'transactions' ? { select: () => ({ eq: async () => ({ data: [], error: null }) }), upsert: async () => ({ error: null }) } : ({
         select: () => ({
           eq: () => ({
             order: () => ({
@@ -1337,7 +1337,7 @@ async function main() {
 
     // กรณี 4b: Complete snapshot (count = 1 และส่งมาครบ 1 แถว) -> ต้องลบ remoteDeletedTx ที่ถูกสั่งลบจากอุปกรณ์อื่น
     state.supabaseClient = {
-      from: () => ({
+      from: (table) => table !== 'transactions' ? { select: () => ({ eq: async () => ({ data: [], error: null }) }), upsert: async () => ({ error: null }) } : ({
         select: () => ({
           eq: () => ({
             order: () => ({
@@ -1472,7 +1472,7 @@ async function main() {
       el('tab-funds').dispatchEvent({ type: 'keydown', key: 'ArrowRight', preventDefault() {} });
       assertEqual(el('tab-analytics').getAttribute('aria-selected'), 'true'); assertEqual(sandbox.document.activeElement, el('tab-analytics'));
       el('tab-home').click(); assertEqual(el('filterSearchInput').value, 'retained'); assertEqual(el('txFormMerchant').value, 'draft');
-      let captures = 0; el('btnChooseGallery').addEventListener('click', () => captures++); el('heroCapture').click(); assertEqual(captures, 1, 'single navigation binding');
+      let captures = 0; el('btnChooseGallery').addEventListener('click', () => captures++); el('btnBottomCenterScan').click(); assertEqual(captures, 1, 'single navigation binding');
       sandbox.navigator.onLine = false; api.renderFinancialCharts('2027-01');
       assertEqual(host.children.length, 4, 'offline render needs no network');
     });
@@ -1487,6 +1487,31 @@ async function main() {
     }
   });
 
+  await runTest('Dynamic buckets', 'schema, policies, grants and atomic move RPC contract', () => {
+    const sql = fs.readFileSync(path.join(PROJECT_ROOT, 'supabase.sql'), 'utf8');
+    const table = sql.match(/CREATE TABLE IF NOT EXISTS public\.fund_buckets \(([\s\S]*?)\n\);/)[1];
+    for (const column of ['id', 'user_id', 'bucket_key', 'name', 'icon', 'color', 'is_cumulative', 'sort_order', 'created_at', 'updated_at']) assert(new RegExp('\\b' + column + '\\b').test(table));
+    assert(/UNIQUE\(user_id, bucket_key\)/.test(table));
+    assert(/char_length\(bucket_key\) BETWEEN 1 AND 50/.test(table));
+    assert(/char_length\(btrim\(name\)\) BETWEEN 1 AND 50/.test(table));
+    for (const mode of ['ENABLE', 'FORCE']) assert(sql.includes('ALTER TABLE public.fund_buckets ' + mode + ' ROW LEVEL SECURITY'));
+    assertEqual((sql.match(/CREATE POLICY fund_buckets_/g) || []).length, 4);
+    for (const action of ['SELECT', 'DELETE']) assert(new RegExp('ON public.fund_buckets FOR ' + action + ' TO authenticated USING \\(auth.uid\\(\\) = user_id\\)').test(sql));
+    assert(/FOR INSERT TO authenticated WITH CHECK \(auth.uid\(\) = user_id\)/.test(sql));
+    assert(/ON public.fund_buckets FOR UPDATE TO authenticated USING \(auth.uid\(\) = user_id\) WITH CHECK \(auth.uid\(\) = user_id\)/.test(sql));
+    assert(sql.includes('REVOKE ALL ON public.fund_buckets, public.fund_bucket_deletions FROM PUBLIC, anon'));
+    assert(sql.includes('GRANT SELECT, INSERT, UPDATE, DELETE ON public.fund_buckets TO authenticated'));
+    assert(sql.includes('CHECK (char_length(fund_bucket) BETWEEN 1 AND 50)'));
+    assert(!sql.includes('CHECK (fund_bucket IN'));
+    assert(sql.includes('pg_get_constraintdef(c.oid)'));
+    const rpc = sql.match(/CREATE OR REPLACE FUNCTION public\.delete_fund_bucket\([\s\S]*?END \$\$;/)[0];
+    for (const token of ['SECURITY INVOKER', 'pg_advisory_xact_lock', 'LAST_BUCKET', 'INVALID_BUCKET', 'OPERATION_CONFLICT', 'replayed', 'auth.uid()', 'UPDATE public.transactions', 'DELETE FROM public.fund_buckets', 'INSERT INTO public.fund_bucket_deletions']) assert(rpc.includes(token), token);
+    assert(rpc.indexOf('pg_advisory_xact_lock') < rpc.indexOf('LAST_BUCKET'));
+    assert(sql.includes('REVOKE ALL ON FUNCTION public.delete_fund_bucket(UUID, TEXT, TEXT) FROM PUBLIC, anon'));
+    assert(sql.includes('GRANT EXECUTE ON FUNCTION public.delete_fund_bucket(UUID, TEXT, TEXT) TO authenticated'));
+    assert(!/AS \$(?!\$)/.test(sql), 'valid dollar-quoted SQL bodies');
+    console.log('    Integration RLS/concurrent delete: NOT RUN (no configured test database)');
+  });
   for (const file of fs.readdirSync(path.join(PROJECT_ROOT, 'tests')).filter(file => file.endsWith('.test.js'))) {
     await runTest('Automation', file, () => memoryBuild.load(path.join(PROJECT_ROOT, 'tests', file))());
   }

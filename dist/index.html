@@ -26,7 +26,7 @@
   
   <script src="./vendor/supabase.min.js"></script>
 
-  <style>:root{--bg-app:#f1f5f9;--bg-surface:#ffffff;--bg-subtle:#f8fafc;--text-main:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border-color:#e2e8f0;--border-strong:#cbd5e1;--brand-primary:#0f766e;--brand-primary-hover:#115e59;--brand-soft:#ccfbf1;--income-color:#15803d;--income-bg:#dcfce7;--expense-color:#b91c1c;--expense-bg:#fee2e2;--warning-color:#b45309;--warning-bg:#fef3c7;--warning-border:#f59e0b;--info-color:#1d4ed8;--info-bg:#dbeafe;--shadow-sm:0 1px 3px rgba(15,23,42,0.06);--shadow-md:0 4px 12px rgba(15,23,42,0.08);--shadow-lg:0 12px 28px rgba(15,23,42,0.16);--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sarabun",Roboto,sans-serif}*{box-sizing:border-box;margin:0;padding:0}html,body{min-height:100%;background-color:var(--bg-app);color:var(--text-main);font-family:var(--font-sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}button,input,select,textarea{font-family:inherit;font-size:1rem;color:inherit}button{cursor:pointer;border:none;background:none}button:disabled{opacity:0.58;cursor:not-allowed}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.system-banner{background:var(--warning-bg);color:#92400e;border-bottom:1px solid #fde68a;padding:0.55rem 1rem;font-size:0.88rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.system-banner.online-synced{background:#ecfdf5;color:#065f46;border-bottom-color:#a7f3d0}.system-banner.offline-mode{background:#fef2f2;color:#991b1b;border-bottom-color:#fecaca}.app-header{background:var(--bg-surface);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:30;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px)}.header-inner{max-width:1200px;margin:0 auto;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.brand-group{display:flex;align-items:center;gap:0.7rem}.brand-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;border:1px solid var(--border-color)}.brand-title{font-size:1.15rem;font-weight:700;color:var(--brand-primary);letter-spacing:-0.01em}.brand-subtitle{font-size:0.78rem;color:var(--text-muted)}.header-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}.status-pill{display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:999px;font-size:0.78rem;font-weight:600;background:var(--bg-subtle);border:1px solid var(--border-color);color:var(--text-secondary)}.status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.green{background:#16a34a}.status-dot.amber{background:#d97706}.status-dot.red{background:#dc2626}.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;min-height:44px;padding:0.55rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.92rem;transition:background-color 0.15s,border-color 0.15s,transform 0.08s;user-select:none}.btn:active:not(:disabled){transform:translateY(1px)}.btn-primary{background:var(--brand-primary);color:#ffffff}.btn-primary:hover:not(:disabled){background:var(--brand-primary-hover)}.btn-secondary{background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border-strong)}.btn-secondary:hover:not(:disabled){background:var(--bg-subtle)}.btn-accent{background:#0284c7;color:#ffffff}.btn-accent:hover:not(:disabled){background:#0369a1}.btn-danger{background:var(--expense-bg);color:var(--expense-color);border:1px solid #fecaca}.btn-danger:hover:not(:disabled){background:#fecaca}.btn-sm{min-height:36px;padding:0.35rem 0.7rem;font-size:0.82rem}.app-container{max-width:1200px;margin:0 auto;padding:1rem;padding-bottom:calc(2.5rem + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr;gap:1.25rem}@media (min-width:768px){.app-container{grid-template-columns:5fr 7fr;align-items:start;padding:1.25rem}}@media (min-width:1024px){.app-container{grid-template-columns:440px 1fr;gap:1.5rem}}.col-stack{display:flex;flex-direction:column;gap:1.25rem}.card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.15rem;box-shadow:var(--shadow-sm)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap}.card-title{font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.45rem}.quick-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}@media (max-width:420px){.quick-actions-grid{grid-template-columns:1fr}}.kpi-grid{display:grid;grid-template-columns:1fr;gap:0.75rem;margin-bottom:1rem}@media (min-width:480px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}.kpi-box{padding:0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-subtle)}.kpi-box.income{background:#f0fdf4;border-color:#bbf7d0}.kpi-box.expense{background:#fef2f2;border-color:#fecaca}.kpi-box.net{background:#f0fdfa;border-color:#99f6e4}.kpi-label{font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem}.kpi-value{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}.kpi-box.income .kpi-value{color:var(--income-color)}.kpi-box.expense .kpi-value{color:var(--expense-color)}.kpi-box.net .kpi-value{color:var(--brand-primary)}.kpi-sub{font-size:0.73rem;color:var(--text-muted);margin-top:0.2rem}.category-list{display:flex;flex-direction:column;gap:0.65rem}.category-row{display:flex;flex-direction:column;gap:0.25rem}.category-row-top{display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600}.progress-track{height:8px;background:var(--bg-app);border-radius:999px;overflow:hidden}.progress-fill{height:100%;background:var(--brand-primary);border-radius:999px;transition:width 0.25s ease}.upload-zone{border:2px dashed var(--border-strong);border-radius:var(--radius-md);padding:1.15rem;text-align:center;background:var(--bg-subtle);transition:border-color 0.2s,background-color 0.2s}.upload-zone:hover{border-color:var(--brand-primary)}.camera-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-top:0.85rem}.preview-container{margin-top:1rem;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:#ffffff}.preview-img{max-width:100%;max-height:280px;display:block;margin:0 auto 0.65rem;border-radius:6px;object-fit:contain;background:#0f172a}.compression-meta{font-size:0.8rem;color:var(--text-secondary);background:var(--bg-subtle);padding:0.45rem 0.65rem;border-radius:6px;margin-bottom:0.65rem}.form-grid{display:grid;grid-template-columns:1fr;gap:0.85rem}@media (min-width:540px){.form-grid.two-col{grid-template-columns:1fr 1fr}}.form-group{display:flex;flex-direction:column;gap:0.3rem}.form-label{font-size:0.86rem;font-weight:600;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;gap:0.4rem}.form-control{width:100%;min-height:44px;padding:0.55rem 0.75rem;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:#ffffff;transition:border-color 0.15s,box-shadow 0.15s}.form-control:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(15,118,110,0.18)}.form-group.uncertain-field .form-control{border-color:var(--warning-border);background-color:#fffbeb}.uncertain-badge{display:inline-block;font-size:0.72rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:999px;background:var(--warning-bg);color:var(--warning-color);border:1px solid var(--warning-border)}.tx-list{display:flex;flex-direction:column;gap:0.75rem}.tx-item{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.9rem;background:#ffffff;display:flex;flex-direction:column;gap:0.55rem;transition:border-color 0.15s}.tx-item:hover{border-color:var(--border-strong)}.tx-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem}.tx-merchant{font-weight:700;font-size:1rem;color:var(--text-main);word-break:break-word}.tx-amount{font-weight:800;font-size:1.08rem;font-variant-numeric:tabular-nums;white-space:nowrap}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.tx-badges{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}.badge{display:inline-flex;align-items:center;gap:0.25rem;padding:0.18rem 0.55rem;border-radius:999px;font-size:0.74rem;font-weight:600}.badge-income{background:var(--income-bg);color:var(--income-color)}.badge-expense{background:var(--expense-bg);color:var(--expense-color)}.badge-category{background:var(--bg-app);color:var(--text-secondary)}.badge-synced{background:#dcfce7;color:#166534}.badge-pending{background:#fef3c7;color:#92400e}.badge-local{background:#e2e8f0;color:#334155}.badge-failed{background:#fee2e2;color:#991b1b}.tx-purpose-box{font-size:0.84rem;color:var(--text-secondary);background:var(--bg-subtle);border-left:3px solid var(--brand-primary);padding:0.45rem 0.65rem;border-radius:0 6px 6px 0}.tx-actions{display:flex;justify-content:flex-end;gap:0.5rem;border-top:1px solid var(--bg-app);padding-top:0.5rem}.alert-box{padding:0.8rem 0.95rem;border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:0.85rem;border:1px solid transparent}.alert-warning{background:var(--warning-bg);color:#92400e;border-color:#fcd34d}.alert-error{background:var(--expense-bg);color:var(--expense-color);border-color:#fecaca}.alert-info{background:var(--info-bg);color:var(--info-color);border-color:#bfdbfe}.alert-success{background:var(--income-bg);color:var(--income-color);border-color:#bbf7d0}.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.92rem}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}.modal-backdrop[hidden]{display:none !important}.modal-panel{background:var(--bg-surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border-color);display:flex;flex-direction:column}.modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-surface);z-index:2}.modal-body{padding:1.25rem;overflow-y:auto}.modal-footer{padding:0.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.65rem;flex-wrap:wrap;background:var(--bg-subtle)}.toast-stack{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));right:1rem;left:1rem;max-width:420px;margin-left:auto;z-index:90;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}.toast{pointer-events:auto;padding:0.8rem 1rem;border-radius:var(--radius-sm);background:#0f172a;color:#ffffff;font-size:0.88rem;font-weight:500;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:space-between;gap:0.75rem}.toast.success{background:#15803d}.toast.error{background:#b91c1c}.toast.warning{background:#b45309}.fund-grid{display:flex;flex-direction:column;gap:0.65rem}.fund-card{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem 0.9rem;background:var(--bg-subtle);display:flex;flex-direction:column;gap:0.4rem}.fund-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem}.fund-title{font-weight:700;font-size:0.92rem;color:var(--text-main)}.fund-balance{font-weight:800;font-size:1.02rem;font-variant-numeric:tabular-nums;white-space:nowrap}.fund-balance.positive{color:var(--brand-primary)}.fund-balance.negative{color:var(--expense-color)}.fund-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.78rem;color:var(--text-muted)}.badge-fund{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}.fixed-checklist{display:flex;flex-direction:column;gap:0.45rem;margin-top:0.65rem;padding-top:0.65rem;border-top:1px dashed var(--border-color)}.fixed-item-row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:6px;background:var(--bg-surface);border:1px solid var(--border-color);font-size:0.82rem}.fixed-item-info{display:flex;flex-direction:column;gap:0.1rem}.fixed-item-name{font-weight:600;color:var(--text-main)}.fixed-item-sub{font-size:0.75rem;color:var(--text-muted)}:root,[data-theme="light"]{color-scheme:light;--bg-app:#edf5f9;--bg-surface:#f9fcff;--bg-subtle:#e6f0f6;--text-main:#102c40;--text-secondary:#304f63;--text-muted:#456176;--glass:rgba(255,255,255,0.08);--glass-border:rgba(34,108,142,0.30);--aurora-blue:rgba(45,170,240,0.16);--aurora-green:rgba(34,206,160,0.12);--aurora-purple:rgba(153,104,230,0.13)}[data-theme="dark"]{color-scheme:dark;--bg-app:#07151f;--bg-surface:#102734;--bg-subtle:#183342;--text-main:#effaff;--text-secondary:#c3dbe7;--text-muted:#abc8d7;--border-color:#446171;--border-strong:#6b8a9b;--brand-primary:#147e88;--brand-soft:#163e47;--glass:rgba(181,226,255,0.06);--glass-border:rgba(166,226,255,0.28);--aurora-blue:rgba(45,170,240,0.12);--aurora-green:rgba(34,206,160,0.08);--aurora-purple:rgba(153,104,230,0.11)}[data-theme="blue"]{color-scheme:dark;--bg-app:#071526;--bg-surface:#102f4e;--bg-subtle:#163d5c;--text-main:#f2fbff;--text-secondary:#c9e3f5;--text-muted:#b2d1e8;--border-color:#416986;--border-strong:#739ab5;--brand-primary:#147e88;--brand-soft:#133e59;--glass:rgba(164,218,255,0.08);--glass-border:rgba(134,218,255,0.32);--aurora-blue:rgba(55,192,222,0.16);--aurora-green:rgba(39,194,147,0.14);--aurora-purple:rgba(144,110,219,0.16)}[data-theme="dark-red"]{color-scheme:dark;--bg-app:#12070a;--bg-surface:#200910;--bg-subtle:#32121d;--text-main:#fff0f3;--text-secondary:#f4bac4;--text-muted:#dca3b0;--border-color:#814354;--border-strong:#db879c;--brand-primary:#e11d48;--brand-soft:#481325;--brand-primary-hover:#be123c;--expense-color:#ff9eae;--expense-bg:#481321;--income-color:#8ee6bf;--income-bg:#10382d;--glass:rgba(225,29,72,0.08);--glass-border:rgba(244,186,196,0.32);--aurora-blue:rgba(225,29,72,0.16);--aurora-green:rgba(159,18,57,0.14);--aurora-purple:rgba(190,24,93,0.16);--shadow-sm:0 1px 6px rgba(18,7,10,0.4);--shadow-md:0 4px 20px rgba(18,7,10,0.5);--shadow-lg:0 12px 32px rgba(18,7,10,0.65)}body{background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app);background-attachment:fixed}[data-theme="dark-red"] body{background:radial-gradient(ellipse at 8% 10%,rgba(225,29,72,0.22) 0%,rgba(159,18,57,0.08) 35%,transparent 65%),radial-gradient(ellipse at 90% 75%,rgba(190,24,93,0.18) 0%,rgba(88,15,38,0.08) 40%,transparent 70%),linear-gradient(155deg,rgba(18,7,10,0.72) 0%,rgba(32,9,16,0.6) 55%,rgba(18,7,10,0.82) 100%),url('./icons/dark_red_finance_bg.png') center / cover no-repeat,#12070a;background-attachment:fixed}[data-theme="dark-red"]:focus-visible{outline-color:#ff91ad}[data-theme="dark-red"] .form-control,[data-theme="dark-red"] .tx-item,[data-theme="dark-red"] .kpi-box{background:var(--bg-surface);color:var(--text-main);border-color:var(--glass-border)}[data-theme="dark-red"] .kpi-box.net .kpi-value{color:#ff91ad}[data-theme="dark-red"] .form-group.uncertain-field .form-control{background-color:#3b2410}[data-theme="dark-red"] .form-control:focus-visible{outline:3px solid #ff91ad;outline-offset:3px;box-shadow:none}.app-header,.card,.fund-card{background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(24px) saturate(130%);backdrop-filter:blur(24px) saturate(130%)}[data-theme="blue"] body{background:radial-gradient(ellipse at 4% 8%,var(--aurora-green),transparent 58%),radial-gradient(ellipse at 90% 18%,var(--aurora-purple),transparent 56%),radial-gradient(ellipse at 60% 85%,var(--aurora-blue),transparent 64%),linear-gradient(155deg,#071526 15%,#0b233b 60%,#071526);background-attachment:fixed}.modal-content{background:var(--bg-surface)}.app-header{padding-top:env(safe-area-inset-top)}.app-container{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{border:1px solid var(--glass-border);border-radius:14px;background:var(--glass);color:var(--text-main);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 16px rgba(0,8,20,0.08);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%)}button,.btn,select,input:not([type="checkbox"]){min-height:44px}input:not([type="file"]):not([type="checkbox"]):not(.sr-only),select,textarea{padding:0.65rem 0.8rem;max-width:100%;min-width:0}input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:1}select option{background:var(--bg-surface);color:var(--text-main)}input[type="checkbox"]{appearance:none;width:24px;height:24px;min-height:24px;border-radius:12px;accent-color:var(--brand-primary);cursor:pointer}input[type="checkbox"]:checked{background-color:var(--brand-primary);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");outline:1px solid var(--border-strong);outline-offset:2px}@media (forced-colors:active){input[type="checkbox"]{appearance:auto}}[hidden]{display:none !important}input:disabled,select:disabled,textarea:disabled{opacity:0.58;cursor:not-allowed}input[aria-invalid="true"],input:user-invalid{border-color:var(--expense-color);outline:2px solid var(--expense-color);outline-offset:2px}.btn-primary,.btn-accent{background:linear-gradient(145deg,rgba(255,255,255,0.12),transparent),var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}.btn,button,input,select,textarea{transition:transform 180ms ease,background-color 180ms ease,border-color 180ms ease}:focus-visible{outline:3px solid #22a6c7;outline-offset:3px}.automation-panel{grid-column:1 / -1;margin-bottom:0;padding:clamp(1rem,3vw,1.5rem)}.automation-panel h2{font-size:1.2rem;letter-spacing:-0.02em}.automation-panel p{color:var(--text-secondary);font-size:0.9rem;line-height:1.7}.automation-panel>button{margin-block:0.65rem}.automation-bar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-block:1rem}.automation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.25rem}.glass-subcard{padding:clamp(1rem,2vw,1.4rem);min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0.75rem}.glass-subcard h3{font-size:1rem;font-weight:650;letter-spacing:-0.01em;line-height:1.6}.glass-subcard label{font-size:0.9rem;color:var(--text-secondary)}.glass-subcard>button{align-self:flex-start;margin-top:0.25rem}.batch-row{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(80px,120px);gap:0.75rem;align-items:center;margin-block:0.75rem}.batch-row input{width:100%}.batch-row label{overflow-wrap:anywhere}@media (max-width:600px){.automation-grid{grid-template-columns:minmax(0,1fr)}.automation-bar>.btn{flex:1 1 100%}.batch-row{grid-template-columns:24px minmax(0,1fr)}.batch-row input[type="number"]{grid-column:2}}@media (hover:hover) and (pointer:fine){button:hover:not(:disabled),.btn:hover:not(:disabled){transform:scale(1.015);border-color:var(--border-strong)}button:active:not(:disabled),.btn:active:not(:disabled){transform:scale(0.98)}}@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.app-header,.card,.fund-card,.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{background:var(--bg-surface)}input[type="checkbox"]:checked{background-color:var(--brand-primary)}.btn-primary,.btn-accent{background:var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;transform:none !important;scroll-behavior:auto !important}}[hidden]{display:none !important}body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}.app-panels{display:block;max-width:900px;margin:auto;padding:12px}.app-panels>section{min-width:0}.app-panels .card{margin-bottom:16px;min-width:0}.hero-action{border-radius:24px;padding:24px;margin:0 0 18px;background:linear-gradient(135deg,#244780,#5c318a);color:#fff}.hero-action h1{font-size:clamp(1.3rem,5vw,2rem);margin:12px 0}.hero-action p{color:#fff;margin-bottom:12px}.app-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.app-shortcut{min-height:118px;padding:16px 8px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-surface);color:var(--text-main);display:flex;align-items:center;flex-direction:column;gap:10px;font:inherit}.shortcut-icon{border-radius:50%;background:#406bd5;color:white;width:48px;height:48px;display:grid;place-items:center;font-size:26px}.app-shortcut:nth-child(2) .shortcut-icon{background:#168065}.app-shortcut:nth-child(3) .shortcut-icon{background:#a45813}.app-shortcut:nth-child(4) .shortcut-icon{background:#a13878}.bottom-nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg-surface);border-top:1px solid var(--border-color);z-index:40}.bottom-nav button{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;min-height:52px;border:0;background:transparent;color:var(--text-main);font:inherit}.bottom-nav [aria-selected="true"]{background:#244780;color:#fff;border-radius:14px}button,.btn,input,select,summary{min-height:44px !important}:focus-visible{outline:3px solid #efac24;outline-offset:3px}.app-panels svg{display:block;width:100%;max-height:320px}.chart-table{width:100%;font-size:.78rem;border-collapse:collapse;margin:12px 0 24px}.chart-table td,.chart-table th{padding:6px 2px;text-align:right}.chart-legend{list-style:none;padding:0}.chart-legend li{padding:6px 10px;overflow-wrap:anywhere}progress{width:100%;height:20px;accent-color:#168065}.fund-card-header{flex-wrap:wrap}@media (max-width:400px){.app-panels .card{padding:14px}.fund-grid,.kpi-grid{grid-template-columns:1fr}.filters-grid{grid-template-columns:1fr}.batch-row{flex-wrap:wrap}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}}[data-theme="fintrack"]{color-scheme:dark;--bg-app:#090a0f;--bg-surface:#12141c;--bg-subtle:#191c27;--border-color:#1e2230;--border-strong:#67728a;--glass-border:#1e2230;--brand-primary:#10b981;--brand-primary-hover:#059669;--brand-soft:#10382d;--ai-color:#6366f1;--expense-color:#f43f5e;--expense-bg:#351722;--income-color:#10b981;--income-bg:#10382d;--text-main:#f3f5fa;--text-secondary:#c1c6d5;--text-muted:#9ba3b8;--glass:rgba(18,20,28,0.08);--aurora-blue:rgba(99,102,241,0.08);--aurora-green:rgba(16,185,129,0.08);--aurora-purple:rgba(99,102,241,0.08)}[data-theme="fintrack"] body{background:#090a0f}.mobile-frame-glow{min-width:0;margin:auto}.dynamic-island{display:none}.brand-wallet{color:#10b981;flex-shrink:0}.ai-badge{display:inline-block;border:1px solid #6366f1;border-radius:8px;padding:3px 7px;font-size:.65rem;color:#bfc2ff;background:#202244;white-space:nowrap}.sync-indicator{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-secondary)}.app-header{position:sticky;top:0;z-index:35}.header-inner,.header-actions,.brand-group{min-width:0;flex-wrap:wrap}.header-actions{gap:8px}.brand-title{font-size:1.2rem}.brand-subtitle{font-size:.7rem}[data-theme="fintrack"] .card,[data-theme="fintrack"] .fund-card,[data-theme="fintrack"] .kpi-box,[data-theme="fintrack"] .tx-item{background:#12141c;border-color:#1e2230}[data-theme="fintrack"] .app-header{background:rgba(18,20,28,.92)}[data-theme="fintrack"] .form-control{background:#191c27;color:var(--text-main)}[data-theme="fintrack"] .form-group.uncertain-field .form-control{background:#3b2410}[data-theme="fintrack"] .btn-primary{color:#052c20;font-weight:700}[data-theme="fintrack"]:focus-visible{outline-color:#10b981}.balance-hero{position:relative;isolation:isolate;border-radius:24px}.balance-hero::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 90% 0,rgba(16,185,129,.18),transparent 65%)}.balance-hero .kpi-box.net{background:transparent;border:0;padding:12px 0 24px}.balance-hero .kpi-box.net .kpi-value{font-size:clamp(2rem,8vw,3rem);color:var(--text-main);letter-spacing:-.04em}.balance-hero .kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.balance-hero .kpi-grid .kpi-box{min-width:0;padding:12px;background:var(--bg-subtle)}.balance-hero .kpi-grid .kpi-value{font-size:clamp(1rem,4vw,1.5rem);overflow-wrap:anywhere}.kpi-sub{overflow-wrap:anywhere}.progress-track{height:7px;background:var(--bg-subtle);border-radius:99px}.progress-fill{background:linear-gradient(90deg,#10b981,#6366f1);border-radius:99px}.hero-action{background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border-color);padding:18px}.hero-action p{color:var(--text-secondary)}.ai-callout{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:20px 16px;margin-bottom:20px;text-align:left;border:1px solid #6366f1;background:linear-gradient(120deg,#202244,#12141c);color:#f3f5fa}.ai-callout small{display:block;color:#c1c6d5;margin-top:6px}.scan-preview{position:relative;overflow:hidden;border-radius:16px}.scan-preview .preview-img{display:block;margin:auto}.laser-line{position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#10b981,#2dd4bf,#6366f1);box-shadow:0 0 20px #10b981;animation:scanLaser 2.4s ease-in-out infinite alternate;pointer-events:none}@keyframes scanLaser{from{top:0}to{top:calc(100% - 3px)}}.latest-filters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.latest-filters button{padding:8px 14px}.latest-filters [aria-pressed="true"]{border-color:var(--brand-primary);color:var(--income-color)}.tx-top{gap:12px;flex-wrap:wrap}.tx-top>div{min-width:0}.tx-merchant,.tx-item p,.tx-purpose-box,.status-pill{overflow-wrap:anywhere}.tx-direction{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;font-size:24px;background:var(--expense-bg);color:var(--expense-color)}.tx-direction.income{background:var(--income-bg);color:var(--income-color)}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.bottom-nav{display:block;width:100%;max-width:900px;margin:auto}.nav-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}#tab-analytics{grid-column:4}#tab-history{grid-column:5}.bottom-nav .center-scan-fab{position:absolute;left:50%;top:-19px;transform:translateX(-50%);width:60px;height:60px;min-height:60px;border-radius:50%;background:linear-gradient(135deg,#10b981,#0d9488);color:#052c20;border:5px solid var(--bg-app);box-shadow:0 0 24px #10b98155}.bottom-nav .center-scan-fab:hover{transform:translateX(-50%)}[data-theme="fintrack"] .bottom-nav [aria-selected="true"]{background:#10382d;color:#10b981}.app-panels,.header-inner{width:100%;max-width:900px;margin:auto}.card-header{flex-wrap:wrap;gap:10px}.card-header>div{min-width:0;flex-wrap:wrap}.modal-panel{max-width:calc(100vw - 24px)}.form-grid>*{min-width:0}@media (min-width:1024px){body{padding:32px 0 0}.mobile-frame-glow{width:480px;border:1px solid #1e2230;border-radius:40px 40px 0 0;box-shadow:0 0 80px #10b98120,0 0 130px #6366f118;padding-top:12px;background:var(--bg-app);padding-bottom:100px}.dynamic-island{display:block;width:104px;height:26px;border-radius:99px;background:#000;margin:0 auto 14px}.mobile-frame-glow .bottom-nav{max-width:480px}}@supports not (backdrop-filter:blur(1px)){[data-theme="fintrack"] .app-header{background:#12141c}}@media (prefers-reduced-motion:reduce){.laser-line{animation:none !important;top:50%}.bottom-nav .center-scan-fab{transform:translateX(-50%) !important}}</style>
+  <style>:root{--bg-app:#f1f5f9;--bg-surface:#ffffff;--bg-subtle:#f8fafc;--text-main:#0f172a;--text-secondary:#475569;--text-muted:#64748b;--border-color:#e2e8f0;--border-strong:#cbd5e1;--brand-primary:#0f766e;--brand-primary-hover:#115e59;--brand-soft:#ccfbf1;--income-color:#15803d;--income-bg:#dcfce7;--expense-color:#b91c1c;--expense-bg:#fee2e2;--warning-color:#b45309;--warning-bg:#fef3c7;--warning-border:#f59e0b;--info-color:#1d4ed8;--info-bg:#dbeafe;--shadow-sm:0 1px 3px rgba(15,23,42,0.06);--shadow-md:0 4px 12px rgba(15,23,42,0.08);--shadow-lg:0 12px 28px rgba(15,23,42,0.16);--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sarabun",Roboto,sans-serif}*{box-sizing:border-box;margin:0;padding:0}html,body{min-height:100%;background-color:var(--bg-app);color:var(--text-main);font-family:var(--font-sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}button,input,select,textarea{font-family:inherit;font-size:1rem;color:inherit}button{cursor:pointer;border:none;background:none}button:disabled{opacity:0.58;cursor:not-allowed}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.system-banner{background:var(--warning-bg);color:#92400e;border-bottom:1px solid #fde68a;padding:0.55rem 1rem;font-size:0.88rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.system-banner.online-synced{background:#ecfdf5;color:#065f46;border-bottom-color:#a7f3d0}.system-banner.offline-mode{background:#fef2f2;color:#991b1b;border-bottom-color:#fecaca}.app-header{background:var(--bg-surface);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:30;box-shadow:var(--shadow-sm);padding-top:env(safe-area-inset-top,0px)}.header-inner{max-width:1200px;margin:0 auto;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}.brand-group{display:flex;align-items:center;gap:0.7rem}.brand-logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;border:1px solid var(--border-color)}.brand-title{font-size:1.15rem;font-weight:700;color:var(--brand-primary);letter-spacing:-0.01em}.brand-subtitle{font-size:0.78rem;color:var(--text-muted)}.header-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}.status-pill{display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:999px;font-size:0.78rem;font-weight:600;background:var(--bg-subtle);border:1px solid var(--border-color);color:var(--text-secondary)}.status-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.status-dot.green{background:#16a34a}.status-dot.amber{background:#d97706}.status-dot.red{background:#dc2626}.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;min-height:44px;padding:0.55rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.92rem;transition:background-color 0.15s,border-color 0.15s,transform 0.08s;user-select:none}.btn:active:not(:disabled){transform:translateY(1px)}.btn-primary{background:var(--brand-primary);color:#ffffff}.btn-primary:hover:not(:disabled){background:var(--brand-primary-hover)}.btn-secondary{background:var(--bg-surface);color:var(--text-main);border:1px solid var(--border-strong)}.btn-secondary:hover:not(:disabled){background:var(--bg-subtle)}.btn-accent{background:#0284c7;color:#ffffff}.btn-accent:hover:not(:disabled){background:#0369a1}.btn-danger{background:var(--expense-bg);color:var(--expense-color);border:1px solid #fecaca}.btn-danger:hover:not(:disabled){background:#fecaca}.btn-sm{min-height:36px;padding:0.35rem 0.7rem;font-size:0.82rem}.app-container{max-width:1200px;margin:0 auto;padding:1rem;padding-bottom:calc(2.5rem + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr;gap:1.25rem}@media (min-width:768px){.app-container{grid-template-columns:5fr 7fr;align-items:start;padding:1.25rem}}@media (min-width:1024px){.app-container{grid-template-columns:440px 1fr;gap:1.5rem}}.col-stack{display:flex;flex-direction:column;gap:1.25rem}.card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.15rem;box-shadow:var(--shadow-sm)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap}.card-title{font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.45rem}.quick-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}@media (max-width:420px){.quick-actions-grid{grid-template-columns:1fr}}.kpi-grid{display:grid;grid-template-columns:1fr;gap:0.75rem;margin-bottom:1rem}@media (min-width:480px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}.kpi-box{padding:0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-subtle)}.kpi-box.income{background:#f0fdf4;border-color:#bbf7d0}.kpi-box.expense{background:#fef2f2;border-color:#fecaca}.kpi-box.net{background:#f0fdfa;border-color:#99f6e4}.kpi-label{font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.25rem}.kpi-value{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}.kpi-box.income .kpi-value{color:var(--income-color)}.kpi-box.expense .kpi-value{color:var(--expense-color)}.kpi-box.net .kpi-value{color:var(--brand-primary)}.kpi-sub{font-size:0.73rem;color:var(--text-muted);margin-top:0.2rem}.category-list{display:flex;flex-direction:column;gap:0.65rem}.category-row{display:flex;flex-direction:column;gap:0.25rem}.category-row-top{display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600}.progress-track{height:8px;background:var(--bg-app);border-radius:999px;overflow:hidden}.progress-fill{height:100%;background:var(--brand-primary);border-radius:999px;transition:width 0.25s ease}.upload-zone{border:2px dashed var(--border-strong);border-radius:var(--radius-md);padding:1.15rem;text-align:center;background:var(--bg-subtle);transition:border-color 0.2s,background-color 0.2s}.upload-zone:hover{border-color:var(--brand-primary)}.camera-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-top:0.85rem}.preview-container{margin-top:1rem;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;background:#ffffff}.preview-img{max-width:100%;max-height:280px;display:block;margin:0 auto 0.65rem;border-radius:6px;object-fit:contain;background:#0f172a}.compression-meta{font-size:0.8rem;color:var(--text-secondary);background:var(--bg-subtle);padding:0.45rem 0.65rem;border-radius:6px;margin-bottom:0.65rem}.form-grid{display:grid;grid-template-columns:1fr;gap:0.85rem}@media (min-width:540px){.form-grid.two-col{grid-template-columns:1fr 1fr}}.form-group{display:flex;flex-direction:column;gap:0.3rem}.form-label{font-size:0.86rem;font-weight:600;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;gap:0.4rem}.form-control{width:100%;min-height:44px;padding:0.55rem 0.75rem;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:#ffffff;transition:border-color 0.15s,box-shadow 0.15s}.form-control:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(15,118,110,0.18)}.form-group.uncertain-field .form-control{border-color:var(--warning-border);background-color:#fffbeb}.uncertain-badge{display:inline-block;font-size:0.72rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:999px;background:var(--warning-bg);color:var(--warning-color);border:1px solid var(--warning-border)}.tx-list{display:flex;flex-direction:column;gap:0.75rem}.tx-item{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.9rem;background:#ffffff;display:flex;flex-direction:column;gap:0.55rem;transition:border-color 0.15s}.tx-item:hover{border-color:var(--border-strong)}.tx-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem}.tx-merchant{font-weight:700;font-size:1rem;color:var(--text-main);word-break:break-word}.tx-amount{font-weight:800;font-size:1.08rem;font-variant-numeric:tabular-nums;white-space:nowrap}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.tx-badges{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}.badge{display:inline-flex;align-items:center;gap:0.25rem;padding:0.18rem 0.55rem;border-radius:999px;font-size:0.74rem;font-weight:600}.badge-income{background:var(--income-bg);color:var(--income-color)}.badge-expense{background:var(--expense-bg);color:var(--expense-color)}.badge-category{background:var(--bg-app);color:var(--text-secondary)}.badge-synced{background:#dcfce7;color:#166534}.badge-pending{background:#fef3c7;color:#92400e}.badge-local{background:#e2e8f0;color:#334155}.badge-failed{background:#fee2e2;color:#991b1b}.tx-purpose-box{font-size:0.84rem;color:var(--text-secondary);background:var(--bg-subtle);border-left:3px solid var(--brand-primary);padding:0.45rem 0.65rem;border-radius:0 6px 6px 0}.tx-actions{display:flex;justify-content:flex-end;gap:0.5rem;border-top:1px solid var(--bg-app);padding-top:0.5rem}.alert-box{padding:0.8rem 0.95rem;border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:0.85rem;border:1px solid transparent}.alert-warning{background:var(--warning-bg);color:#92400e;border-color:#fcd34d}.alert-error{background:var(--expense-bg);color:var(--expense-color);border-color:#fecaca}.alert-info{background:var(--info-bg);color:var(--info-color);border-color:#bfdbfe}.alert-success{background:var(--income-bg);color:var(--income-color);border-color:#bbf7d0}.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.92rem}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}.modal-backdrop[hidden]{display:none !important}.modal-panel{background:var(--bg-surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:1px solid var(--border-color);display:flex;flex-direction:column}.modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-surface);z-index:2}.modal-body{padding:1.25rem;overflow-y:auto}.modal-footer{padding:0.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.65rem;flex-wrap:wrap;background:var(--bg-subtle)}.toast-stack{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));right:1rem;left:1rem;max-width:420px;margin-left:auto;z-index:90;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}.toast{pointer-events:auto;padding:0.8rem 1rem;border-radius:var(--radius-sm);background:#0f172a;color:#ffffff;font-size:0.88rem;font-weight:500;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:space-between;gap:0.75rem}.toast.success{background:#15803d}.toast.error{background:#b91c1c}.toast.warning{background:#b45309}.fund-grid{display:flex;flex-direction:column;gap:0.65rem}.fund-card{border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem 0.9rem;background:var(--bg-subtle);display:flex;flex-direction:column;gap:0.4rem}.fund-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem}.fund-title{font-weight:700;font-size:0.92rem;color:var(--text-main)}.fund-balance{font-weight:800;font-size:1.02rem;font-variant-numeric:tabular-nums;white-space:nowrap}.fund-balance.positive{color:var(--brand-primary)}.fund-balance.negative{color:var(--expense-color)}.fund-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.78rem;color:var(--text-muted)}.badge-fund{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}.fixed-checklist{display:flex;flex-direction:column;gap:0.45rem;margin-top:0.65rem;padding-top:0.65rem;border-top:1px dashed var(--border-color)}.fixed-item-row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:6px;background:var(--bg-surface);border:1px solid var(--border-color);font-size:0.82rem}.fixed-item-info{display:flex;flex-direction:column;gap:0.1rem}.fixed-item-name{font-weight:600;color:var(--text-main)}.fixed-item-sub{font-size:0.75rem;color:var(--text-muted)}:root,[data-theme="light"]{color-scheme:light;--bg-app:#edf5f9;--bg-surface:#f9fcff;--bg-subtle:#e6f0f6;--text-main:#102c40;--text-secondary:#304f63;--text-muted:#456176;--glass:rgba(255,255,255,0.08);--glass-border:rgba(34,108,142,0.30);--aurora-blue:rgba(45,170,240,0.16);--aurora-green:rgba(34,206,160,0.12);--aurora-purple:rgba(153,104,230,0.13)}[data-theme="dark"]{color-scheme:dark;--bg-app:#07151f;--bg-surface:#102734;--bg-subtle:#183342;--text-main:#effaff;--text-secondary:#c3dbe7;--text-muted:#abc8d7;--border-color:#446171;--border-strong:#6b8a9b;--brand-primary:#147e88;--brand-soft:#163e47;--glass:rgba(181,226,255,0.06);--glass-border:rgba(166,226,255,0.28);--aurora-blue:rgba(45,170,240,0.12);--aurora-green:rgba(34,206,160,0.08);--aurora-purple:rgba(153,104,230,0.11)}[data-theme="blue"]{color-scheme:dark;--bg-app:#071526;--bg-surface:#102f4e;--bg-subtle:#163d5c;--text-main:#f2fbff;--text-secondary:#c9e3f5;--text-muted:#b2d1e8;--border-color:#416986;--border-strong:#739ab5;--brand-primary:#147e88;--brand-soft:#133e59;--glass:rgba(164,218,255,0.08);--glass-border:rgba(134,218,255,0.32);--aurora-blue:rgba(55,192,222,0.16);--aurora-green:rgba(39,194,147,0.14);--aurora-purple:rgba(144,110,219,0.16)}[data-theme="dark-red"]{color-scheme:dark;--bg-app:#12070a;--bg-surface:#200910;--bg-subtle:#32121d;--text-main:#fff0f3;--text-secondary:#f4bac4;--text-muted:#dca3b0;--border-color:#814354;--border-strong:#db879c;--brand-primary:#e11d48;--brand-soft:#481325;--brand-primary-hover:#be123c;--expense-color:#ff9eae;--expense-bg:#481321;--income-color:#8ee6bf;--income-bg:#10382d;--glass:rgba(225,29,72,0.08);--glass-border:rgba(244,186,196,0.32);--aurora-blue:rgba(225,29,72,0.16);--aurora-green:rgba(159,18,57,0.14);--aurora-purple:rgba(190,24,93,0.16);--shadow-sm:0 1px 6px rgba(18,7,10,0.4);--shadow-md:0 4px 20px rgba(18,7,10,0.5);--shadow-lg:0 12px 32px rgba(18,7,10,0.65)}body{background:radial-gradient(ellipse at 10% 10%,var(--aurora-green),transparent 55%),radial-gradient(ellipse at 90% 25%,var(--aurora-purple),transparent 55%),radial-gradient(ellipse at 40% 70%,var(--aurora-blue),transparent 60%),var(--bg-app);background-attachment:fixed}[data-theme="dark-red"] body{background:radial-gradient(ellipse at 8% 10%,rgba(225,29,72,0.22) 0%,rgba(159,18,57,0.08) 35%,transparent 65%),radial-gradient(ellipse at 90% 75%,rgba(190,24,93,0.18) 0%,rgba(88,15,38,0.08) 40%,transparent 70%),linear-gradient(155deg,rgba(18,7,10,0.72) 0%,rgba(32,9,16,0.6) 55%,rgba(18,7,10,0.82) 100%),url('./icons/dark_red_finance_bg.png') center / cover no-repeat,#12070a;background-attachment:fixed}[data-theme="dark-red"]:focus-visible{outline-color:#ff91ad}[data-theme="dark-red"] .form-control,[data-theme="dark-red"] .tx-item,[data-theme="dark-red"] .kpi-box{background:var(--bg-surface);color:var(--text-main);border-color:var(--glass-border)}[data-theme="dark-red"] .kpi-box.net .kpi-value{color:#ff91ad}[data-theme="dark-red"] .form-group.uncertain-field .form-control{background-color:#3b2410}[data-theme="dark-red"] .form-control:focus-visible{outline:3px solid #ff91ad;outline-offset:3px;box-shadow:none}.app-header,.card,.fund-card{background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(24px) saturate(130%);backdrop-filter:blur(24px) saturate(130%)}[data-theme="blue"] body{background:radial-gradient(ellipse at 4% 8%,var(--aurora-green),transparent 58%),radial-gradient(ellipse at 90% 18%,var(--aurora-purple),transparent 56%),radial-gradient(ellipse at 60% 85%,var(--aurora-blue),transparent 64%),linear-gradient(155deg,#071526 15%,#0b233b 60%,#071526);background-attachment:fixed}.modal-content{background:var(--bg-surface)}.app-header{padding-top:env(safe-area-inset-top)}.app-container{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{border:1px solid var(--glass-border);border-radius:14px;background:var(--glass);color:var(--text-main);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 16px rgba(0,8,20,0.08);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%)}button,.btn,select,input:not([type="checkbox"]){min-height:44px}input:not([type="file"]):not([type="checkbox"]):not(.sr-only),select,textarea{padding:0.65rem 0.8rem;max-width:100%;min-width:0}input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:1}select option{background:var(--bg-surface);color:var(--text-main)}input[type="checkbox"]{appearance:none;width:24px;height:24px;min-height:24px;border-radius:12px;accent-color:var(--brand-primary);cursor:pointer}input[type="checkbox"]:checked{background-color:var(--brand-primary);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");outline:1px solid var(--border-strong);outline-offset:2px}@media (forced-colors:active){input[type="checkbox"]{appearance:auto}}[hidden]{display:none !important}input:disabled,select:disabled,textarea:disabled{opacity:0.58;cursor:not-allowed}input[aria-invalid="true"],input:user-invalid{border-color:var(--expense-color);outline:2px solid var(--expense-color);outline-offset:2px}.btn-primary,.btn-accent{background:linear-gradient(145deg,rgba(255,255,255,0.12),transparent),var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}.btn,button,input,select,textarea{transition:transform 180ms ease,background-color 180ms ease,border-color 180ms ease}:focus-visible{outline:3px solid #22a6c7;outline-offset:3px}.automation-panel{grid-column:1 / -1;margin-bottom:0;padding:clamp(1rem,3vw,1.5rem)}.automation-panel h2{font-size:1.2rem;letter-spacing:-0.02em}.automation-panel p{color:var(--text-secondary);font-size:0.9rem;line-height:1.7}.automation-panel>button{margin-block:0.65rem}.automation-bar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-block:1rem}.automation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.25rem}.glass-subcard{padding:clamp(1rem,2vw,1.4rem);min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0.75rem}.glass-subcard h3{font-size:1rem;font-weight:650;letter-spacing:-0.01em;line-height:1.6}.glass-subcard label{font-size:0.9rem;color:var(--text-secondary)}.glass-subcard>button{align-self:flex-start;margin-top:0.25rem}.batch-row{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(80px,120px);gap:0.75rem;align-items:center;margin-block:0.75rem}.batch-row input{width:100%}.batch-row label{overflow-wrap:anywhere}@media (max-width:600px){.automation-grid{grid-template-columns:minmax(0,1fr)}.automation-bar>.btn{flex:1 1 100%}.batch-row{grid-template-columns:24px minmax(0,1fr)}.batch-row input[type="number"]{grid-column:2}}@media (hover:hover) and (pointer:fine){button:hover:not(:disabled),.btn:hover:not(:disabled){transform:scale(1.015);border-color:var(--border-strong)}button:active:not(:disabled),.btn:active:not(:disabled){transform:scale(0.98)}}@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.app-header,.card,.fund-card,.glass-subcard,input:not([type="file"]):not(.sr-only),select,textarea,button,.btn{background:var(--bg-surface)}input[type="checkbox"]:checked{background-color:var(--brand-primary)}.btn-primary,.btn-accent{background:var(--brand-primary);color:#fff}.btn-danger{background:var(--expense-bg);color:var(--expense-color)}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;transform:none !important;scroll-behavior:auto !important}}[hidden]{display:none !important}body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}.app-panels{display:block;max-width:900px;margin:auto;padding:12px}.app-panels>section{min-width:0}.app-panels .card{margin-bottom:16px;min-width:0}.app-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.app-shortcut{min-height:118px;padding:16px 8px;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-surface);color:var(--text-main);display:flex;align-items:center;flex-direction:column;gap:10px;font:inherit}.shortcut-icon{border-radius:50%;background:#406bd5;color:white;width:48px;height:48px;display:grid;place-items:center;font-size:26px}.app-shortcut:nth-child(2) .shortcut-icon{background:#168065}.app-shortcut:nth-child(3) .shortcut-icon{background:#a45813}.app-shortcut:nth-child(4) .shortcut-icon{background:#a13878}.bottom-nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg-surface);border-top:1px solid var(--border-color);z-index:40}.bottom-nav button{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;min-height:52px;border:0;background:transparent;color:var(--text-main);font:inherit}.bottom-nav [aria-selected="true"]{background:#244780;color:#fff;border-radius:14px}button,.btn,input,select,summary{min-height:44px !important}:focus-visible{outline:3px solid #efac24;outline-offset:3px}.app-panels svg{display:block;width:100%;max-height:320px}.chart-table{width:100%;font-size:.78rem;border-collapse:collapse;margin:12px 0 24px}.chart-table td,.chart-table th{padding:6px 2px;text-align:right}.chart-legend{list-style:none;padding:0}.chart-legend li{padding:6px 10px;overflow-wrap:anywhere}progress{width:100%;height:20px;accent-color:#168065}.fund-card-header{flex-wrap:wrap}@media (max-width:400px){.app-panels .card{padding:14px}.fund-grid,.kpi-grid{grid-template-columns:1fr}.filters-grid{grid-template-columns:1fr}.batch-row{flex-wrap:wrap}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}}[data-theme="fintrack"]{color-scheme:dark;--bg-app:#090a0f;--bg-surface:#12141c;--bg-subtle:#191c27;--border-color:#1e2230;--border-strong:#67728a;--glass-border:#1e2230;--brand-primary:#10b981;--brand-primary-hover:#059669;--brand-soft:#10382d;--ai-color:#6366f1;--expense-color:#f43f5e;--expense-bg:#351722;--income-color:#10b981;--income-bg:#10382d;--text-main:#f3f5fa;--text-secondary:#c1c6d5;--text-muted:#9ba3b8;--glass:rgba(18,20,28,0.08);--aurora-blue:rgba(99,102,241,0.08);--aurora-green:rgba(16,185,129,0.08);--aurora-purple:rgba(99,102,241,0.08)}[data-theme="fintrack"] body{background:#090a0f}.mobile-frame-glow{min-width:0;margin:auto}.dynamic-island{display:none}.brand-wallet{color:#10b981;flex-shrink:0}.ai-badge{display:inline-block;border:1px solid #6366f1;border-radius:8px;padding:3px 7px;font-size:.65rem;color:#bfc2ff;background:#202244;white-space:nowrap}.sync-indicator{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-secondary)}.app-header{position:sticky;top:0;z-index:35}.header-inner,.header-actions,.brand-group{min-width:0;flex-wrap:wrap}.header-actions{gap:8px}.brand-title{font-size:1.2rem}.brand-subtitle{font-size:.7rem}[data-theme="fintrack"] .card,[data-theme="fintrack"] .fund-card,[data-theme="fintrack"] .kpi-box,[data-theme="fintrack"] .tx-item{background:#12141c;border-color:#1e2230}[data-theme="fintrack"] .app-header{background:rgba(18,20,28,.92)}[data-theme="fintrack"] .form-control{background:#191c27;color:var(--text-main)}[data-theme="fintrack"] .form-group.uncertain-field .form-control{background:#3b2410}[data-theme="fintrack"] .btn-primary{color:#052c20;font-weight:700}[data-theme="fintrack"]:focus-visible{outline-color:#10b981}.balance-hero{position:relative;isolation:isolate;border-radius:24px}.balance-hero::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 90% 0,rgba(16,185,129,.18),transparent 65%)}.balance-hero .kpi-box.net{background:transparent;border:0;padding:12px 0 24px}.balance-hero .kpi-box.net .kpi-value{font-size:clamp(2rem,8vw,3rem);color:var(--text-main);letter-spacing:-.04em}.balance-hero .kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.balance-hero .kpi-grid .kpi-box{min-width:0;padding:12px;background:var(--bg-subtle)}.balance-hero .kpi-grid .kpi-value{font-size:clamp(1rem,4vw,1.5rem);overflow-wrap:anywhere}.kpi-sub{overflow-wrap:anywhere}.progress-track{height:7px;background:var(--bg-subtle);border-radius:99px}.progress-fill{background:linear-gradient(90deg,#10b981,#6366f1);border-radius:99px}.ai-callout{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:20px 16px;margin-bottom:20px;text-align:left;border:1px solid #6366f1;background:linear-gradient(120deg,#202244,#12141c);color:#f3f5fa}.ai-callout small{display:block;color:#c1c6d5;margin-top:6px}.scan-preview{position:relative;overflow:hidden;border-radius:16px}.scan-preview .preview-img{display:block;margin:auto}.laser-line{position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#10b981,#2dd4bf,#6366f1);box-shadow:0 0 20px #10b981;animation:scanLaser 2.4s ease-in-out infinite alternate;pointer-events:none}@keyframes scanLaser{from{top:0}to{top:calc(100% - 3px)}}.latest-filters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.latest-filters button{padding:8px 14px}.latest-filters [aria-pressed="true"]{border-color:var(--brand-primary);color:var(--income-color)}.tx-top{gap:12px;flex-wrap:wrap}.tx-top>div{min-width:0}.tx-merchant,.tx-item p,.tx-purpose-box,.status-pill{overflow-wrap:anywhere}.tx-direction{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;font-size:24px;background:var(--expense-bg);color:var(--expense-color)}.tx-direction.income{background:var(--income-bg);color:var(--income-color)}.tx-amount.income{color:var(--income-color)}.tx-amount.expense{color:var(--expense-color)}.bottom-nav{display:block;width:100%;max-width:900px;margin:auto}.nav-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}#tab-analytics{grid-column:4}#tab-history{grid-column:5}.bottom-nav .center-scan-fab{position:absolute;left:50%;top:-19px;transform:translateX(-50%);width:60px;height:60px;min-height:60px;border-radius:50%;background:linear-gradient(135deg,#10b981,#0d9488);color:#052c20;border:5px solid var(--bg-app);box-shadow:0 0 24px #10b98155}.bottom-nav .center-scan-fab:hover{transform:translateX(-50%)}[data-theme="fintrack"] .bottom-nav [aria-selected="true"]{background:#10382d;color:#10b981}.app-panels,.header-inner{width:100%;max-width:900px;margin:auto}.card-header{flex-wrap:wrap;gap:10px}.card-header>div{min-width:0;flex-wrap:wrap}.modal-panel{max-width:calc(100vw - 24px)}.form-grid>*{min-width:0}@media (min-width:1024px){body{padding:32px 0 0}.mobile-frame-glow{width:480px;border:1px solid #1e2230;border-radius:40px 40px 0 0;box-shadow:0 0 80px #10b98120,0 0 130px #6366f118;padding-top:12px;background:var(--bg-app);padding-bottom:100px}.dynamic-island{display:block;width:104px;height:26px;border-radius:99px;background:#000;margin:0 auto 14px}.mobile-frame-glow .bottom-nav{max-width:480px}}@supports not (backdrop-filter:blur(1px)){[data-theme="fintrack"] .app-header{background:#12141c}}@media (prefers-reduced-motion:reduce){.laser-line{animation:none !important;top:50%}.bottom-nav .center-scan-fab{transform:translateX(-50%) !important}}.camera-btn-pair{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.camera-btn-pair .btn{min-width:0;padding:10px 4px;font-size:clamp(.72rem,3vw,.95rem);min-height:48px}#bucketIconPicker{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}#bucketIconPicker .btn{font-size:1.5rem;min-height:48px}.bucket-dialog{max-height:90dvh;overflow-y:auto;width:min(92vw,480px);background:var(--bg-surface);padding:20px;border-radius:20px}#bucketModal{position:fixed;inset:0;z-index:1000;background:#0009;display:flex;align-items:center;justify-content:center}#bucketModal[hidden]{display:none}#bucketModal label{display:block;margin-top:12px}#bucketModal:focus-visible{outline:3px solid var(--accent-primary,#6366f1);outline-offset:3px}</style>
 </head>
 <body>
   <div class="mobile-frame-glow">
@@ -109,14 +109,11 @@
           </div>
         </div>
       </section>
-      <div class="hero-action"><p>ผู้ช่วยการเงินของคุณ</p><h2>สแกนและตรวจทานก่อนบันทึก</h2><button id="heroCapture" class="btn btn-primary" type="button">ถ่ายภาพ / เลือกสลิป</button></div>
-      <button id="btnAiReceiptCallout" type="button" class="ai-callout"><span aria-hidden="true">✨</span><span>สแกนสลิปหรือใบเสร็จด้วย AI<small>ตรวจทานข้อมูลก่อนยืนยันทุกครั้ง</small></span><span class="ai-badge">Gemini</span></button>
       <section class="card" aria-labelledby="latestTitle"><h2 id="latestTitle" class="card-title">รายการล่าสุด</h2><div class="latest-filters" role="group" aria-label="กรองรายการล่าสุด"><button id="latest-all" type="button" aria-pressed="true">ทั้งหมด</button><button id="latest-expense" type="button" aria-pressed="false">รายจ่าย</button><button id="latest-income" type="button" aria-pressed="false">รายรับ</button></div><div id="latestTransactionList" class="transaction-list"></div></section>
-      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">◉</span>กระปุก 6 ส่วน</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">▥</span>กราฟการเงิน</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">≡</span>ประวัติรายการ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">฿</span>แบ่งเงินเดือน</button></div>
+      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🐷</span>กระปุก</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">📊</span>กราฟ</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🧾</span>ประวัติ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">💰</span>แบ่งงบ</button></div>
       <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
-          <h2 id="scanSectionTitle" class="card-title">สแกนใบเสร็จ / สลิปโอนเงิน</h2>
-          <button type="button" id="btnOpenManualEntry" class="btn btn-primary btn-sm">+ เพิ่มรายการใหม่</button>
+          <h2 id="scanSectionTitle" class="card-title">สแกนด่วน</h2>
         </div>
 
         <div class="upload-zone" id="uploadDropZone">
@@ -124,7 +121,7 @@
             ถ่ายภาพใบเสร็จ หรือเลือกรูปสลิปจากอัลบั้ม
           </p>
           <p style="font-size:0.82rem;color:var(--text-muted);">
-            รองรับไฟล์ JPEG, PNG, WebP (ย่อภาพในเครื่องอัตโนมัติที่ ~1,600px ก่อนวิเคราะห์ และไม่บันทึกรูปต้นฉบับขึ้น Cloud)
+            ตรวจทานก่อนบันทึกทุกครั้ง
           </p>
 
           
@@ -133,11 +130,12 @@
 
           <div class="camera-btn-pair">
             <button type="button" id="btnStartScanCamera" class="btn btn-primary">
-              ถ่ายภาพใบเสร็จ
+              📸 ถ่ายสลิป
             </button>
             <button type="button" id="btnChooseGallery" class="btn btn-secondary">
-              เลือกรูปจากอัลบั้ม
+              🖼️ เลือกรูป
             </button>
+            <button type="button" id="btnOpenManualEntry" class="btn btn-secondary">✏️ จดเอง</button>
           </div>
         </div>
 
@@ -159,7 +157,7 @@
         </div>
 
         <div role="status" aria-live="polite" id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
-          กำลังส่งภาพที่ย่อแล้วไปยัง Supabase Edge Function เพื่อวิเคราะห์ด้วย Gemini AI กรุณารอสักครู่...
+          กำลังอ่านสลิป รอสักครู่…
         </div>
         <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
       </section>
@@ -180,6 +178,8 @@
           </div>
         </div>
 
+        <button type="button" id="btnOpenBucketModal" class="btn btn-primary">+ เพิ่มกระปุก</button>
+        <p id="bucketSyncStatus" role="status" aria-live="polite"></p>
         <div id="fundBucketsContainer" class="fund-grid">
           <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 6 ส่วน...</p>
         </div>
@@ -278,16 +278,8 @@
           </div>
 
           <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 6 ส่วน)</label>
-            <select id="filterFundSelect" class="form-control">
-              <option value="all">ทุกส่วนของเงิน (1–5)</option>
-              <option value="investment_stock">1. เงินลงทุน (หุ้น)</option>
-              <option value="home_building">2. เงินเก็บสร้างบ้าน</option>
-              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่</option>
-              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)</option>
-              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
-              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
-            </select>
+            <label for="filterFundSelect" class="form-label">กระปุก</label>
+            <select id="filterFundSelect" class="form-control"><option value="">ทุกกระปุก</option></select>
           </div>
 
           <div class="form-group">
@@ -381,14 +373,7 @@
             <label for="txFormFundBucket" class="form-label">
               <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
             </label>
-            <select id="txFormFundBucket" class="form-control" required>
-              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
-              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
-              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
-              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — เก็บสะสมเงินเหลือใช้)</option>
-              <option value="home_building">2. เงินเก็บสร้างบ้าน (Fix 13,000/เดือน)</option>
-              <option value="investment_stock">1. เงินลงทุน (หุ้น — Fix 6,500/เดือน)</option>
-            </select>
+            <select id="txFormFundBucket" class="form-control" required></select>
           </div>
 
           <div class="form-group" id="groupTxDate">
@@ -689,12 +674,27 @@
   
   
   
-  <script>
+  <div id="bucketModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bucketModalTitle" hidden>
+ <div class="modal-content bucket-dialog"><h2 id="bucketModalTitle">เพิ่มกระปุก</h2>
+ <form id="bucketForm">
+ <label for="bucketFormName">ชื่อสั้น</label><input id="bucketFormName" class="form-control" maxlength="50" required>
+ <label for="bucketFormIcon">ไอคอน</label><input id="bucketFormIcon" class="form-control" value="🐷" readonly>
+ <div id="bucketIconPicker" role="group" aria-label="เลือกไอคอนกระปุก"></div>
+ <label for="bucketFormColor">สี</label><input id="bucketFormColor" type="color" value="#6366f1">
+ <label for="bucketFormCumulative"><input id="bucketFormCumulative" type="checkbox" checked>สะสมข้ามเดือน</label>
+ <p>เปิด: เก็บยอดต่อเดือนถัดไป · ปิด: แสดงงบเฉพาะเดือนที่เลือก</p>
+ <div id="bucketDeleteFields" hidden><label for="bucketDeleteTarget">ย้ายรายการไป</label><select id="bucketDeleteTarget" class="form-control"></select>
+ <label for="bucketDeleteConfirm">พิมพ์ชื่อกระปุกเพื่อยืนยันลบ</label><input id="bucketDeleteConfirm" class="form-control"><p>ย้ายทุกรายการแล้วลบกระปุก ยอดรวมเท่าเดิม</p></div>
+ <p id="bucketFormError" role="alert"></p>
+ <button id="btnSaveBucket" type="submit" class="btn btn-primary">ยืนยัน</button>
+ <button id="btnCloseBucketModal" type="button" class="btn btn-secondary">ยกเลิก</button>
+ </form></div></div>
+<script>
     ;
 (function(globalScope){
 'use strict';
 const _0x1a0='slipsense_db';
-const _0x1a1=2;
+const _0x1a1=3;
 const _0x1a2='transactions';
 const _0x1a3='slipsense_settings_v1';
 const _0x1a4={
@@ -724,22 +724,44 @@ pending_sync:'รอซิงก์ขึ้น Cloud',
 synced:'ซิงก์ Cloud แล้ว',
 sync_failed:'ซิงก์ไม่สำเร็จ'
 };
-const FUND_BUCKET_LABELS={
-investment_stock:'1. เงินลงทุน (หุ้น)',
-home_building:'2. เงินเก็บสร้างบ้าน',
-fixed_expense:'3. ค่าใช้จ่ายคงที่',
-emergency_personal:'4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-general_expense:'5. ค่าใช้จ่ายทั่วไป',
-dan_insurance:'6. เงินเก็บประกันแดน'
-};
-const FUND_BUCKET_ORDER=[
-'investment_stock',
-'home_building',
-'fixed_expense',
-'emergency_personal',
-'general_expense',
-'dan_insurance'
-];
+const BUCKET_ICONS=['🐷','🏡','📈','🍜','🛟','🛡️','✈️','🐱','🚗','🎁','💎','☕'];
+const DEFAULT_BUCKETS=[
+['investment_stock','หุ้น/ลงทุน','📈',true],['home_building','สร้างบ้าน','🏡',true],
+['fixed_expense','รายเดือน','📌',false],['emergency_personal','ฉุกเฉิน','🛟',true],
+['general_expense','กิน/ใช้','🍜',false],['dan_insurance','ประกันแดน','🛡️',true]
+].map(([bucket_key,name,icon,is_cumulative],sort_order)=>({bucket_key,name,icon,is_cumulative,sort_order,color:'#6366f1'}));
+const FUND_BUCKET_LABELS=Object.create(null);
+const FUND_BUCKET_ORDER=[];
+let bucketRegistry=null;
+let bucketMutation=Promise.resolve();
+function bucketOwner(){return _0x1a7.currentUser?.id||null;}
+function bucketDefaultKey(){return FUND_BUCKET_ORDER.includes('general_expense')?'general_expense':FUND_BUCKET_ORDER[0];}
+function applyBucketRegistry(registry){
+bucketRegistry=registry;
+for(const key of Object.keys(FUND_BUCKET_LABELS))delete FUND_BUCKET_LABELS[key];
+FUND_BUCKET_ORDER.length=0;
+for(const bucket of[...registry.buckets].sort((a,b)=>a.sort_order-b.sort_order)){
+FUND_BUCKET_ORDER.push(bucket.bucket_key);
+FUND_BUCKET_LABELS[bucket.bucket_key]=bucket.icon+' '+bucket.name;
+}
+refreshBucketOptions();
+const status=document.getElementById('bucketSyncStatus');
+if(status){
+const entries=[...registry.buckets,...registry.deletions];
+status.textContent=entries.some(b=>b.sync_status==='sync_failed')?'ซิงก์กระปุกไม่สำเร็จ · กดซิงก์เพื่อลองใหม่'
+:entries.some(b=>b.sync_status==='pending_sync')?'กระปุกรอซิงก์':registry.owner?'กระปุกซิงก์แล้ว':'กระปุกบันทึกในเครื่อง';
+}
+}
+function refreshBucketOptions(destination=''){
+for(const id of['txFormFundBucket','filterFundSelect']){
+const select=document.getElementById(id);if(!select)continue;
+const previous=select.value;
+select.innerHTML='';
+if(id==='filterFundSelect'){const option=document.createElement('option');option.value='';option.textContent='ทุกกระปุก';select.appendChild(option);}
+for(const key of FUND_BUCKET_ORDER){const option=document.createElement('option');option.value=key;option.textContent=FUND_BUCKET_LABELS[key];select.appendChild(option);}
+select.value=FUND_BUCKET_ORDER.includes(previous)?previous:destination||(id==='filterFundSelect'?'':bucketDefaultKey());
+}
+}
 const FIXED_MONTHLY_PRESETS={
 HOME_BUILDING:13000,
 INVESTMENT_STOCK:6500,
@@ -772,6 +794,7 @@ isAnalyzingAi:false,
 isSavingTx:false,
 isSyncing:false
 };
+applyBucketRegistry({id:'guest',owner:null,buckets:DEFAULT_BUCKETS.map(b=>({...b})),deletions:[]});
 function generateUuid(){
 if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){
 return crypto.randomUUID();
@@ -842,7 +865,8 @@ return`฿${formattedNumber}`;
 }
 return`${curr} ${formattedNumber}`;
 }
-function inferDefaultFundBucket(
+function inferDefaultFundBucket(...args){const inferred=resolveDeletedBucket(inferLegacyFundBucket(...args));return FUND_BUCKET_ORDER.includes(inferred)?inferred:bucketDefaultKey();}
+function inferLegacyFundBucket(
 category='',
 merchant='',
 itemsSummary='',
@@ -907,7 +931,7 @@ const source_type=['receipt','transfer_slip','manual'].includes(rawSource)?rawSo
 const itemsSummaryClean=typeof input.items_summary==='string'?input.items_summary.trim().slice(0,2000):'';
 const purposeAnalysisClean=typeof input.purpose_analysis==='string'?input.purpose_analysis.trim().slice(0,2000):'';
 const noteClean=typeof input.note==='string'?input.note.trim().slice(0,2000):'';
-const rawFundBucket=typeof input.fund_bucket==='string'?input.fund_bucket.trim():'';
+const rawFundBucket=typeof input.fund_bucket==='string'?resolveDeletedBucket(input.fund_bucket.trim()):'';
 const fund_bucket=(FUND_BUCKET_LABELS)[rawFundBucket]
 ?(rawFundBucket)
 :inferDefaultFundBucket(category,merchant,itemsSummaryClean,purposeAnalysisClean,noteClean);
@@ -997,7 +1021,7 @@ const purpose_analysis=
 typeof raw.purpose_analysis==='string'&&raw.purpose_analysis.trim()
 ?raw.purpose_analysis.trim()
 :'ไม่สามารถระบุวัตถุประสงค์ที่ชัดเจนจากหลักฐานในภาพเพียงอย่างเดียว';
-const rawFundBucket=typeof raw.fund_bucket==='string'?raw.fund_bucket.trim():'';
+const rawFundBucket=typeof raw.fund_bucket==='string'?resolveDeletedBucket(raw.fund_bucket.trim()):'';
 const fund_bucket=(FUND_BUCKET_LABELS)[rawFundBucket]
 ?(rawFundBucket)
 :inferDefaultFundBucket(category,merchant||'',items_summary,purpose_analysis);
@@ -1035,14 +1059,7 @@ let localOrPendingCount=0;
 let failedCount=0;
 const categoryTotalsCents={};
 const fundStatsCents
-={
-investment_stock:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
-home_building:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
-fixed_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
-emergency_personal:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
-general_expense:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0},
-dan_insurance:{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0}
-};
+=Object.fromEntries(FUND_BUCKET_ORDER.map(key=>[key,{monthIncomeCents:0,monthExpenseCents:0,allTimeIncomeCents:0,allTimeExpenseCents:0}]));
 let fatherInsPaidCents=0;
 let danInsPaidCents=0;
 let sisterMindPaidCents=0;
@@ -1059,7 +1076,7 @@ const d=transactionCalendarDate(tx.transaction_date||tx.date);
 if(!d)continue;
 const cents=transactionAmountCents(tx.amount);
 if(!Number.isSafeInteger(cents)||cents<=0)continue;
-const rawBucket=typeof tx.fund_bucket==='string'?tx.fund_bucket.trim():'';
+const rawBucket=typeof tx.fund_bucket==='string'?resolveDeletedBucket(tx.fund_bucket.trim()):'';
 const bucket=(FUND_BUCKET_LABELS)[rawBucket]
 ?(rawBucket)
 :inferDefaultFundBucket(tx.category,tx.merchant,tx.items_summary,tx.purpose_analysis,tx.note);
@@ -1135,7 +1152,7 @@ amount:cents/100,
 percentage:totalExpenseCents>0?Math.round((cents/totalExpenseCents)*10000)/100:0
 }))
 .sort((a,b)=>b.amount-a.amount);
-const cumulativeBuckets=new Set(['investment_stock','home_building','emergency_personal','dan_insurance']);
+const cumulativeBuckets=new Set(bucketRegistry.buckets.filter(b=>b.is_cumulative).map(b=>b.bucket_key));
 const fundBalances=FUND_BUCKET_ORDER.map((bucket)=>{
 const st=fundStatsCents[bucket];
 const isCumulative=cumulativeBuckets.has(bucket);
@@ -1210,6 +1227,7 @@ try{
 const req=indexedDB.open(_0x1a0,_0x1a1);
 req.onupgradeneeded=function(event){
 const db=event.target.result;
+if(!db.objectStoreNames.contains('fund_registry'))db.createObjectStore('fund_registry',{keyPath:'id'});
 if(!db.objectStoreNames.contains('automation'))db.createObjectStore('automation',{keyPath:'id'});
 if(!db.objectStoreNames.contains(_0x1a2)){
 const store=db.createObjectStore(_0x1a2,{keyPath:'id'});
@@ -1219,6 +1237,7 @@ store.createIndex('by_user_id','user_id',{unique:false});
 }
 };
 req.onsuccess=function(event){
+event.target.result.onversionchange=()=>event.target.result.close();
 resolve(event.target.result);
 };
 req.onerror=function(){
@@ -1249,18 +1268,23 @@ resolve(Array.from(_0x1a7.memoryStore.values()));
 });
 }
 async function _0x1aa(record){
-_0x1a7.memoryStore.set(record.id,record);
 const db=await _0x1a8();
 if(!db||_0x1a7.usingMemoryFallback){
+_0x1a7.memoryStore.set(record.id,record);
 return record;
 }
 return new Promise((resolve,reject)=>{
 try{
-const tx=db.transaction(_0x1a2,'readwrite');
+const tx=db.transaction([_0x1a2,'fund_registry'],'readwrite');
 const store=tx.objectStore(_0x1a2);
+const registry=tx.objectStore('fund_registry').get(record.user_id||'guest');
+registry.onsuccess=()=>{
+if(registry.result)record.fund_bucket=resolveDeletedBucket(record.fund_bucket,registry.result);
 store.put(record);
-tx.oncomplete=()=>resolve(record);
+};
+tx.oncomplete=()=>{_0x1a7.memoryStore.set(record.id,record);resolve(record);};
 tx.onerror=()=>reject(new Error('ไม่สามารถบันทึกข้อมูลลง IndexedDB ได้ (พื้นที่จัดเก็บอาจเต็ม)'));
+tx.onabort=tx.onerror;
 }catch(err){
 reject(err);
 }
@@ -1279,6 +1303,216 @@ tx.onerror=()=>resolve(false);
 }catch(_e){
 resolve(false);
 }
+});
+}
+function validBucket(input){
+const name=String(input.name||'').trim();
+if(!name||[...name].length>50)throw new Error('ตั้งชื่อกระปุก 1–50 ตัวอักษร');
+if(![...BUCKET_ICONS,'📌'].includes(input.icon))throw new Error('กรุณาเลือกไอคอน');
+if(!/^#[0-9a-fA-F]{6}$/.test(input.color))throw new Error('กรุณาเลือกสี');
+if(typeof input.is_cumulative!=='boolean')throw new Error('กรุณาเลือกประเภทกระปุก');
+if(!/^[a-zA-Z0-9_-]{1,50}$/.test(input.bucket_key)||['__proto__','constructor','prototype'].includes(input.bucket_key))throw new Error('รหัสกระปุกไม่ถูกต้อง');
+return{...input,name};
+}
+async function bucketStoreChange(owner,change=null){
+const id=owner||'guest',db=await _0x1a8();
+if(!db)throw new Error('เปิดที่เก็บกระปุกไม่ได้ กรุณาอนุญาต IndexedDB แล้วลองใหม่');
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(['fund_registry',_0x1a2],'readwrite');
+const store=tx.objectStore('fund_registry');
+const r=store.get(id),all=tx.objectStore(_0x1a2).getAll();
+let registry,rows,ready=0;
+function done(){
+if(++ready!==2)return;
+try{
+registry=r.result||{id,owner,buckets:DEFAULT_BUCKETS.map(b=>({...b,sync_status:owner?'pending_sync':'local_only'})),deletions:[]};
+rows=all.result||[];
+if(change)change(registry,rows);
+store.put(registry);
+rows=rows.filter(row=>row.__bucketMoved);
+for(const row of rows){delete row.__bucketMoved;tx.objectStore(_0x1a2).put(row);}
+}catch(error){reject(error);tx.abort();}
+}
+r.onsuccess=done;all.onsuccess=done;
+tx.oncomplete=()=>{
+db.close();
+for(const row of rows||[])_0x1a7.memoryStore.set(row.id,row);
+if(bucketOwner()===owner)applyBucketRegistry(registry);
+resolve(registry);
+};
+tx.onerror=tx.onabort=()=>{db.close();reject(new Error('บันทึกกระปุกไม่สำเร็จ กรุณาลองใหม่'));};
+});
+}
+async function loadFundBuckets(){return bucketStoreChange(bucketOwner());}
+function mutateBucket(change){
+const owner=bucketOwner();
+const run=bucketMutation.catch(()=>{}).then(async()=>{
+if(bucketOwner()!==owner)throw new Error('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่');
+const result=await bucketStoreChange(owner,(registry,rows)=>{
+change(registry,rows);registry.edit_version=(registry.edit_version||0)+1;
+});
+if(bucketOwner()===owner)await _0x1b5();
+return result;
+});
+bucketMutation=run;return run;
+}
+async function saveFundBucket(input,existingKey=null){
+const key=existingKey||('bucket_'+generateUuid().replace(/-/g,''));
+const bucket=validBucket({...input,bucket_key:key});
+await mutateBucket(registry=>{
+const existing=registry.buckets.find(b=>b.bucket_key===key);
+if(existingKey&&!existing)throw new Error('ไม่พบกระปุก');
+if(!existingKey&&(existing||registry.deletions.some(d=>d.source_key===key)))throw new Error('รหัสกระปุกซ้ำ');
+const record={...existing,...bucket,sort_order:existing?.sort_order??Math.max(-1,...registry.buckets.map(b=>b.sort_order))+1,
+updated_at:new Date().toISOString(),sync_status:registry.owner?'pending_sync':'local_only'};
+registry.buckets=registry.buckets.filter(b=>b.bucket_key!==key).concat(record);
+});
+return key;
+}
+function createFundBucket(input){return saveFundBucket(input);}
+async function updateFundBucket(key,input){
+await loadFundBuckets();
+const old=bucketRegistry.buckets.find(b=>b.bucket_key===key);
+if(!old)throw new Error('ไม่พบกระปุก');
+return saveFundBucket({...old,...input},key);
+}
+async function deleteFundBucket(source,target){
+const selected=['txFormFundBucket','filterFundSelect'].filter(id=>document.getElementById(id)?.value===source);
+await mutateBucket((registry,rows)=>{
+if(registry.buckets.length<=1)throw new Error('ต้องเหลืออย่างน้อย 1 กระปุก');
+if(source===target||!registry.buckets.some(b=>b.bucket_key===source)||!registry.buckets.some(b=>b.bucket_key===target))throw new Error('เลือกกระปุกปลายทางให้ถูกต้อง');
+const original=registry.buckets.find(b=>b.bucket_key===source);
+for(const row of rows)if((row.user_id||null)===registry.owner&&row.fund_bucket===source){
+row.fund_bucket=target;row.updated_at=new Date().toISOString();
+row.sync_status=registry.owner?'pending_sync':'local_only';row.__bucketMoved=true;
+}
+registry.deletions.push({id:generateUuid(),source_key:source,target_key:target,original,
+sync_status:registry.owner?'pending_sync':'local_only'});
+registry.buckets=registry.buckets.filter(b=>b.bucket_key!==source);
+});
+refreshBucketOptions(target);
+for(const id of selected)document.getElementById(id).value=target;
+}
+function resolveDeletedBucket(key,registry=bucketRegistry){
+const seen=new Set();
+while(!seen.has(key)){seen.add(key);const d=registry.deletions.find(d=>d.source_key===key);if(!d)break;key=d.target_key;}
+return key;
+}
+async function syncFundBuckets(){
+const owner=bucketOwner(),client=_0x1a7.supabaseClient;
+if(!owner||!client||!navigator.onLine)return false;
+const check=()=>{if(bucketOwner()!==owner||_0x1a7.supabaseClient!==client||!navigator.onLine)throw new Error('บัญชีหรือการเชื่อมต่อเปลี่ยนแล้ว');};
+try{
+if(client.auth?.getSession){
+const{data,error}=await client.auth.getSession();check();
+if(error||data?.session?.user?.id!==owner)throw new Error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง');
+}
+let registry=await bucketStoreChange(owner);check();
+const remoteDeleted=await client.from('fund_bucket_deletions').select('*').eq('user_id',owner);check();
+if(remoteDeleted.error)throw remoteDeleted.error;
+if(!Array.isArray(remoteDeleted.data))throw new Error('อ่านประวัติกระปุกไม่สำเร็จ');
+await bucketStoreChange(owner,(local,rows)=>{
+for(const d of remoteDeleted.data||[]){
+const existing=local.deletions.find(item=>item.source_key===d.source_key);
+if(existing)Object.assign(existing,d,{sync_status:'synced'});else local.deletions.push({...d,sync_status:'synced'});
+local.buckets=local.buckets.filter(b=>b.bucket_key!==d.source_key);
+}
+for(const row of rows)if((row.user_id||null)===owner){
+const target=resolveDeletedBucket(row.fund_bucket,local);
+if(target!==row.fund_bucket){row.fund_bucket=target;row.__bucketMoved=true;row.sync_status='pending_sync';row.updated_at=new Date().toISOString();}
+}
+});
+registry=await bucketStoreChange(owner);check();
+const remote=await client.from('fund_buckets').select('*').eq('user_id',owner);check();
+if(remote.error)throw remote.error;
+if(!Array.isArray(remote.data))throw new Error('อ่านกระปุกไม่สำเร็จ');
+await bucketStoreChange(owner,local=>{
+for(const raw of remote.data||[]){
+if(local.deletions.some(d=>d.source_key===raw.bucket_key))continue;
+const incoming=validBucket(raw),existing=local.buckets.find(b=>b.bucket_key===raw.bucket_key);
+if(!existing)local.buckets.push({...incoming,sync_status:'synced'});
+else if(!existing.updated_at||(existing.sync_status==='synced'&&raw.updated_at>existing.updated_at))Object.assign(existing,incoming,{sync_status:'synced'});
+}
+});
+registry=await bucketStoreChange(owner);check();
+const remoteKeys=new Set((remote.data||[]).map(b=>b.bucket_key));
+const revision=registry.edit_version||0;
+const sources=registry.deletions.filter(d=>d.sync_status!=='synced'&&!remoteKeys.has(d.source_key)).map(d=>d.original).filter(Boolean);
+const pending=registry.buckets.filter(b=>b.sync_status!=='synced');
+for(const bucket of[...sources,...pending]){
+check();const b=validBucket(bucket);
+const{error}=await client.from('fund_buckets').upsert({user_id:owner,bucket_key:b.bucket_key,name:b.name,icon:b.icon,color:b.color,
+is_cumulative:b.is_cumulative,sort_order:b.sort_order},{onConflict:'user_id,bucket_key'});check();
+if(error)throw error;
+await bucketStoreChange(owner,local=>{const current=local.buckets.find(item=>item.bucket_key===b.bucket_key);if(current&&current.updated_at===b.updated_at)current.sync_status='synced';});
+}
+for(const d of registry.deletions.filter(d=>d.sync_status!=='synced')){
+const target=resolveDeletedBucket(d.target_key,registry);
+check();const{error}=await client.rpc('delete_fund_bucket',{p_operation_id:d.id,p_source_key:d.source_key,p_target_key:target});check();
+if(error)throw error;
+await bucketStoreChange(owner,local=>{const current=local.deletions.find(item=>item.id===d.id);if(current)current.sync_status='synced';});
+}
+const latest=await bucketStoreChange(owner);check();
+return(latest.edit_version||0)===revision;
+}catch(error){
+if(bucketOwner()===owner){
+await bucketStoreChange(owner,local=>{
+for(const item of[...local.buckets,...local.deletions])if(item.sync_status!=='synced'){item.sync_status='sync_failed';item.sync_error=String(error.message||error);}
+});
+_0x1c1('กระปุกรอซิงก์ กรุณาตรวจการเชื่อมต่อหรืออัปเดตฐานข้อมูล แล้วกดซิงก์อีกครั้ง','error');
+}
+return false;
+}
+}
+let bucketModalKey=null,bucketModalMode='edit',bucketReturnFocus=null,bucketBusy=false;
+function closeBucketModal(){
+if(bucketBusy)return;
+document.getElementById('bucketModal').hidden=true;
+(bucketReturnFocus?.isConnected===false?document.getElementById('btnOpenBucketModal'):bucketReturnFocus)?.focus();
+}
+function openBucketModal(key=null,mode='edit'){
+bucketModalKey=key;bucketModalMode=mode;bucketReturnFocus=document.activeElement;
+const bucket=bucketRegistry.buckets.find(b=>b.bucket_key===key),el=id=>document.getElementById(id);
+el('bucketModalTitle').textContent=mode==='delete'?'ลบกระปุก':key?'แก้ไขกระปุก':'เพิ่มกระปุก';
+el('bucketFormName').value=bucket?.name||'';el('bucketFormIcon').value=bucket?.icon||'🐷';
+el('bucketFormColor').value=bucket?.color||'#6366f1';el('bucketFormCumulative').checked=bucket?.is_cumulative??true;
+el('bucketFormName').required=mode!=='delete';el('bucketFormName').readOnly=mode==='delete';
+el('bucketDeleteFields').hidden=mode!=='delete';el('bucketDeleteConfirm').value='';el('bucketFormError').textContent='';
+const select=el('bucketDeleteTarget');select.innerHTML='';
+for(const b of bucketRegistry.buckets.filter(b=>b.bucket_key!==key)){const option=document.createElement('option');option.value=b.bucket_key;option.textContent=b.icon+' '+b.name;select.appendChild(option);}
+select.value=FUND_BUCKET_ORDER.includes('general_expense')&&key!=='general_expense'?'general_expense':FUND_BUCKET_ORDER.find(k=>k!==key)||'';
+el('bucketModal').hidden=false;(mode==='delete'?el('bucketDeleteConfirm'):el('bucketFormName')).focus();
+}
+function bindBucketEvents(){
+const el=id=>document.getElementById(id),modal=el('bucketModal');
+if(!modal||modal.dataset.bound)return;modal.dataset.bound='true';
+el('btnOpenBucketModal').addEventListener('click',()=>openBucketModal());
+el('btnCloseBucketModal').addEventListener('click',closeBucketModal);
+for(const icon of BUCKET_ICONS){
+const button=document.createElement('button');button.type='button';button.className='btn btn-secondary';button.textContent=icon;
+button.setAttribute('aria-label','เลือกไอคอน '+icon);button.onclick=()=>{el('bucketFormIcon').value=icon;};el('bucketIconPicker').appendChild(button);
+}
+modal.addEventListener('keydown',event=>{
+if(event.key==='Escape'){event.preventDefault();closeBucketModal();}
+if(event.key==='Tab'){
+const nodes=[...modal.querySelectorAll('button,input,select,[tabindex="0"]')].filter(n=>!n.disabled&&!n.closest('[hidden]'));
+const first=nodes[0],last=nodes[nodes.length-1];
+if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+}
+});
+el('bucketForm').addEventListener('submit',async event=>{
+event.preventDefault();if(bucketBusy)return;bucketBusy=true;el('btnSaveBucket').disabled=true;
+try{
+if(bucketModalMode==='delete'){
+const bucket=bucketRegistry.buckets.find(b=>b.bucket_key===bucketModalKey);
+if(el('bucketDeleteConfirm').value.trim()!==bucket?.name)throw new Error('พิมพ์ชื่อกระปุกให้ตรงเพื่อยืนยัน');
+await deleteFundBucket(bucketModalKey,el('bucketDeleteTarget').value);
+}else await saveFundBucket({name:el('bucketFormName').value,icon:el('bucketFormIcon').value,color:el('bucketFormColor').value,is_cumulative:el('bucketFormCumulative').checked},bucketModalKey);
+bucketBusy=false;closeBucketModal();_0x1c1('บันทึกกระปุกในเครื่องแล้ว','success');
+if(bucketOwner()&&navigator.onLine)await syncPendingTransactions();
+}catch(error){el('bucketFormError').textContent=error.message;}
+finally{bucketBusy=false;el('btnSaveBucket').disabled=false;}
 });
 }
 async function compressReceiptImage(file,maxDimension=1600,quality=0.82){
@@ -1618,6 +1852,7 @@ _0x1a7.aiStatusMessage='ยังไม่ได้ตั้งค่า AI';
 _0x1b8();
 }
 async function _0x1b5(){
+await loadFundBuckets().catch(()=>{});
 const allRecords=await _0x1a9();
 const activeUserId=_0x1a7.currentUser?.id||null;
 const visible=allRecords.filter((tx)=>{
@@ -1639,6 +1874,9 @@ _0x1b8();
 return visible;
 }
 async function saveTransaction(txInput){
+const entryOwner=bucketOwner();
+await loadFundBuckets();
+if(bucketOwner()!==entryOwner)throw new Error('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่');
 const validation=validateTransactionInput(txInput);
 if(!validation.valid){
 throw new Error(validation.errors.join('\n'));
@@ -1652,16 +1890,18 @@ const existingId=typeof txInput.id==='string'&&txInput.id.trim()?txInput.id.trim
 const id=existingId||generateUuid();
 const allExisting=await _0x1a9();
 const oldRecord=allExisting.find((item)=>item.id===id)||null;
+if(oldRecord&&(oldRecord.user_id||null)!==entryOwner)throw new Error('ไม่สามารถแก้ไขรายการของบัญชีอื่น');
 const isCloudReady=Boolean(_0x1a7.supabaseClient&&_0x1a7.supabaseConnected&&_0x1a7.currentUser);
 const record={
 id,
-user_id:isCloudReady?_0x1a7.currentUser.id:(oldRecord?.user_id||null),
+user_id:entryOwner,
 ...validation.normalized,
-sync_status:isCloudReady?'pending_sync':'local_only',
+sync_status:entryOwner?'pending_sync':'local_only',
 sync_error:null,
 created_at:oldRecord?.created_at||nowIso,
 updated_at:nowIso
 };
+if(bucketOwner()!==entryOwner)throw new Error('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่');
 await _0x1aa(record);
 await _0x1b5();
 if(isCloudReady&&navigator.onLine){
@@ -1670,14 +1910,21 @@ await _0x1b5();
 }
 return record;
 }
-async function syncSingleTransactionToCloud(localRecord){
+async function syncSingleTransactionToCloud(localRecord,registryReady=false){
 if(!_0x1a7.supabaseClient||!_0x1a7.currentUser||!navigator.onLine){
 return{synced:false,reason:'offline_or_unauthenticated'};
 }
+const txOwner=bucketOwner(),txClient=_0x1a7.supabaseClient;
+const checkOwner=()=>{if(bucketOwner()!==txOwner||_0x1a7.supabaseClient!==txClient)throw new Error('บัญชีเปลี่ยนแล้ว');};
 try{
+if(!registryReady&&!await syncFundBuckets())throw new Error('กระปุกยังซิงก์ไม่สำเร็จ');
+checkOwner();
+if(localRecord.user_id!==bucketOwner())throw new Error('บัญชีเปลี่ยนแล้ว');
+localRecord={...localRecord,fund_bucket:resolveDeletedBucket(localRecord.fund_bucket)};
+if(!bucketRegistry.buckets.some(b=>b.bucket_key===localRecord.fund_bucket&&b.sync_status==='synced'))throw new Error('กระปุกรอซิงก์ กรุณาลองใหม่');
 const userId=_0x1a7.currentUser.id;
 if(localRecord.deleted_at){
-const{error:delErr}=await _0x1a7.supabaseClient
+const{error:delErr}=await txClient
 .from('transactions')
 .delete()
 .eq('id',localRecord.id)
@@ -1693,6 +1940,7 @@ const{data:remoteExisting}=await _0x1a7.supabaseClient
 .select('id, updated_at, user_id')
 .eq('id',localRecord.id)
 .maybeSingle();
+checkOwner();
 if(remoteExisting&&remoteExisting.updated_at){
 const remoteTime=new Date(remoteExisting.updated_at).getTime();
 const localTime=new Date(localRecord.updated_at).getTime();
@@ -1723,6 +1971,7 @@ const{data:upserted,error:upsertErr}=await _0x1a7.supabaseClient
 .upsert(cloudPayload,{onConflict:'id'})
 .select()
 .single();
+checkOwner();
 if(upsertErr){
 throw upsertErr;
 }
@@ -1751,11 +2000,14 @@ if(!_0x1a7.supabaseClient||!_0x1a7.currentUser||!navigator.onLine){
 return{syncedCount:0,failedCount:0};
 }
 _0x1a7.isSyncing=true;
+const syncOwner=bucketOwner(),syncClient=_0x1a7.supabaseClient;
 let syncedCount=0;
 let failedCount=0;
 try{
+if(!await syncFundBuckets())return{syncedCount:0,failedCount:1};
 const allLocal=await _0x1a9();
-const activeUserId=_0x1a7.currentUser.id;
+if(bucketOwner()!==syncOwner||_0x1a7.supabaseClient!==syncClient)return{syncedCount,failedCount:1};
+const activeUserId=syncOwner;
 const queue=allLocal.filter(
 (tx)=>
 tx&&
@@ -1763,14 +2015,16 @@ tx.user_id===activeUserId&&
 (tx.sync_status==='pending_sync'||tx.sync_status==='sync_failed')
 );
 for(const item of queue){
-const res=await syncSingleTransactionToCloud(item);
+if(bucketOwner()!==syncOwner||_0x1a7.supabaseClient!==syncClient)return{syncedCount,failedCount:failedCount+1};
+const res=await syncSingleTransactionToCloud(item,true);
 if(res.synced){
 syncedCount+=1;
 }else{
 failedCount+=1;
 }
 }
-await pullCloudTransactionsAndMerge();
+if(bucketOwner()!==syncOwner||_0x1a7.supabaseClient!==syncClient)return{syncedCount,failedCount:failedCount+1};
+await pullCloudTransactionsAndMerge({registryReady:true});
 await _0x1b5();
 return{syncedCount,failedCount};
 }finally{
@@ -1779,14 +2033,18 @@ _0x1a7.isSyncing=false;
 }
 async function pullCloudTransactionsAndMerge(options={}){
 if(!_0x1a7.supabaseClient||!_0x1a7.currentUser||!navigator.onLine)return;
+const pullOwner=bucketOwner(),pullClient=_0x1a7.supabaseClient;
+if(!options.registryReady&&!await syncFundBuckets())return;
+if(bucketOwner()!==pullOwner||_0x1a7.supabaseClient!==pullClient)return;
 try{
-const userId=_0x1a7.currentUser.id;
+const userId=pullOwner;
 const PAGE_SIZE=500;
 const remoteRows=[];
 let offset=0;
 let isCompleteSnapshot=false;
 while(true){
-const baseQuery=_0x1a7.supabaseClient
+if(bucketOwner()!==pullOwner||_0x1a7.supabaseClient!==pullClient)return;
+const baseQuery=pullClient
 .from('transactions')
 .select('*',{count:'exact'})
 .eq('user_id',userId)
@@ -1821,6 +2079,7 @@ break;
 }
 if(remoteRows.length===0&&!isCompleteSnapshot)return;
 const allLocal=await _0x1a9();
+if(bucketOwner()!==pullOwner||_0x1a7.supabaseClient!==pullClient)return;
 const localMap=new Map(allLocal.map((item)=>[item.id,item]));
 const remoteIdSet=new Set(remoteRows.map((r)=>r.id));
 if(isCompleteSnapshot){
@@ -1837,6 +2096,8 @@ await _0x1ab(localItem.id);
 }
 }
 for(const remote of remoteRows){
+if(bucketOwner()!==userId)return;
+remote.fund_bucket=resolveDeletedBucket(remote.fund_bucket);
 const localItem=localMap.get(remote.id);
 if(localItem&&localItem.deleted_at){
 continue;
@@ -1892,9 +2153,16 @@ const confirmed=await askUserConfirmation(
 `พบรายการที่บันทึกไว้ในเครื่องจำนวน ${localOnlyItems.length} รายการ\nตัวอย่างรายการ:\n${sampleNames}\n\nต้องการซิงก์รายการเหล่านี้เข้าสู่บัญชี ${_0x1a7.currentUser.email} หรือไม่?`
 );
 if(!confirmed)return;
+const migrationOwner=bucketOwner();
+const guestRegistry=await bucketStoreChange(null);
+if(bucketOwner()!==migrationOwner)throw new Error('บัญชีเปลี่ยนแล้ว');
+await bucketStoreChange(migrationOwner,registry=>{
+for(const bucket of guestRegistry.buckets)if(!registry.buckets.some(b=>b.bucket_key===bucket.bucket_key)&&!registry.deletions.some(d=>d.source_key===bucket.bucket_key))registry.buckets.push({...bucket,sync_status:'pending_sync'});
+});
 let successCount=0;
 let failCount=0;
 for(const item of localOnlyItems){
+if(bucketOwner()!==migrationOwner)throw new Error('บัญชีเปลี่ยนแล้ว');
 const updatedItem={
 ...item,
 user_id:_0x1a7.currentUser.id,
@@ -1968,6 +2236,7 @@ app:'SlipSense',
 schema_version:'1.0.0',
 exported_at:new Date().toISOString(),
 count:_0x1a7.transactions.length,
+fund_buckets:bucketRegistry.buckets,
 transactions:_0x1a7.transactions
 };
 const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
@@ -2051,11 +2320,12 @@ cells.push(cur.trim());
 return cells;
 }
 async function validateAndImportBackup(rawContent,fileName='backup.json'){
+await loadFundBuckets();
 const cleanText=String(rawContent||'').replace(/^\uFEFF/,'').trim();
 if(!cleanText){
 throw new Error('ไฟล์สำรองว่างเปล่า');
 }
-let candidateRows=[];
+let candidateRows=[],importedBuckets=[];
 if(fileName.toLowerCase().endsWith('.csv')||(!cleanText.startsWith('{')&&!cleanText.startsWith('['))){
 const lines=cleanText.split(/\r?\n/).filter((ln)=>ln.trim().length>0);
 if(lines.length<2){
@@ -2072,6 +2342,7 @@ candidateRows.push(obj);
 }
 }else{
 const parsed=JSON.parse(cleanText);
+importedBuckets=Array.isArray(parsed.fund_buckets)?parsed.fund_buckets.map(validBucket):[];
 candidateRows=Array.isArray(parsed)
 ?parsed
 :Array.isArray(parsed.transactions)
@@ -2079,6 +2350,20 @@ candidateRows=Array.isArray(parsed)
 :[];
 }
 const existingRecords=await _0x1a9();
+await mutateBucket(registry=>{
+for(const metadata of importedBuckets){
+if(registry.deletions.some(d=>d.source_key===metadata.bucket_key))continue;
+const existing=registry.buckets.find(b=>b.bucket_key===metadata.bucket_key);
+const record={...metadata,sort_order:existing?.sort_order??registry.buckets.length,sync_status:registry.owner?'pending_sync':'local_only',updated_at:new Date().toISOString()};
+if(existing)Object.assign(existing,record);else registry.buckets.push(record);
+}
+for(const row of candidateRows){
+const key=row.fund_bucket;
+if(typeof key!=='string'||!/^[a-zA-Z0-9_-]{1,50}$/.test(key)||registry.buckets.some(b=>b.bucket_key===key)||registry.deletions.some(d=>d.source_key===key))continue;
+const metadata=importedBuckets.find(b=>b.bucket_key===key)||{bucket_key:key,name:key,icon:'🐷',color:'#6366f1',is_cumulative:true};
+registry.buckets.push({...validBucket(metadata),sort_order:registry.buckets.length,sync_status:registry.owner?'pending_sync':'local_only',updated_at:new Date().toISOString()});
+}
+});
 const existingIds=new Set(existingRecords.map((r)=>r.id));
 let imported=0;
 let rejected=0;
@@ -2300,7 +2585,7 @@ if(_0x1a7.isAnalyzingAi||activeShare)return;
 selectAppPanel('home',false);
 document.getElementById('btnChooseGallery')?.click();
 };
-for(const id of['heroCapture','btnBottomCenterScan','btnAiReceiptCallout']){
+for(const id of['btnBottomCenterScan']){
 document.getElementById(id)?.addEventListener('click',openReceiptCapture);
 }
 for(const type of['all','expense','income']){
@@ -2918,10 +3203,11 @@ const rows=(await _0x1a9()).filter(row=>(row.user_id||null)===(_0x1a7.currentUse
 if(legacyInsuranceReview(rows,ym).length)throw new Error('มีข้อมูลประกันแดนเก่ารอตรวจสอบ กรุณาตรวจและยืนยันก่อนโอน');
 const metrics=calculateDashboardMetrics(rows,ym);
 const txDate=ym===getBangkokTodayIso().slice(0,7)?getBangkokTodayIso():ym+'-28';
+if(!FUND_BUCKET_ORDER.includes('emergency_personal'))throw new Error('กระปุกฉุกเฉินถูกลบแล้ว กรุณาโอนด้วยการจดรายการ');
 const inputs=[];let totalCents=0;
 const amounts={};
 for(const bucket of['fixed_expense','general_expense']){
-const cents=Math.max(0,Math.round(metrics.fundBalances.find(row=>row.bucket===bucket).availableBalance*100));
+const cents=Math.max(0,Math.round((metrics.fundBalances.find(row=>row.bucket===bucket)?.availableBalance||0)*100));
 amounts[bucket]=cents/100;
 if(!cents)continue;
 totalCents+=cents;
@@ -3084,6 +3370,13 @@ const titleWrap=document.createElement('div');
 const titleEl=document.createElement('div');
 titleEl.className='fund-title';
 titleEl.textContent=f.label;
+card.style.borderColor=bucketRegistry.buckets.find(b=>b.bucket_key===f.bucket)?.color||'#6366f1';
+for(const[label,mode]of[['✏️ แก้ไข','edit'],['🗑️ ลบ','delete']]){
+const action=document.createElement('button');action.type='button';action.className='btn btn-secondary btn-sm';
+action.textContent=label;action.setAttribute('aria-label',label+' '+f.label);
+action.disabled=mode==='delete'&&FUND_BUCKET_ORDER.length<=1;
+action.onclick=()=>openBucketModal(f.bucket,mode);titleWrap.appendChild(action);
+}
 const modeSub=document.createElement('div');
 modeSub.style.fontSize='0.73rem';
 modeSub.style.color='var(--text-muted)';
@@ -3107,7 +3400,7 @@ btnWithdraw.className='btn btn-secondary btn-sm';
 btnWithdraw.style.minHeight='44px';
 btnWithdraw.style.padding='0.15rem 0.55rem';
 btnWithdraw.style.fontSize='0.74rem';
-btnWithdraw.textContent='ถอน/ใช้จากส่วนนี้';
+btnWithdraw.textContent='💸 ใช้เงิน';
 btnWithdraw.onclick=()=>{
 openVerificationModalForManual('manual',f.bucket);
 };
@@ -3585,7 +3878,7 @@ function updateAnalysisPresentation(){
 const busy=_0x1a7.isAnalyzingAi;
 document.getElementById('imagePreviewPanel')?.setAttribute('aria-busy',String(busy));
 const laser=document.getElementById('scanLaserLine');if(laser)laser.hidden=!busy;
-for(const id of['heroCapture','btnBottomCenterScan','btnAiReceiptCallout','btnChooseGallery','btnStartScanCamera']){
+for(const id of['btnBottomCenterScan','btnChooseGallery','btnStartScanCamera']){
 const button=document.getElementById(id);if(button)button.disabled=busy;
 }
 }
@@ -3633,6 +3926,7 @@ if(progressBox)progressBox.hidden=true;
 }
 let uiBound=false;
 function _0x1c4(){
+bindBucketEvents();
 if(uiBound)return;uiBound=true;
 bindAppNavigation();
 bindAutomationEvents();
@@ -4115,7 +4409,7 @@ startVoiceEntry,validReceiptFile,handleReceiptPaste,handleImageFileSelected,
 resumeSharedReceipt,releaseSharedReceipt,shareInboxChange,bindAutomationEvents,
 triggerAiAnalysisForCurrentImage,_0x1b6,renderLatestTransactions,_0x1b8,
 getState:()=>_0x1a7,
-FUND_BUCKET_LABELS,
+FUND_BUCKET_LABELS,loadFundBuckets,createFundBucket,saveFundBucket,updateFundBucket,deleteFundBucket,syncFundBuckets,openBucketModal,bindBucketEvents,
 FIXED_MONTHLY_PRESETS,
 generateUuid,
 getBangkokTodayIso,
@@ -4145,5 +4439,6 @@ _0x1cb();
 }
 })(typeof window!=='undefined'?window:globalThis);
   </script>
+
 </body>
 </html>

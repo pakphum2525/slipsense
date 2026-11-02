@@ -11,13 +11,7 @@ type TransactionType = 'income' | 'expense' | 'unknown';
 type SourceType = 'receipt' | 'transfer_slip' | 'manual';
 type SyncStatus = 'local_only' | 'pending_sync' | 'synced' | 'sync_failed';
 type AiServiceStatus = 'ready' | 'unconfigured' | 'unreachable' | 'rate_limited' | 'error';
-type FundBucket =
-  | 'investment_stock'
-  | 'home_building'
-  | 'fixed_expense'
-  | 'emergency_personal'
-  | 'general_expense'
-  | 'dan_insurance';
+type FundBucket = string;
 
 interface TransactionRecord {
   id: string;
@@ -72,7 +66,7 @@ interface DashboardMetrics {
       'use strict';
 
       const DB_NAME: string = 'slipsense_db';
-      const DB_VERSION: number = 2;
+      const DB_VERSION: number = 3;
       const STORE_TRANSACTIONS: string = 'transactions';
       const SETTINGS_STORAGE_KEY: string = 'slipsense_settings_v1';
 
@@ -106,23 +100,44 @@ interface DashboardMetrics {
         sync_failed: 'ซิงก์ไม่สำเร็จ'
       };
 
-      const FUND_BUCKET_LABELS: Record<FundBucket, string> = {
-        investment_stock: '1. เงินลงทุน (หุ้น)',
-        home_building: '2. เงินเก็บสร้างบ้าน',
-        fixed_expense: '3. ค่าใช้จ่ายคงที่',
-        emergency_personal: '4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)',
-        general_expense: '5. ค่าใช้จ่ายทั่วไป',
-        dan_insurance: '6. เงินเก็บประกันแดน'
-      };
-
-      const FUND_BUCKET_ORDER: FundBucket[] = [
-        'investment_stock',
-        'home_building',
-        'fixed_expense',
-        'emergency_personal',
-        'general_expense',
-        'dan_insurance'
-      ];
+      const BUCKET_ICONS = ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕'];
+      const DEFAULT_BUCKETS = [
+        ['investment_stock', 'หุ้น/ลงทุน', '📈', true], ['home_building', 'สร้างบ้าน', '🏡', true],
+        ['fixed_expense', 'รายเดือน', '📌', false], ['emergency_personal', 'ฉุกเฉิน', '🛟', true],
+        ['general_expense', 'กิน/ใช้', '🍜', false], ['dan_insurance', 'ประกันแดน', '🛡️', true]
+      ].map(([bucket_key, name, icon, is_cumulative], sort_order) => ({ bucket_key, name, icon, is_cumulative, sort_order, color: '#6366f1' }));
+      const FUND_BUCKET_LABELS: Record<string, string> = Object.create(null);
+      const FUND_BUCKET_ORDER: string[] = [];
+      let bucketRegistry: any = null;
+      let bucketMutation = Promise.resolve();
+      function bucketOwner() { return appState.currentUser?.id || null; }
+      function bucketDefaultKey() { return FUND_BUCKET_ORDER.includes('general_expense') ? 'general_expense' : FUND_BUCKET_ORDER[0]; }
+      function applyBucketRegistry(registry) {
+        bucketRegistry = registry;
+        for (const key of Object.keys(FUND_BUCKET_LABELS)) delete FUND_BUCKET_LABELS[key];
+        FUND_BUCKET_ORDER.length = 0;
+        for (const bucket of [...registry.buckets].sort((a, b) => a.sort_order - b.sort_order)) {
+          FUND_BUCKET_ORDER.push(bucket.bucket_key);
+          FUND_BUCKET_LABELS[bucket.bucket_key] = bucket.icon + ' ' + bucket.name;
+        }
+        refreshBucketOptions();
+        const status = document.getElementById('bucketSyncStatus');
+        if (status) {
+          const entries = [...registry.buckets, ...registry.deletions];
+          status.textContent = entries.some(b => b.sync_status === 'sync_failed') ? 'ซิงก์กระปุกไม่สำเร็จ · กดซิงก์เพื่อลองใหม่'
+            : entries.some(b => b.sync_status === 'pending_sync') ? 'กระปุกรอซิงก์' : registry.owner ? 'กระปุกซิงก์แล้ว' : 'กระปุกบันทึกในเครื่อง';
+        }
+      }
+      function refreshBucketOptions(destination = '') {
+        for (const id of ['txFormFundBucket', 'filterFundSelect']) {
+          const select = document.getElementById(id); if (!select) continue;
+          const previous = select.value;
+          select.innerHTML = '';
+          if (id === 'filterFundSelect') { const option = document.createElement('option'); option.value = ''; option.textContent = 'ทุกกระปุก'; select.appendChild(option); }
+          for (const key of FUND_BUCKET_ORDER) { const option = document.createElement('option'); option.value = key; option.textContent = FUND_BUCKET_LABELS[key]; select.appendChild(option); }
+          select.value = FUND_BUCKET_ORDER.includes(previous) ? previous : destination || (id === 'filterFundSelect' ? '' : bucketDefaultKey());
+        }
+      }
 
       const FIXED_MONTHLY_PRESETS = {
         HOME_BUILDING: 13000,
@@ -162,6 +177,7 @@ interface DashboardMetrics {
       /**
        * สร้าง UUID v4 ที่คงที่สำหรับรายการเดียวกันในทุกการซิงก์ซ้ำ (Idempotency)
        */
+      applyBucketRegistry({ id: 'guest', owner: null, buckets: DEFAULT_BUCKETS.map(b => ({ ...b })), deletions: [] });
       function generateUuid(): string {
         if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
           return crypto.randomUUID();
@@ -257,7 +273,8 @@ interface DashboardMetrics {
       /**
        * วิเคราะห์และจับคู่ส่วนของเงิน (1 ใน 6 ส่วน) อัตโนมัติจากหมวดหมู่ ชื่อร้านค้า และรายละเอียดรายการ
        */
-      function inferDefaultFundBucket(
+      function inferDefaultFundBucket(...args) { const inferred = resolveDeletedBucket(inferLegacyFundBucket(...args)); return FUND_BUCKET_ORDER.includes(inferred) ? inferred : bucketDefaultKey(); }
+      function inferLegacyFundBucket(
         category: string = '',
         merchant: string = '',
         itemsSummary: string = '',
@@ -334,7 +351,7 @@ interface DashboardMetrics {
         const purposeAnalysisClean = typeof input.purpose_analysis === 'string' ? input.purpose_analysis.trim().slice(0, 2000) : '';
         const noteClean = typeof input.note === 'string' ? input.note.trim().slice(0, 2000) : '';
 
-        const rawFundBucket = typeof input.fund_bucket === 'string' ? input.fund_bucket.trim() : '';
+        const rawFundBucket = typeof input.fund_bucket === 'string' ? resolveDeletedBucket(input.fund_bucket.trim()) : '';
         const fund_bucket: FundBucket = (FUND_BUCKET_LABELS as Record<string, string>)[rawFundBucket]
           ? (rawFundBucket as FundBucket)
           : inferDefaultFundBucket(category, merchant, itemsSummaryClean, purposeAnalysisClean, noteClean);
@@ -437,7 +454,7 @@ interface DashboardMetrics {
             ? raw.purpose_analysis.trim()
             : 'ไม่สามารถระบุวัตถุประสงค์ที่ชัดเจนจากหลักฐานในภาพเพียงอย่างเดียว';
 
-        const rawFundBucket = typeof raw.fund_bucket === 'string' ? raw.fund_bucket.trim() : '';
+        const rawFundBucket = typeof raw.fund_bucket === 'string' ? resolveDeletedBucket(raw.fund_bucket.trim()) : '';
         const fund_bucket: FundBucket = (FUND_BUCKET_LABELS as Record<string, string>)[rawFundBucket]
           ? (rawFundBucket as FundBucket)
           : inferDefaultFundBucket(category, merchant || '', items_summary, purpose_analysis);
@@ -486,14 +503,7 @@ interface DashboardMetrics {
           monthExpenseCents: number;
           allTimeIncomeCents: number;
           allTimeExpenseCents: number;
-        }> = {
-          investment_stock: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
-          home_building: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
-          fixed_expense: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
-          emergency_personal: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
-          general_expense: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 },
-          dan_insurance: { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 }
-        };
+        }> = Object.fromEntries(FUND_BUCKET_ORDER.map(key => [key, { monthIncomeCents: 0, monthExpenseCents: 0, allTimeIncomeCents: 0, allTimeExpenseCents: 0 }]));
 
         let fatherInsPaidCents = 0;
         let danInsPaidCents = 0;
@@ -515,7 +525,7 @@ interface DashboardMetrics {
           const cents = transactionAmountCents(tx.amount);
           if (!Number.isSafeInteger(cents) || cents <= 0) continue;
 
-          const rawBucket = typeof tx.fund_bucket === 'string' ? tx.fund_bucket.trim() : '';
+          const rawBucket = typeof tx.fund_bucket === 'string' ? resolveDeletedBucket(tx.fund_bucket.trim()) : '';
           const bucket: FundBucket = (FUND_BUCKET_LABELS as Record<string, string>)[rawBucket]
             ? (rawBucket as FundBucket)
             : inferDefaultFundBucket(tx.category, tx.merchant, tx.items_summary, tx.purpose_analysis, tx.note);
@@ -602,7 +612,7 @@ interface DashboardMetrics {
           }))
           .sort((a, b) => b.amount - a.amount);
 
-        const cumulativeBuckets = new Set<FundBucket>(['investment_stock', 'home_building', 'emergency_personal', 'dan_insurance']);
+        const cumulativeBuckets = new Set<FundBucket>(bucketRegistry.buckets.filter(b => b.is_cumulative).map(b => b.bucket_key));
         const fundBalances = FUND_BUCKET_ORDER.map((bucket) => {
           const st = fundStatsCents[bucket];
           const isCumulative = cumulativeBuckets.has(bucket);
@@ -684,6 +694,7 @@ interface DashboardMetrics {
             const req = indexedDB.open(DB_NAME, DB_VERSION);
             req.onupgradeneeded = function (event) {
               const db = event.target.result;
+              if (!db.objectStoreNames.contains('fund_registry')) db.createObjectStore('fund_registry', { keyPath: 'id' });
               if (!db.objectStoreNames.contains('automation')) db.createObjectStore('automation', { keyPath: 'id' });
               if (!db.objectStoreNames.contains(STORE_TRANSACTIONS)) {
                 const store = db.createObjectStore(STORE_TRANSACTIONS, { keyPath: 'id' });
@@ -693,6 +704,7 @@ interface DashboardMetrics {
               }
             };
             req.onsuccess = function (event) {
+              event.target.result.onversionchange = () => event.target.result.close();
               resolve(event.target.result);
             };
             req.onerror = function () {
@@ -725,18 +737,23 @@ interface DashboardMetrics {
       }
 
       async function dbPutTransaction(record) {
-        appState.memoryStore.set(record.id, record);
         const db = await openLocalDatabase();
         if (!db || appState.usingMemoryFallback) {
+          appState.memoryStore.set(record.id, record);
           return record;
         }
         return new Promise((resolve, reject) => {
           try {
-            const tx = db.transaction(STORE_TRANSACTIONS, 'readwrite');
+            const tx = db.transaction([STORE_TRANSACTIONS, 'fund_registry'], 'readwrite');
             const store = tx.objectStore(STORE_TRANSACTIONS);
-            store.put(record);
-            tx.oncomplete = () => resolve(record);
+            const registry = tx.objectStore('fund_registry').get(record.user_id || 'guest');
+            registry.onsuccess = () => {
+              if (registry.result) record.fund_bucket = resolveDeletedBucket(record.fund_bucket, registry.result);
+              store.put(record);
+            };
+            tx.oncomplete = () => { appState.memoryStore.set(record.id, record); resolve(record); };
             tx.onerror = () => reject(new Error('ไม่สามารถบันทึกข้อมูลลง IndexedDB ได้ (พื้นที่จัดเก็บอาจเต็ม)'));
+            tx.onabort = tx.onerror;
           } catch (err) {
             reject(err);
           }
@@ -762,6 +779,218 @@ interface DashboardMetrics {
       // =====================================================================
       // CLIENT-SIDE IMAGE VALIDATION & CANVAS COMPRESSION (~1600px)
       // =====================================================================
+      function validBucket(input) {
+        const name = String(input.name || '').trim();
+        if (!name || [...name].length > 50) throw new Error('ตั้งชื่อกระปุก 1–50 ตัวอักษร');
+        if (![...BUCKET_ICONS, '📌'].includes(input.icon)) throw new Error('กรุณาเลือกไอคอน');
+        if (!/^#[0-9a-fA-F]{6}$/.test(input.color)) throw new Error('กรุณาเลือกสี');
+        if (typeof input.is_cumulative !== 'boolean') throw new Error('กรุณาเลือกประเภทกระปุก');
+        if (!/^[a-zA-Z0-9_-]{1,50}$/.test(input.bucket_key) || ['__proto__', 'constructor', 'prototype'].includes(input.bucket_key)) throw new Error('รหัสกระปุกไม่ถูกต้อง');
+        return { ...input, name };
+      }
+      async function bucketStoreChange(owner, change = null) {
+        const id = owner || 'guest', db = await openLocalDatabase();
+        if (!db) throw new Error('เปิดที่เก็บกระปุกไม่ได้ กรุณาอนุญาต IndexedDB แล้วลองใหม่');
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(['fund_registry', STORE_TRANSACTIONS], 'readwrite');
+          const store = tx.objectStore('fund_registry');
+          const r = store.get(id), all = tx.objectStore(STORE_TRANSACTIONS).getAll();
+          let registry, rows, ready = 0;
+          function done() {
+            if (++ready !== 2) return;
+            try {
+              registry = r.result || { id, owner, buckets: DEFAULT_BUCKETS.map(b => ({ ...b, sync_status: owner ? 'pending_sync' : 'local_only' })), deletions: [] };
+              rows = all.result || [];
+              if (change) change(registry, rows);
+              store.put(registry);
+              rows = rows.filter(row => row.__bucketMoved);
+              for (const row of rows) { delete row.__bucketMoved; tx.objectStore(STORE_TRANSACTIONS).put(row); }
+            } catch (error) { reject(error); tx.abort(); }
+          }
+          r.onsuccess = done; all.onsuccess = done;
+          tx.oncomplete = () => {
+            db.close();
+            for (const row of rows || []) appState.memoryStore.set(row.id, row);
+            if (bucketOwner() === owner) applyBucketRegistry(registry);
+            resolve(registry);
+          };
+          tx.onerror = tx.onabort = () => { db.close(); reject(new Error('บันทึกกระปุกไม่สำเร็จ กรุณาลองใหม่')); };
+        });
+      }
+      async function loadFundBuckets() { return bucketStoreChange(bucketOwner()); }
+      function mutateBucket(change) {
+        const owner = bucketOwner();
+        const run = bucketMutation.catch(() => {}).then(async () => {
+          if (bucketOwner() !== owner) throw new Error('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่');
+          const result = await bucketStoreChange(owner, (registry, rows) => {
+            change(registry, rows); registry.edit_version = (registry.edit_version || 0) + 1;
+          });
+          if (bucketOwner() === owner) await refreshTransactionsFromLocal();
+          return result;
+        });
+        bucketMutation = run; return run;
+      }
+      async function saveFundBucket(input, existingKey = null) {
+        const key = existingKey || ('bucket_' + generateUuid().replace(/-/g, ''));
+        const bucket = validBucket({ ...input, bucket_key: key });
+        await mutateBucket(registry => {
+          const existing = registry.buckets.find(b => b.bucket_key === key);
+          if (existingKey && !existing) throw new Error('ไม่พบกระปุก');
+          if (!existingKey && (existing || registry.deletions.some(d => d.source_key === key))) throw new Error('รหัสกระปุกซ้ำ');
+          const record = { ...existing, ...bucket, sort_order: existing?.sort_order ?? Math.max(-1, ...registry.buckets.map(b => b.sort_order)) + 1,
+            updated_at: new Date().toISOString(), sync_status: registry.owner ? 'pending_sync' : 'local_only' };
+          registry.buckets = registry.buckets.filter(b => b.bucket_key !== key).concat(record);
+        });
+        return key;
+      }
+      function createFundBucket(input) { return saveFundBucket(input); }
+      async function updateFundBucket(key, input) {
+        await loadFundBuckets();
+        const old = bucketRegistry.buckets.find(b => b.bucket_key === key);
+        if (!old) throw new Error('ไม่พบกระปุก');
+        return saveFundBucket({ ...old, ...input }, key);
+      }
+      async function deleteFundBucket(source, target) {
+        const selected = ['txFormFundBucket', 'filterFundSelect'].filter(id => document.getElementById(id)?.value === source);
+        await mutateBucket((registry, rows) => {
+          if (registry.buckets.length <= 1) throw new Error('ต้องเหลืออย่างน้อย 1 กระปุก');
+          if (source === target || !registry.buckets.some(b => b.bucket_key === source) || !registry.buckets.some(b => b.bucket_key === target)) throw new Error('เลือกกระปุกปลายทางให้ถูกต้อง');
+          const original = registry.buckets.find(b => b.bucket_key === source);
+          for (const row of rows) if ((row.user_id || null) === registry.owner && row.fund_bucket === source) {
+            row.fund_bucket = target; row.updated_at = new Date().toISOString();
+            row.sync_status = registry.owner ? 'pending_sync' : 'local_only'; row.__bucketMoved = true;
+          }
+          registry.deletions.push({ id: generateUuid(), source_key: source, target_key: target, original,
+            sync_status: registry.owner ? 'pending_sync' : 'local_only' });
+          registry.buckets = registry.buckets.filter(b => b.bucket_key !== source);
+        });
+        refreshBucketOptions(target);
+        for (const id of selected) document.getElementById(id).value = target;
+      }
+      function resolveDeletedBucket(key, registry = bucketRegistry) {
+        const seen = new Set();
+        while (!seen.has(key)) { seen.add(key); const d = registry.deletions.find(d => d.source_key === key); if (!d) break; key = d.target_key; }
+        return key;
+      }
+      async function syncFundBuckets() {
+        const owner = bucketOwner(), client = appState.supabaseClient;
+        if (!owner || !client || !navigator.onLine) return false;
+        const check = () => { if (bucketOwner() !== owner || appState.supabaseClient !== client || !navigator.onLine) throw new Error('บัญชีหรือการเชื่อมต่อเปลี่ยนแล้ว'); };
+        try {
+          if (client.auth?.getSession) {
+            const { data, error } = await client.auth.getSession(); check();
+            if (error || data?.session?.user?.id !== owner) throw new Error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง');
+          }
+          let registry = await bucketStoreChange(owner); check();
+          const remoteDeleted = await client.from('fund_bucket_deletions').select('*').eq('user_id', owner); check();
+          if (remoteDeleted.error) throw remoteDeleted.error;
+          if (!Array.isArray(remoteDeleted.data)) throw new Error('อ่านประวัติกระปุกไม่สำเร็จ');
+          await bucketStoreChange(owner, (local, rows) => {
+            for (const d of remoteDeleted.data || []) {
+              const existing = local.deletions.find(item => item.source_key === d.source_key);
+              if (existing) Object.assign(existing, d, { sync_status: 'synced' }); else local.deletions.push({ ...d, sync_status: 'synced' });
+              local.buckets = local.buckets.filter(b => b.bucket_key !== d.source_key);
+            }
+            for (const row of rows) if ((row.user_id || null) === owner) {
+              const target = resolveDeletedBucket(row.fund_bucket, local);
+              if (target !== row.fund_bucket) { row.fund_bucket = target; row.__bucketMoved = true; row.sync_status = 'pending_sync'; row.updated_at = new Date().toISOString(); }
+            }
+          });
+          registry = await bucketStoreChange(owner); check();
+          const remote = await client.from('fund_buckets').select('*').eq('user_id', owner); check();
+          if (remote.error) throw remote.error;
+          if (!Array.isArray(remote.data)) throw new Error('อ่านกระปุกไม่สำเร็จ');
+          await bucketStoreChange(owner, local => {
+            for (const raw of remote.data || []) {
+              if (local.deletions.some(d => d.source_key === raw.bucket_key)) continue;
+              const incoming = validBucket(raw), existing = local.buckets.find(b => b.bucket_key === raw.bucket_key);
+              if (!existing) local.buckets.push({ ...incoming, sync_status: 'synced' });
+              else if (!existing.updated_at || (existing.sync_status === 'synced' && raw.updated_at > existing.updated_at)) Object.assign(existing, incoming, { sync_status: 'synced' });
+            }
+          });
+          registry = await bucketStoreChange(owner); check();
+          const remoteKeys = new Set((remote.data || []).map(b => b.bucket_key));
+          const revision = registry.edit_version || 0;
+          const sources = registry.deletions.filter(d => d.sync_status !== 'synced' && !remoteKeys.has(d.source_key)).map(d => d.original).filter(Boolean);
+          const pending = registry.buckets.filter(b => b.sync_status !== 'synced');
+          for (const bucket of [...sources, ...pending]) {
+            check(); const b = validBucket(bucket);
+            const { error } = await client.from('fund_buckets').upsert({ user_id: owner, bucket_key: b.bucket_key, name: b.name, icon: b.icon, color: b.color,
+              is_cumulative: b.is_cumulative, sort_order: b.sort_order }, { onConflict: 'user_id,bucket_key' }); check();
+            if (error) throw error;
+            await bucketStoreChange(owner, local => { const current = local.buckets.find(item => item.bucket_key === b.bucket_key); if (current && current.updated_at === b.updated_at) current.sync_status = 'synced'; });
+          }
+          for (const d of registry.deletions.filter(d => d.sync_status !== 'synced')) {
+            // Another device may have deleted the chosen destination while this device was offline.
+            // Follow its durable tombstone to a live bucket before requesting the atomic move.
+            const target = resolveDeletedBucket(d.target_key, registry);
+            check(); const { error } = await client.rpc('delete_fund_bucket', { p_operation_id: d.id, p_source_key: d.source_key, p_target_key: target }); check();
+            if (error) throw error;
+            await bucketStoreChange(owner, local => { const current = local.deletions.find(item => item.id === d.id); if (current) current.sync_status = 'synced'; });
+          }
+          const latest = await bucketStoreChange(owner); check();
+          return (latest.edit_version || 0) === revision;
+        } catch (error) {
+          if (bucketOwner() === owner) {
+            await bucketStoreChange(owner, local => {
+              for (const item of [...local.buckets, ...local.deletions]) if (item.sync_status !== 'synced') { item.sync_status = 'sync_failed'; item.sync_error = String(error.message || error); }
+            });
+            showToast('กระปุกรอซิงก์ กรุณาตรวจการเชื่อมต่อหรืออัปเดตฐานข้อมูล แล้วกดซิงก์อีกครั้ง', 'error');
+          }
+          return false;
+        }
+      }
+      let bucketModalKey = null, bucketModalMode = 'edit', bucketReturnFocus = null, bucketBusy = false;
+      function closeBucketModal() {
+        if (bucketBusy) return;
+        document.getElementById('bucketModal').hidden = true;
+        (bucketReturnFocus?.isConnected === false ? document.getElementById('btnOpenBucketModal') : bucketReturnFocus)?.focus();
+      }
+      function openBucketModal(key = null, mode = 'edit') {
+        bucketModalKey = key; bucketModalMode = mode; bucketReturnFocus = document.activeElement;
+        const bucket = bucketRegistry.buckets.find(b => b.bucket_key === key), el = id => document.getElementById(id);
+        el('bucketModalTitle').textContent = mode === 'delete' ? 'ลบกระปุก' : key ? 'แก้ไขกระปุก' : 'เพิ่มกระปุก';
+        el('bucketFormName').value = bucket?.name || ''; el('bucketFormIcon').value = bucket?.icon || '🐷';
+        el('bucketFormColor').value = bucket?.color || '#6366f1'; el('bucketFormCumulative').checked = bucket?.is_cumulative ?? true;
+        el('bucketFormName').required = mode !== 'delete'; el('bucketFormName').readOnly = mode === 'delete';
+        el('bucketDeleteFields').hidden = mode !== 'delete'; el('bucketDeleteConfirm').value = ''; el('bucketFormError').textContent = '';
+        const select = el('bucketDeleteTarget'); select.innerHTML = '';
+        for (const b of bucketRegistry.buckets.filter(b => b.bucket_key !== key)) { const option = document.createElement('option'); option.value = b.bucket_key; option.textContent = b.icon + ' ' + b.name; select.appendChild(option); }
+        select.value = FUND_BUCKET_ORDER.includes('general_expense') && key !== 'general_expense' ? 'general_expense' : FUND_BUCKET_ORDER.find(k => k !== key) || '';
+        el('bucketModal').hidden = false; (mode === 'delete' ? el('bucketDeleteConfirm') : el('bucketFormName')).focus();
+      }
+      function bindBucketEvents() {
+        const el = id => document.getElementById(id), modal = el('bucketModal');
+        if (!modal || modal.dataset.bound) return; modal.dataset.bound = 'true';
+        el('btnOpenBucketModal').addEventListener('click', () => openBucketModal());
+        el('btnCloseBucketModal').addEventListener('click', closeBucketModal);
+        for (const icon of BUCKET_ICONS) {
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.textContent = icon;
+          button.setAttribute('aria-label', 'เลือกไอคอน ' + icon); button.onclick = () => { el('bucketFormIcon').value = icon; }; el('bucketIconPicker').appendChild(button);
+        }
+        modal.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { event.preventDefault(); closeBucketModal(); }
+          if (event.key === 'Tab') {
+            const nodes = [...modal.querySelectorAll('button,input,select,[tabindex="0"]')].filter(n => !n.disabled && !n.closest('[hidden]'));
+            const first = nodes[0], last = nodes[nodes.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+          }
+        });
+        el('bucketForm').addEventListener('submit', async event => {
+          event.preventDefault(); if (bucketBusy) return; bucketBusy = true; el('btnSaveBucket').disabled = true;
+          try {
+            if (bucketModalMode === 'delete') {
+              const bucket = bucketRegistry.buckets.find(b => b.bucket_key === bucketModalKey);
+              if (el('bucketDeleteConfirm').value.trim() !== bucket?.name) throw new Error('พิมพ์ชื่อกระปุกให้ตรงเพื่อยืนยัน');
+              await deleteFundBucket(bucketModalKey, el('bucketDeleteTarget').value);
+            } else await saveFundBucket({ name: el('bucketFormName').value, icon: el('bucketFormIcon').value, color: el('bucketFormColor').value, is_cumulative: el('bucketFormCumulative').checked }, bucketModalKey);
+            bucketBusy = false; closeBucketModal(); showToast('บันทึกกระปุกในเครื่องแล้ว', 'success');
+            if (bucketOwner() && navigator.onLine) await syncPendingTransactions();
+          } catch (error) { el('bucketFormError').textContent = error.message; }
+          finally { bucketBusy = false; el('btnSaveBucket').disabled = false; }
+        });
+      }
       async function compressReceiptImage(file, maxDimension = 1600, quality = 0.82) {
         if (!file) {
           throw new Error('ไม่พบไฟล์รูปภาพ กรุณาเลือกรูปใหม่อีกครั้ง');
@@ -1163,6 +1392,7 @@ interface DashboardMetrics {
       // OFFLINE-FIRST CRUD & CLOUD SYNCHRONIZATION (IDEMPOTENT & CONFLICT-SAFE)
       // =====================================================================
       async function refreshTransactionsFromLocal() {
+        await loadFundBuckets().catch(() => {});
         const allRecords = await dbGetAllTransactions();
         const activeUserId = appState.currentUser?.id || null;
 
@@ -1189,6 +1419,9 @@ interface DashboardMetrics {
       }
 
       async function saveTransaction(txInput) {
+        const entryOwner = bucketOwner();
+        await loadFundBuckets();
+        if (bucketOwner() !== entryOwner) throw new Error('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่');
         const validation = validateTransactionInput(txInput);
         if (!validation.valid) {
           throw new Error(validation.errors.join('\n'));
@@ -1204,19 +1437,21 @@ interface DashboardMetrics {
 
         const allExisting = await dbGetAllTransactions();
         const oldRecord = allExisting.find((item) => item.id === id) || null;
+        if (oldRecord && (oldRecord.user_id || null) !== entryOwner) throw new Error('ไม่สามารถแก้ไขรายการของบัญชีอื่น');
 
         const isCloudReady = Boolean(appState.supabaseClient && appState.supabaseConnected && appState.currentUser);
         const record = {
           id,
-          user_id: isCloudReady ? appState.currentUser.id : (oldRecord?.user_id || null),
+          user_id: entryOwner,
           ...validation.normalized,
-          sync_status: isCloudReady ? 'pending_sync' : 'local_only',
+          sync_status: entryOwner ? 'pending_sync' : 'local_only',
           sync_error: null,
           created_at: oldRecord?.created_at || nowIso,
           updated_at: nowIso
         };
 
         // 1. บันทึกลง Local IndexedDB ก่อนเสมอ (Local-First Save)
+        if (bucketOwner() !== entryOwner) throw new Error('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่');
         await dbPutTransaction(record);
         await refreshTransactionsFromLocal();
 
@@ -1229,17 +1464,24 @@ interface DashboardMetrics {
         return record;
       }
 
-      async function syncSingleTransactionToCloud(localRecord) {
+      async function syncSingleTransactionToCloud(localRecord, registryReady = false) {
         if (!appState.supabaseClient || !appState.currentUser || !navigator.onLine) {
           return { synced: false, reason: 'offline_or_unauthenticated' };
         }
 
+        const txOwner = bucketOwner(), txClient = appState.supabaseClient;
+        const checkOwner = () => { if (bucketOwner() !== txOwner || appState.supabaseClient !== txClient) throw new Error('บัญชีเปลี่ยนแล้ว'); };
         try {
+          if (!registryReady && !await syncFundBuckets()) throw new Error('กระปุกยังซิงก์ไม่สำเร็จ');
+          checkOwner();
+          if (localRecord.user_id !== bucketOwner()) throw new Error('บัญชีเปลี่ยนแล้ว');
+          localRecord = { ...localRecord, fund_bucket: resolveDeletedBucket(localRecord.fund_bucket) };
+          if (!bucketRegistry.buckets.some(b => b.bucket_key === localRecord.fund_bucket && b.sync_status === 'synced')) throw new Error('กระปุกรอซิงก์ กรุณาลองใหม่');
           const userId = appState.currentUser.id;
 
           // กรณีเป็น Tombstone รายการที่ถูกลบขณะออฟไลน์ ให้สั่งลบบน Cloud แล้วล้าง Tombstone ในเครื่อง
           if (localRecord.deleted_at) {
-            const { error: delErr } = await appState.supabaseClient
+            const { error: delErr } = await txClient
               .from('transactions')
               .delete()
               .eq('id', localRecord.id)
@@ -1259,6 +1501,7 @@ interface DashboardMetrics {
             .eq('id', localRecord.id)
             .maybeSingle();
 
+          checkOwner();
           if (remoteExisting && remoteExisting.updated_at) {
             const remoteTime = new Date(remoteExisting.updated_at).getTime();
             const localTime = new Date(localRecord.updated_at).getTime();
@@ -1294,6 +1537,7 @@ interface DashboardMetrics {
             .select()
             .single();
 
+          checkOwner();
           if (upsertErr) {
             throw upsertErr;
           }
@@ -1325,12 +1569,15 @@ interface DashboardMetrics {
         }
 
         appState.isSyncing = true;
+        const syncOwner = bucketOwner(), syncClient = appState.supabaseClient;
         let syncedCount = 0;
         let failedCount = 0;
 
         try {
+          if (!await syncFundBuckets()) return { syncedCount: 0, failedCount: 1 };
           const allLocal = await dbGetAllTransactions();
-          const activeUserId = appState.currentUser.id;
+          if (bucketOwner() !== syncOwner || appState.supabaseClient !== syncClient) return { syncedCount, failedCount: 1 };
+          const activeUserId = syncOwner;
           const queue = allLocal.filter(
             (tx) =>
               tx &&
@@ -1339,7 +1586,8 @@ interface DashboardMetrics {
           );
 
           for (const item of queue) {
-            const res = await syncSingleTransactionToCloud(item);
+            if (bucketOwner() !== syncOwner || appState.supabaseClient !== syncClient) return { syncedCount, failedCount: failedCount + 1 };
+            const res = await syncSingleTransactionToCloud(item, true);
             if (res.synced) {
               syncedCount += 1;
             } else {
@@ -1347,7 +1595,8 @@ interface DashboardMetrics {
             }
           }
 
-          await pullCloudTransactionsAndMerge();
+          if (bucketOwner() !== syncOwner || appState.supabaseClient !== syncClient) return { syncedCount, failedCount: failedCount + 1 };
+          await pullCloudTransactionsAndMerge({ registryReady: true });
           await refreshTransactionsFromLocal();
           return { syncedCount, failedCount };
         } finally {
@@ -1357,16 +1606,20 @@ interface DashboardMetrics {
 
       async function pullCloudTransactionsAndMerge(options = {}) {
         if (!appState.supabaseClient || !appState.currentUser || !navigator.onLine) return;
+        const pullOwner = bucketOwner(), pullClient = appState.supabaseClient;
+        if (!options.registryReady && !await syncFundBuckets()) return;
 
+        if (bucketOwner() !== pullOwner || appState.supabaseClient !== pullClient) return;
         try {
-          const userId = appState.currentUser.id;
+          const userId = pullOwner;
           const PAGE_SIZE = 500;
           const remoteRows = [];
           let offset = 0;
           let isCompleteSnapshot = false;
 
           while (true) {
-            const baseQuery = appState.supabaseClient
+            if (bucketOwner() !== pullOwner || appState.supabaseClient !== pullClient) return;
+            const baseQuery = pullClient
               .from('transactions')
               .select('*', { count: 'exact' })
               .eq('user_id', userId)
@@ -1405,6 +1658,7 @@ interface DashboardMetrics {
           if (remoteRows.length === 0 && !isCompleteSnapshot) return;
 
           const allLocal = await dbGetAllTransactions();
+          if (bucketOwner() !== pullOwner || appState.supabaseClient !== pullClient) return;
           const localMap = new Map(allLocal.map((item) => [item.id, item]));
           const remoteIdSet = new Set(remoteRows.map((r) => r.id));
 
@@ -1424,6 +1678,8 @@ interface DashboardMetrics {
           }
 
           for (const remote of remoteRows) {
+            if (bucketOwner() !== userId) return;
+            remote.fund_bucket = resolveDeletedBucket(remote.fund_bucket);
             const localItem = localMap.get(remote.id);
             // ห้ามนำแถวที่ผู้ใช้เพิ่งสั่งลบในเครื่อง (Tombstone รอซิงก์การลบ) กลับมาแสดงซ้ำ
             if (localItem && localItem.deleted_at) {
@@ -1492,10 +1748,17 @@ interface DashboardMetrics {
 
         if (!confirmed) return;
 
+        const migrationOwner = bucketOwner();
+        const guestRegistry = await bucketStoreChange(null);
+        if (bucketOwner() !== migrationOwner) throw new Error('บัญชีเปลี่ยนแล้ว');
+        await bucketStoreChange(migrationOwner, registry => {
+          for (const bucket of guestRegistry.buckets) if (!registry.buckets.some(b => b.bucket_key === bucket.bucket_key) && !registry.deletions.some(d => d.source_key === bucket.bucket_key)) registry.buckets.push({ ...bucket, sync_status: 'pending_sync' });
+        });
         let successCount = 0;
         let failCount = 0;
 
         for (const item of localOnlyItems) {
+          if (bucketOwner() !== migrationOwner) throw new Error('บัญชีเปลี่ยนแล้ว');
           const updatedItem = {
             ...item,
             user_id: appState.currentUser.id,
@@ -1584,6 +1847,7 @@ interface DashboardMetrics {
           schema_version: '1.0.0',
           exported_at: new Date().toISOString(),
           count: appState.transactions.length,
+          fund_buckets: bucketRegistry.buckets,
           transactions: appState.transactions
         };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -1673,12 +1937,13 @@ interface DashboardMetrics {
       }
 
       async function validateAndImportBackup(rawContent, fileName = 'backup.json') {
+        await loadFundBuckets();
         const cleanText = String(rawContent || '').replace(/^\uFEFF/, '').trim();
         if (!cleanText) {
           throw new Error('ไฟล์สำรองว่างเปล่า');
         }
 
-        let candidateRows = [];
+        let candidateRows = [], importedBuckets = [];
         if (fileName.toLowerCase().endsWith('.csv') || (!cleanText.startsWith('{') && !cleanText.startsWith('['))) {
           const lines = cleanText.split(/\r?\n/).filter((ln) => ln.trim().length > 0);
           if (lines.length < 2) {
@@ -1695,6 +1960,7 @@ interface DashboardMetrics {
           }
         } else {
           const parsed = JSON.parse(cleanText);
+          importedBuckets = Array.isArray(parsed.fund_buckets) ? parsed.fund_buckets.map(validBucket) : [];
           candidateRows = Array.isArray(parsed)
             ? parsed
             : Array.isArray(parsed.transactions)
@@ -1703,6 +1969,20 @@ interface DashboardMetrics {
         }
 
         const existingRecords = await dbGetAllTransactions();
+        await mutateBucket(registry => {
+          for (const metadata of importedBuckets) {
+            if (registry.deletions.some(d => d.source_key === metadata.bucket_key)) continue;
+            const existing = registry.buckets.find(b => b.bucket_key === metadata.bucket_key);
+            const record = { ...metadata, sort_order: existing?.sort_order ?? registry.buckets.length, sync_status: registry.owner ? 'pending_sync' : 'local_only', updated_at: new Date().toISOString() };
+            if (existing) Object.assign(existing, record); else registry.buckets.push(record);
+          }
+          for (const row of candidateRows) {
+            const key = row.fund_bucket;
+            if (typeof key !== 'string' || !/^[a-zA-Z0-9_-]{1,50}$/.test(key) || registry.buckets.some(b => b.bucket_key === key) || registry.deletions.some(d => d.source_key === key)) continue;
+            const metadata = importedBuckets.find(b => b.bucket_key === key) || { bucket_key: key, name: key, icon: '🐷', color: '#6366f1', is_cumulative: true };
+            registry.buckets.push({ ...validBucket(metadata), sort_order: registry.buckets.length, sync_status: registry.owner ? 'pending_sync' : 'local_only', updated_at: new Date().toISOString() });
+          }
+        });
         const existingIds = new Set(existingRecords.map((r) => r.id));
 
         let imported = 0;
@@ -1948,7 +2228,7 @@ interface DashboardMetrics {
           selectAppPanel('home', false);
           document.getElementById('btnChooseGallery')?.click();
         };
-        for (const id of ['heroCapture', 'btnBottomCenterScan', 'btnAiReceiptCallout']) {
+        for (const id of ['btnBottomCenterScan']) {
           document.getElementById(id)?.addEventListener('click', openReceiptCapture);
         }
         for (const type of ['all', 'expense', 'income']) {
@@ -2621,10 +2901,11 @@ interface DashboardMetrics {
         if (legacyInsuranceReview(rows, ym).length) throw new Error('มีข้อมูลประกันแดนเก่ารอตรวจสอบ กรุณาตรวจและยืนยันก่อนโอน');
         const metrics = calculateDashboardMetrics(rows, ym);
         const txDate = ym === getBangkokTodayIso().slice(0, 7) ? getBangkokTodayIso() : ym + '-28';
+        if (!FUND_BUCKET_ORDER.includes('emergency_personal')) throw new Error('กระปุกฉุกเฉินถูกลบแล้ว กรุณาโอนด้วยการจดรายการ');
         const inputs = []; let totalCents = 0;
         const amounts = {};
         for (const bucket of ['fixed_expense', 'general_expense']) {
-          const cents = Math.max(0, Math.round(metrics.fundBalances.find(row => row.bucket === bucket).availableBalance * 100));
+          const cents = Math.max(0, Math.round((metrics.fundBalances.find(row => row.bucket === bucket)?.availableBalance || 0) * 100));
           amounts[bucket] = cents / 100;
           if (!cents) continue;
           totalCents += cents;
@@ -2813,6 +3094,13 @@ interface DashboardMetrics {
             const titleEl = document.createElement('div');
             titleEl.className = 'fund-title';
             titleEl.textContent = f.label;
+            card.style.borderColor = bucketRegistry.buckets.find(b => b.bucket_key === f.bucket)?.color || '#6366f1';
+            for (const [label, mode] of [['✏️ แก้ไข', 'edit'], ['🗑️ ลบ', 'delete']]) {
+              const action = document.createElement('button'); action.type = 'button'; action.className = 'btn btn-secondary btn-sm';
+              action.textContent = label; action.setAttribute('aria-label', label + ' ' + f.label);
+              action.disabled = mode === 'delete' && FUND_BUCKET_ORDER.length <= 1;
+              action.onclick = () => openBucketModal(f.bucket, mode); titleWrap.appendChild(action);
+            }
             const modeSub = document.createElement('div');
             modeSub.style.fontSize = '0.73rem';
             modeSub.style.color = 'var(--text-muted)';
@@ -2839,7 +3127,7 @@ interface DashboardMetrics {
             btnWithdraw.style.minHeight = '44px';
             btnWithdraw.style.padding = '0.15rem 0.55rem';
             btnWithdraw.style.fontSize = '0.74rem';
-            btnWithdraw.textContent = 'ถอน/ใช้จากส่วนนี้';
+            btnWithdraw.textContent = '💸 ใช้เงิน';
             btnWithdraw.onclick = () => {
               openVerificationModalForManual('manual', f.bucket);
             };
@@ -3388,7 +3676,7 @@ interface DashboardMetrics {
         const busy = appState.isAnalyzingAi;
         document.getElementById('imagePreviewPanel')?.setAttribute('aria-busy', String(busy));
         const laser = document.getElementById('scanLaserLine'); if (laser) laser.hidden = !busy;
-        for (const id of ['heroCapture', 'btnBottomCenterScan', 'btnAiReceiptCallout', 'btnChooseGallery', 'btnStartScanCamera']) {
+        for (const id of ['btnBottomCenterScan', 'btnChooseGallery', 'btnStartScanCamera']) {
           const button = document.getElementById(id); if (button) button.disabled = busy;
         }
       }
@@ -3442,6 +3730,7 @@ interface DashboardMetrics {
 
       let uiBound = false;
       function bindUiEvents() {
+        bindBucketEvents();
         if (uiBound) return; uiBound = true;
         bindAppNavigation();
         bindAutomationEvents();
@@ -3993,7 +4282,7 @@ interface DashboardMetrics {
         resumeSharedReceipt, releaseSharedReceipt, shareInboxChange, bindAutomationEvents,
         triggerAiAnalysisForCurrentImage, renderDashboardAndHistory, renderLatestTransactions, updateStatusBannersAndPills,
         getState: () => appState,
-        FUND_BUCKET_LABELS,
+        FUND_BUCKET_LABELS, loadFundBuckets, createFundBucket, saveFundBucket, updateFundBucket, deleteFundBucket, syncFundBuckets, openBucketModal, bindBucketEvents,
         FIXED_MONTHLY_PRESETS,
         generateUuid,
         getBangkokTodayIso,

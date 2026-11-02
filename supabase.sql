@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   currency VARCHAR(3) NOT NULL DEFAULT 'THB' CHECK (currency ~ '^[A-Z]{3}$'),
   type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
   category TEXT NOT NULL CHECK (char_length(btrim(category)) >= 1 AND char_length(category) <= 100),
-  fund_bucket TEXT NOT NULL DEFAULT 'general_expense' CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance')),
+  fund_bucket TEXT NOT NULL DEFAULT 'general_expense' CHECK (char_length(fund_bucket) BETWEEN 1 AND 50),
   items_summary TEXT NOT NULL DEFAULT '' CHECK (char_length(items_summary) <= 2000),
   purpose_analysis TEXT NOT NULL DEFAULT '' CHECK (char_length(purpose_analysis) <= 2000),
   source_type TEXT NOT NULL DEFAULT 'manual' CHECK (source_type IN ('receipt', 'transfer_slip', 'manual')),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 -- รองรับการอัปเกรดตารางที่มีอยู่เดิมแบบ Idempotent (เพิ่มคอลัมน์ fund_bucket สำหรับกระปุกเงินเดือน 6 ส่วน)
 ALTER TABLE public.transactions
   ADD COLUMN IF NOT EXISTS fund_bucket TEXT NOT NULL DEFAULT 'general_expense'
-  CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance'));
+  CHECK (char_length(fund_bucket) BETWEEN 1 AND 50);
 
 -- แทนที่ CHECK กระปุกเดิมภายใต้ transaction
 DO $$
@@ -45,13 +45,12 @@ BEGIN
     JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
     WHERE c.conrelid = 'public.transactions'::regclass AND c.contype = 'c' AND a.attname = 'fund_bucket'
       AND c.conkey = ARRAY[a.attnum]::smallint[]
-      AND pg_get_constraintdef(c.oid) LIKE '%investment_stock%'
-      AND pg_get_constraintdef(c.oid) LIKE '%general_expense%'
+      AND (pg_get_constraintdef(c.oid) LIKE '%investment_stock%' OR c.conname = 'transactions_fund_bucket_check')
   LOOP
     EXECUTE format('ALTER TABLE public.transactions DROP CONSTRAINT %I', bucket_constraint.conname);
   END LOOP;
   ALTER TABLE public.transactions ADD CONSTRAINT transactions_fund_bucket_check
-    CHECK (fund_bucket IN ('investment_stock', 'home_building', 'fixed_expense', 'emergency_personal', 'general_expense', 'dan_insurance'));
+    CHECK (char_length(fund_bucket) BETWEEN 1 AND 50);
 END $$;
 
 COMMENT ON TABLE public.transactions IS 'ตารางธุรกรรมรายรับ-รายจ่ายของผู้ใช้แต่ละบัญชีในระบบ SlipSense';
@@ -276,5 +275,93 @@ BEGIN
   END IF;
 END
 $$;
+
+CREATE TABLE IF NOT EXISTS public.fund_buckets (
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ bucket_key TEXT NOT NULL CHECK (char_length(bucket_key) BETWEEN 1 AND 50),
+ name TEXT NOT NULL CHECK (char_length(btrim(name)) BETWEEN 1 AND 50),
+ icon TEXT NOT NULL DEFAULT '🐷',
+ color TEXT NOT NULL DEFAULT '#6366f1' CHECK (color ~ '^#[0-9a-fA-F]{6}$'),
+ is_cumulative BOOLEAN NOT NULL DEFAULT true,
+ sort_order INTEGER NOT NULL DEFAULT 0,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ UNIQUE(user_id, bucket_key)
+);
+CREATE TABLE IF NOT EXISTS public.fund_bucket_deletions (
+ id UUID PRIMARY KEY,
+ user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ source_key TEXT NOT NULL, target_key TEXT NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(user_id, source_key)
+);
+ALTER TABLE public.fund_buckets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fund_buckets FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.fund_bucket_deletions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fund_bucket_deletions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS fund_buckets_select ON public.fund_buckets;
+CREATE POLICY fund_buckets_select ON public.fund_buckets FOR SELECT TO authenticated USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS fund_buckets_insert ON public.fund_buckets;
+CREATE POLICY fund_buckets_insert ON public.fund_buckets FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS fund_buckets_update ON public.fund_buckets;
+CREATE POLICY fund_buckets_update ON public.fund_buckets FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS fund_buckets_delete ON public.fund_buckets;
+CREATE POLICY fund_buckets_delete ON public.fund_buckets FOR DELETE TO authenticated USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS bucket_deletions_select ON public.fund_bucket_deletions;
+CREATE POLICY bucket_deletions_select ON public.fund_bucket_deletions FOR SELECT TO authenticated USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS bucket_deletions_insert ON public.fund_bucket_deletions;
+CREATE POLICY bucket_deletions_insert ON public.fund_bucket_deletions FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+REVOKE ALL ON public.fund_buckets, public.fund_bucket_deletions FROM PUBLIC, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.fund_buckets TO authenticated;
+GRANT SELECT, INSERT ON public.fund_bucket_deletions TO authenticated;
+DROP TRIGGER IF EXISTS fund_buckets_updated_at ON public.fund_buckets;
+CREATE TRIGGER fund_buckets_updated_at BEFORE UPDATE ON public.fund_buckets FOR EACH ROW EXECUTE FUNCTION public.handle_transactions_before_update();
+
+CREATE OR REPLACE FUNCTION public.lock_fund_bucket_owner() RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = public AS $$
+DECLARE owner_id UUID; next_key TEXT; i INTEGER;
+BEGIN
+ IF TG_OP = 'DELETE' THEN owner_id := OLD.user_id; ELSE owner_id := NEW.user_id; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('fund_bucket_' || owner_id::text, 0));
+ IF TG_TABLE_NAME = 'fund_buckets' THEN
+  IF TG_OP = 'UPDATE' AND NEW.bucket_key IS DISTINCT FROM OLD.bucket_key THEN RAISE EXCEPTION 'IMMUTABLE_BUCKET_KEY'; END IF;
+  IF TG_OP <> 'DELETE' AND EXISTS (SELECT 1 FROM public.fund_bucket_deletions WHERE user_id = NEW.user_id AND source_key = NEW.bucket_key) THEN RAISE EXCEPTION 'BUCKET_DELETED'; END IF;
+  IF TG_OP = 'DELETE' AND (SELECT count(*) FROM public.fund_buckets WHERE user_id = OLD.user_id) <= 1 THEN RAISE EXCEPTION 'LAST_BUCKET'; END IF;
+ ELSE
+  FOR i IN 1..100 LOOP
+   SELECT target_key INTO next_key FROM public.fund_bucket_deletions WHERE user_id = NEW.user_id AND source_key = NEW.fund_bucket;
+   IF NOT FOUND THEN EXIT; END IF;
+   NEW.fund_bucket := next_key;
+  END LOOP;
+ END IF;
+ IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+ RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS fund_bucket_owner_lock ON public.fund_buckets;
+CREATE TRIGGER fund_bucket_owner_lock BEFORE INSERT OR UPDATE OR DELETE ON public.fund_buckets FOR EACH ROW EXECUTE FUNCTION public.lock_fund_bucket_owner();
+DROP TRIGGER IF EXISTS transaction_bucket_owner_lock ON public.transactions;
+CREATE TRIGGER transaction_bucket_owner_lock BEFORE INSERT OR UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.lock_fund_bucket_owner();
+
+CREATE OR REPLACE FUNCTION public.delete_fund_bucket(p_operation_id UUID, p_source_key TEXT, p_target_key TEXT)
+RETURNS JSONB LANGUAGE plpgsql SECURITY INVOKER SET search_path = public AS $$
+DECLARE owner_id UUID := auth.uid(); previous public.fund_bucket_deletions%ROWTYPE;
+BEGIN
+ IF owner_id IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('fund_bucket_' || owner_id::text, 0));
+ SELECT * INTO previous FROM public.fund_bucket_deletions WHERE user_id = owner_id AND (id = p_operation_id OR source_key = p_source_key);
+ IF FOUND THEN
+  IF previous.source_key <> p_source_key OR previous.target_key <> p_target_key THEN RAISE EXCEPTION 'OPERATION_CONFLICT'; END IF;
+  RETURN jsonb_build_object('deleted', true, 'replayed', true);
+ END IF;
+ IF p_source_key = p_target_key OR NOT EXISTS (SELECT 1 FROM public.fund_buckets WHERE user_id = owner_id AND bucket_key = p_source_key)
+ OR NOT EXISTS (SELECT 1 FROM public.fund_buckets WHERE user_id = owner_id AND bucket_key = p_target_key) THEN RAISE EXCEPTION 'INVALID_BUCKET'; END IF;
+ IF (SELECT count(*) FROM public.fund_buckets WHERE user_id = owner_id) <= 1 THEN RAISE EXCEPTION 'LAST_BUCKET'; END IF;
+ UPDATE public.transactions SET fund_bucket = p_target_key, updated_at = now() WHERE user_id = owner_id AND fund_bucket = p_source_key;
+ DELETE FROM public.fund_buckets WHERE user_id = owner_id AND bucket_key = p_source_key;
+ INSERT INTO public.fund_bucket_deletions(id, user_id, source_key, target_key) VALUES(p_operation_id, owner_id, p_source_key, p_target_key);
+ RETURN jsonb_build_object('deleted', true, 'replayed', false);
+END $$;
+REVOKE ALL ON FUNCTION public.delete_fund_bucket(UUID, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.delete_fund_bucket(UUID, TEXT, TEXT) TO authenticated;
 
 COMMIT;

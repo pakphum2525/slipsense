@@ -169,3 +169,16 @@ SQL แทนที่ CHECK เดิมแบบ transaction/รันซ้�
    - **ขั้นที่ 3:** วิธีขอ `GEMINI_API_KEY` และสั่งตั้งค่า Secrets + Deploy Edge Function (`analyze-receipt`)
    - **ขั้นที่ 4:** วิธีสร้าง Private GitHub Repository และเปิดใช้งาน GitHub Pages ให้เผยแพร่เฉพาะโฟลเดอร์ `dist/`
    - **ขั้นที่ 5:** วิธีติดตั้งเป็นแอป (Add to Home Screen) บน **iPhone (Safari)** และ **Android Tablet (Chrome)** พร้อมเชื่อมต่อบัญชีซิงก์ข้ามอุปกรณ์
+## TASK-SLIPSENSE-V4-014C — ผลตรวจใน Worktree (2 พฤศจิกายน 2026)
+
+สถานะการพัฒนา: เสร็จแล้ว ส่งต่อ Antigravity ตรวจตามกระบวนการเดิม ยังไม่ merge หรือ release และไม่ได้แก้ไฟล์ควบคุมสถานะของ runner ข้อความสถานะงานเก่าด้านล่างเป็นประวัติ ไม่ใช่ผลยืนยันของงานนี้
+
+- เพิ่ม registry กระปุกกำหนดเอง ชื่อ/ไอคอน/สี/ประเภทสะสมหรือรายเดือน พร้อมเพิ่ม แก้ไข ลบและย้ายรายการหลัง IndexedDB transaction commit รองรับการแยกบัญชี คิว durable และ tombstone
+- เพิ่ม SQL migration, ENABLE/FORCE RLS, สิทธิ์ authenticated และ RPC ย้าย/ลบแบบ atomic พร้อมป้องกันลบใบสุดท้ายและ retry ซ้ำ ซิงก์ registry ก่อนธุรกรรม และตามปลายทางใหม่เมื่ออีกอุปกรณ์ลบกระปุกปลายทางเดิม
+- รวมหน้าแรกเป็น scan hub เดียว ใช้ปุ่ม ถ่ายสลิป/เลือกรูป/จดเอง ปุ่มลัดชื่อสั้น และ modal จัดการกระปุกพร้อม Escape, focus trap และคืน focus
+- สร้าง index.html, sw.js และ dist/** ด้วย `node scripts/build_prod.js` โดย System Node.js v24.16.0: ผ่าน exit code 0; build ตรวจ Security & IP Gate ผ่าน (10 deployable files) อัปเดต SW cache เป็น v4-dynamic-buckets-1 โดยไม่ล้าง IndexedDB
+- `node scripts/run_tests.js`: ผ่าน 41/41 รายการระดับ runner, ล้มเหลว 0, exit code 0 รวม behavioral assertions ทั้ง source และ built สำหรับ CRUD, ประเภทกระปุก, ย้ายยอด/จำนวนคงเดิม, rollback, เปิดใหม่, ไม่ seed คืน, offline retry, แยกบัญชี, schema contract, server-only rows จำลอง และปลายทางที่ถูกลบจากอีกอุปกรณ์
+- UI/mobile: ตรวจโครงสร้าง DOM, accessibility attributes และ CSS แถว 3 ปุ่มด้วยชุดทดสอบแล้ว ยังไม่ได้ตรวจ rendering ที่ความกว้างมือถือจริง เครื่องมือ browser แจ้ง “The browser access host is unavailable” จึงไม่มีผล visual/mobile browser สำหรับงานนี้
+- Offline: ผ่านการทดสอบ IndexedDB และ client จำลอง ไม่ได้ยืนยัน offline browser restart หรือ service worker upgrade จริงบนอุปกรณ์
+- SQL ยังไม่ได้ apply ฐานข้อมูลจริง และไม่ได้รัน RLS integration ด้วยผู้ใช้สองราย/anon หรือ concurrent delete จริง ไม่มีผลทดสอบ PostgreSQL อ้างอิงแทน unit assertions ต้องตรวจในฐานข้อมูลทดสอบก่อนใช้จริง
+- ตรวจขอบเขตด้วย git status รวม untracked และ diff: การแก้ไขอยู่ใน allowlist ของงานเท่านั้น รายงาน DEV_REPORT ส่งเป็น JSON ในผลตอบกลับเพื่อให้ runner รับต่อ โดยไม่สร้างไฟล์นอก allowlist

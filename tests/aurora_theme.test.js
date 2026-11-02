@@ -4,6 +4,23 @@ const assert = require('node:assert/strict');
 const { loadApp } = require('./app_harness');
 module.exports = async function () {
   const html = fs.readFileSync('src/index.template.html', 'utf8');
+  for (const removed of ['heroCapture', 'btnAiReceiptCallout', 'class="hero-action"']) assert(!html.includes(removed));
+  assert.equal((html.match(/id="uploadDropZone"/g) || []).length, 1);
+  assert.equal((html.match(/aria-labelledby="scanSectionTitle"/g) || []).length, 1);
+  for (const [id, label] of [['btnStartScanCamera', '📸 ถ่ายสลิป'], ['btnChooseGallery', '🖼️ เลือกรูป'], ['btnOpenManualEntry', '✏️ จดเอง']]) {
+    assert.equal(html.match(new RegExp('<button[^>]*id="' + id + '"[^>]*>([\\s\\S]*?)</button>'))[1].trim(), label);
+  }
+  assert.match(html, /\.camera-btn-pair \{ display:grid; grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  const shortcuts = html.match(/<div class="app-grid">([\s\S]*?)<\/div>/)[1];
+  for (const label of ['กระปุก', 'กราฟ', 'ประวัติ', 'แบ่งงบ']) assert(shortcuts.includes('</span>' + label));
+  for (const id of ['bucketFormName', 'bucketFormIcon', 'bucketFormColor', 'bucketFormCumulative', 'bucketDeleteTarget', 'bucketDeleteConfirm']) assert(html.includes('for="' + id + '"'));
+  assert.match(html, /id="bucketModal"[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-labelledby="bucketModalTitle"/);
+  assert.match(html, /id="bucketIconPicker"[^>]*role="group"[^>]*aria-label=/);
+  assert.match(html, /id="bucketFormError" role="alert"/);
+  assert(!html.includes('รองรับไฟล์ JPEG, PNG, WebP'));
+  const bucketApp = loadApp(); bucketApp.api.bindBucketEvents();
+  assert.equal(bucketApp.el('bucketIconPicker').children.length, 12);
+  assert.deepEqual(bucketApp.el('bucketIconPicker').children.map(n => n.textContent), ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕']);
   for (const name of ['light', 'dark', 'blue', 'dark-red', 'fintrack']) {
     const block = html.match(new RegExp('\\[data-theme="' + name + '"\\]\\s*\\{([^}]+)'))[1];
     const alpha = Number(block.match(/--glass:rgba\([^,]+,[^,]+,[^,]+,([\d.]+)\)/)[1]);
@@ -66,7 +83,7 @@ module.exports = async function () {
       assert(png.equals(fs.readFileSync(`dist/icons/${name}.png`)), 'deployed wallpaper matches source');
       assert.equal(new URL(`./icons/${name}.png`, 'https://example.com/slipsense/').pathname, `/slipsense/icons/${name}.png`);
     }
-    assert(sw.includes('v4-dark-red-1'));
+    assert(sw.includes('v4-dynamic-buckets-1'));
   }
   const { api, el, context } = loadApp();
   api.bindAutomationEvents();
@@ -126,9 +143,9 @@ module.exports = async function () {
     }
     await el('tab-funds').emit('keydown', { key:'ArrowRight' });
     assert.equal(context.document.activeElement.id, 'tab-analytics', 'arrow skips action FAB');
-    for (const id of ['heroCapture', 'btnBottomCenterScan', 'btnAiReceiptCallout']) el(id).click();
-    assert.equal(captures, 3, 'capture handlers bound once');
-    api.getState().isAnalyzingAi = true; el('btnBottomCenterScan').click(); assert.equal(captures, 3);
+    for (const id of ['btnBottomCenterScan']) el(id).click();
+    assert.equal(captures, 1, 'capture handlers bound once');
+    api.getState().isAnalyzingAi = true; el('btnBottomCenterScan').click(); assert.equal(captures, 1);
     api.getState().isAnalyzingAi = false;
     const tx = (id, type, source_type, date='2026-11-01', user_id=null) => ({ id, type, source_type, transaction_date:date, user_id, amount:100, currency:'THB', merchant:'<long unsafe merchant>', category:type==='income'?'salary_income':'food_drink', fund_bucket:'general_expense', sync_status:'local_only' });
     api.getState().transactions = [tx('a','expense','receipt'), tx('b','income','manual'), tx('c','income','transfer_slip'), tx('d','expense','receipt','2026-10-01'), tx('e','expense','receipt','2026-11-01','another-user')];

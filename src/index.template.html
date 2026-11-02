@@ -975,11 +975,7 @@
     body { padding-bottom:calc(92px + env(safe-area-inset-bottom,0px)); }
     .app-panels { display:block; max-width:900px; margin:auto; padding:12px; }
     .app-panels > section { min-width:0; }
-    .app-panels .card { margin-bottom:16px; min-width:0; }
-    .hero-action { border-radius:24px; padding:24px; margin:0 0 18px; background:linear-gradient(135deg,#244780,#5c318a); color:#fff; }
-    .hero-action h1 { font-size:clamp(1.3rem,5vw,2rem); margin:12px 0; }
-    .hero-action p { color:#fff; margin-bottom:12px; }
-    .app-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+    .app-panels .card { margin-bottom:16px; min-width:0; }    .app-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
     .app-shortcut { min-height:118px; padding:16px 8px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-main); display:flex; align-items:center; flex-direction:column; gap:10px; font:inherit; }
     .shortcut-icon { border-radius:50%; background:#406bd5; color:white; width:48px; height:48px; display:grid; place-items:center; font-size:26px; }
     .app-shortcut:nth-child(2) .shortcut-icon { background:#168065; }
@@ -1033,10 +1029,7 @@
     .balance-hero .kpi-grid .kpi-value { font-size:clamp(1rem,4vw,1.5rem); overflow-wrap:anywhere; }
     .kpi-sub { overflow-wrap:anywhere; }
     .progress-track { height:7px; background:var(--bg-subtle); border-radius:99px; }
-    .progress-fill { background:linear-gradient(90deg,#10b981,#6366f1); border-radius:99px; }
-    .hero-action { background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-color); padding:18px; }
-    .hero-action p { color:var(--text-secondary); }
-    .ai-callout { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:20px 16px; margin-bottom:20px; text-align:left; border:1px solid #6366f1; background:linear-gradient(120deg,#202244,#12141c); color:#f3f5fa; }
+    .progress-fill { background:linear-gradient(90deg,#10b981,#6366f1); border-radius:99px; }    .ai-callout { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:20px 16px; margin-bottom:20px; text-align:left; border:1px solid #6366f1; background:linear-gradient(120deg,#202244,#12141c); color:#f3f5fa; }
     .ai-callout small { display:block; color:#c1c6d5; margin-top:6px; }
     .scan-preview { position:relative; overflow:hidden; border-radius:16px; }
     .scan-preview .preview-img { display:block; margin:auto; }
@@ -1069,7 +1062,16 @@
     @supports not (backdrop-filter:blur(1px)) { [data-theme="fintrack"] .app-header { background:#12141c; } }
     @media (prefers-reduced-motion:reduce) { .laser-line { animation:none !important; top:50%; } .bottom-nav .center-scan-fab { transform:translateX(-50%) !important; } }
 
-  </style>
+  .camera-btn-pair { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.camera-btn-pair .btn { min-width:0; padding:10px 4px; font-size:clamp(.72rem,3vw,.95rem); min-height:48px; }
+#bucketIconPicker { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:8px 0; }
+#bucketIconPicker .btn { font-size:1.5rem; min-height:48px; }
+.bucket-dialog { max-height:90dvh; overflow-y:auto; width:min(92vw,480px); background:var(--bg-surface); padding:20px; border-radius:20px; }
+#bucketModal { position:fixed; inset:0; z-index:1000; background:#0009; display:flex; align-items:center; justify-content:center; }
+#bucketModal[hidden] { display:none; }
+#bucketModal label { display:block; margin-top:12px; }
+#bucketModal :focus-visible { outline:3px solid var(--accent-primary,#6366f1); outline-offset:3px; }
+</style>
 </head>
 <body>
   <div class="mobile-frame-glow">
@@ -1152,14 +1154,11 @@
           </div>
         </div>
       </section>
-      <div class="hero-action"><p>ผู้ช่วยการเงินของคุณ</p><h2>สแกนและตรวจทานก่อนบันทึก</h2><button id="heroCapture" class="btn btn-primary" type="button">ถ่ายภาพ / เลือกสลิป</button></div>
-      <button id="btnAiReceiptCallout" type="button" class="ai-callout"><span aria-hidden="true">✨</span><span>สแกนสลิปหรือใบเสร็จด้วย AI<small>ตรวจทานข้อมูลก่อนยืนยันทุกครั้ง</small></span><span class="ai-badge">Gemini</span></button>
       <section class="card" aria-labelledby="latestTitle"><h2 id="latestTitle" class="card-title">รายการล่าสุด</h2><div class="latest-filters" role="group" aria-label="กรองรายการล่าสุด"><button id="latest-all" type="button" aria-pressed="true">ทั้งหมด</button><button id="latest-expense" type="button" aria-pressed="false">รายจ่าย</button><button id="latest-income" type="button" aria-pressed="false">รายรับ</button></div><div id="latestTransactionList" class="transaction-list"></div></section>
-      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">◉</span>กระปุก 6 ส่วน</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">▥</span>กราฟการเงิน</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">≡</span>ประวัติรายการ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">฿</span>แบ่งเงินเดือน</button></div>
+      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🐷</span>กระปุก</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">📊</span>กราฟ</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🧾</span>ประวัติ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">💰</span>แบ่งงบ</button></div>
       <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
-          <h2 id="scanSectionTitle" class="card-title">สแกนใบเสร็จ / สลิปโอนเงิน</h2>
-          <button type="button" id="btnOpenManualEntry" class="btn btn-primary btn-sm">+ เพิ่มรายการใหม่</button>
+          <h2 id="scanSectionTitle" class="card-title">สแกนด่วน</h2>
         </div>
 
         <div class="upload-zone" id="uploadDropZone">
@@ -1167,7 +1166,7 @@
             ถ่ายภาพใบเสร็จ หรือเลือกรูปสลิปจากอัลบั้ม
           </p>
           <p style="font-size:0.82rem;color:var(--text-muted);">
-            รองรับไฟล์ JPEG, PNG, WebP (ย่อภาพในเครื่องอัตโนมัติที่ ~1,600px ก่อนวิเคราะห์ และไม่บันทึกรูปต้นฉบับขึ้น Cloud)
+            ตรวจทานก่อนบันทึกทุกครั้ง
           </p>
 
           <!-- Input แยกสำหรับถ่ายภาพด้วยกล้องหลัง และเลือกไฟล์จากอัลบั้ม -->
@@ -1176,11 +1175,12 @@
 
           <div class="camera-btn-pair">
             <button type="button" id="btnStartScanCamera" class="btn btn-primary">
-              ถ่ายภาพใบเสร็จ
+              📸 ถ่ายสลิป
             </button>
             <button type="button" id="btnChooseGallery" class="btn btn-secondary">
-              เลือกรูปจากอัลบั้ม
+              🖼️ เลือกรูป
             </button>
+            <button type="button" id="btnOpenManualEntry" class="btn btn-secondary">✏️ จดเอง</button>
           </div>
         </div>
 
@@ -1202,7 +1202,7 @@
         </div>
 
         <div role="status" aria-live="polite" id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
-          กำลังส่งภาพที่ย่อแล้วไปยัง Supabase Edge Function เพื่อวิเคราะห์ด้วย Gemini AI กรุณารอสักครู่...
+          กำลังอ่านสลิป รอสักครู่…
         </div>
         <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
       </section>
@@ -1223,6 +1223,8 @@
           </div>
         </div>
 
+        <button type="button" id="btnOpenBucketModal" class="btn btn-primary">+ เพิ่มกระปุก</button>
+        <p id="bucketSyncStatus" role="status" aria-live="polite"></p>
         <div id="fundBucketsContainer" class="fund-grid">
           <p class="empty-state" style="padding:0.75rem 0;">กำลังคำนวณยอดคงเหลือทั้ง 6 ส่วน...</p>
         </div>
@@ -1321,16 +1323,8 @@
           </div>
 
           <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="filterFundSelect" class="form-label">ส่วนของเงิน (กระปุก 6 ส่วน)</label>
-            <select id="filterFundSelect" class="form-control">
-              <option value="all">ทุกส่วนของเงิน (1–5)</option>
-              <option value="investment_stock">1. เงินลงทุน (หุ้น)</option>
-              <option value="home_building">2. เงินเก็บสร้างบ้าน</option>
-              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่</option>
-              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว)</option>
-              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
-              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
-            </select>
+            <label for="filterFundSelect" class="form-label">กระปุก</label>
+            <select id="filterFundSelect" class="form-control"><option value="">ทุกกระปุก</option></select>
           </div>
 
           <div class="form-group">
@@ -1424,14 +1418,7 @@
             <label for="txFormFundBucket" class="form-label">
               <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
             </label>
-            <select id="txFormFundBucket" class="form-control" required>
-              <option value="general_expense">5. ค่าใช้จ่ายทั่วไป</option>
-              <option value="dan_insurance">6. เงินเก็บประกันแดน (สะสมรายปี)</option>
-              <option value="fixed_expense">3. ค่าใช้จ่ายคงที่ (ประกันพ่อ/ให้น้องมายด์/น้ำ-ไฟ-โทร-เรียนลูก)</option>
-              <option value="emergency_personal">4. ค่าใช้จ่ายฉุกเฉิน (ส่วนตัว — เก็บสะสมเงินเหลือใช้)</option>
-              <option value="home_building">2. เงินเก็บสร้างบ้าน (Fix 13,000/เดือน)</option>
-              <option value="investment_stock">1. เงินลงทุน (หุ้น — Fix 6,500/เดือน)</option>
-            </select>
+            <select id="txFormFundBucket" class="form-control" required></select>
           </div>
 
           <div class="form-group" id="groupTxDate">
@@ -1732,8 +1719,24 @@
   <!-- ======================================================================= -->
   <!-- APPLICATION JAVASCRIPT (ES6+ Vanilla JS) -->
   <!-- ======================================================================= -->
-  <script>
+  <div id="bucketModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bucketModalTitle" hidden>
+ <div class="modal-content bucket-dialog"><h2 id="bucketModalTitle">เพิ่มกระปุก</h2>
+ <form id="bucketForm">
+ <label for="bucketFormName">ชื่อสั้น</label><input id="bucketFormName" class="form-control" maxlength="50" required>
+ <label for="bucketFormIcon">ไอคอน</label><input id="bucketFormIcon" class="form-control" value="🐷" readonly>
+ <div id="bucketIconPicker" role="group" aria-label="เลือกไอคอนกระปุก"></div>
+ <label for="bucketFormColor">สี</label><input id="bucketFormColor" type="color" value="#6366f1">
+ <label for="bucketFormCumulative"><input id="bucketFormCumulative" type="checkbox" checked>สะสมข้ามเดือน</label>
+ <p>เปิด: เก็บยอดต่อเดือนถัดไป · ปิด: แสดงงบเฉพาะเดือนที่เลือก</p>
+ <div id="bucketDeleteFields" hidden><label for="bucketDeleteTarget">ย้ายรายการไป</label><select id="bucketDeleteTarget" class="form-control"></select>
+ <label for="bucketDeleteConfirm">พิมพ์ชื่อกระปุกเพื่อยืนยันลบ</label><input id="bucketDeleteConfirm" class="form-control"><p>ย้ายทุกรายการแล้วลบกระปุก ยอดรวมเท่าเดิม</p></div>
+ <p id="bucketFormError" role="alert"></p>
+ <button id="btnSaveBucket" type="submit" class="btn btn-primary">ยืนยัน</button>
+ <button id="btnCloseBucketModal" type="button" class="btn btn-secondary">ยกเลิก</button>
+ </form></div></div>
+<script>
     /* __SLIPSENSE_APP_BUNDLE_PLACEHOLDER__ */
   </script>
+
 </body>
 </html>
