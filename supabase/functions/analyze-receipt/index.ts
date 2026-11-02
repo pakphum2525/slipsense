@@ -15,6 +15,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 const MAX_BODY_CHARS = 5_500_000; // ~4 MB Base64 payload
 const MAX_IMAGE_BYTES = 3_800_000; // ~3.8 MB binary image size
 const GEMINI_TIMEOUT_MS = 25_000;
+const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const ALLOWED_TYPES = new Set(['expense', 'income', 'unknown']);
@@ -346,7 +347,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const geminiApiKey = (Deno.env.get('GEMINI_API_KEY') || '').trim();
-  const geminiModel = (Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash').trim();
+  const geminiModel = (Deno.env.get('GEMINI_MODEL') || '').trim() || DEFAULT_GEMINI_MODEL;
   const rateLimitPerHour = Math.max(
     1,
     Number.parseInt(Deno.env.get('AI_RATE_LIMIT_PER_HOUR') || '20', 10) || 20
@@ -579,9 +580,12 @@ Deno.serve(async (req: Request) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
+  const candidates = [...new Set([geminiModel, DEFAULT_GEMINI_MODEL, 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'])];
   try {
+    for (const model of candidates) {
+    controller.signal.throwIfAborted();
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      geminiModel
+      model
     )}:generateContent`;
 
     const geminiRes = await fetch(geminiEndpoint, {
@@ -619,7 +623,10 @@ Deno.serve(async (req: Request) => {
       })
     });
 
-    clearTimeout(timeoutId);
+    if (geminiRes.status === 404 && model !== candidates[candidates.length - 1]) {
+      await geminiRes.body?.cancel();
+      continue;
+    }
 
     if (!geminiRes.ok) {
       if (geminiRes.status === 429) {
@@ -681,20 +688,23 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    if (!parsedResult || typeof parsedResult !== 'object' || Array.isArray(parsedResult)) {
+      return jsonResponse({ error: 'ผลลัพธ์ AI ไม่ตรงรูปแบบข้อมูล', code: 'INVALID_AI_SCHEMA' }, 422, corsHeaders);
+    }
     const validatedData = normalizeAndValidateAiResult(parsedResult);
 
     return jsonResponse(
       {
         ok: true,
-        model: geminiModel,
+        model,
         data: validatedData
       },
       200,
       corsHeaders
     );
+    }
   } catch (err: unknown) {
-    clearTimeout(timeoutId);
-    const isAbort = err instanceof Error && err.name === 'AbortError';
+    const isAbort = controller.signal.aborted || (err instanceof Error && err.name === 'AbortError');
     if (isAbort) {
       return jsonResponse(
         {
@@ -713,5 +723,7 @@ Deno.serve(async (req: Request) => {
       500,
       corsHeaders
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 });

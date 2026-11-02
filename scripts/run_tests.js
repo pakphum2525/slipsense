@@ -779,6 +779,55 @@ async function main() {
   });
 
   // =========================================================================
+
+  await runTest('Suite 4', '4.4 handler จริง: ลำดับโมเดล, 404 เท่านั้น, quota ครั้งเดียว และ timeout เดียว', async () => {
+    const { stripTypeScriptTypes } = require('node:module');
+    const code = stripTypeScriptTypes(edgeContent.replace(/^import .*createClient.*;\r?\n/m, ''));
+    async function execute(statuses, options={}) {
+      let handler, rpc=0, cleared=0, scheduled=0, timerCallback, cancelled=0;
+      const calls=[], timers=new Map();
+      const env={ SUPABASE_URL:'https://example.invalid', SUPABASE_ANON_KEY:'public', GEMINI_API_KEY:'test-server-key', GEMINI_MODEL:options.model ?? '' };
+      const context = vm.createContext({ Request, Response, Headers, AbortController, Error, Date, Set, Map, Number, JSON,
+        Deno:{ env:{get:key=>env[key]}, serve:fn=>handler=fn },
+        createClient:()=>({auth:{getUser:async()=>options.invalidJwt ? {error:true} : {data:{user:{id:'test-user'}}}}, rpc:async()=>{rpc++;return options.quotaError?{error:true}:{data:{allowed:!options.denied}};}}),
+        setTimeout:fn=>{scheduled++;timerCallback=fn; timers.set(1,fn);return 1;}, clearTimeout:id=>{cleared++;timers.delete(id);},
+        fetch:async(url, init)=>{
+          calls.push({url,init});
+          const index=calls.length-1, status=statuses[index];
+          if (options.network) throw new Error('network');
+          if (options.timeoutAt===index) { timerCallback(); init.signal.throwIfAborted(); }
+          if (status===404) return {status,ok:false,body:{cancel:async()=>{cancelled++; if(options.abortAfter404)timerCallback();}}};
+          return { status, ok:status===200, json:async()=>{
+            if(options.bodyTimeout){timerCallback();init.signal.throwIfAborted();}
+            return {candidates:[{content:{parts:[{text:options.invalidSchema?'null':JSON.stringify({date:null,amount:null,type:'unknown',currency:'THB',category:'unknown',source_type:'receipt',warnings:[],uncertain_fields:[]})}]}}]};
+          }};
+        }
+      });
+      vm.runInContext(code,context);
+      const request = new Request('https://edge.invalid',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer jwt'},body:JSON.stringify(options.payload || {mimeType:'image/jpeg',imageBase64:'A'.repeat(64)})});
+      const response=await handler(request), body=await response.json();
+      assertEqual(timers.size,0,'timer cleared');
+      assertEqual(cleared,scheduled,'one clear for every timer');
+      if(calls.length) {
+        assertEqual(rpc,1,'atomic reservation exactly once'); assertEqual(scheduled,1,'single deadline');
+        for(const call of calls) {assertEqual(call.init.signal,calls[0].init.signal,'shared signal');assertEqual(call.init.body,calls[0].init.body,'same payload');assertEqual(call.init.headers['x-goog-api-key'],'test-server-key','key only in header');assert(!call.url.includes('test-server-key'),'no URL key');}
+      }
+      return {response,body,calls,rpc,cancelled};
+    }
+    const models=r=>r.calls.map(c=>decodeURIComponent(c.url.split('/models/')[1].split(':')[0]));
+    let r=await execute([200]);assertEqual(r.body.model,'gemini-3.8-flash','default');assertEqual(r.calls.length,1);
+    r=await execute([404,200],{model:' custom-model '});assertEqual(models(r).join(','),'custom-model,gemini-3.8-flash');assertEqual(r.body.model,'gemini-3.8-flash');assertEqual(r.cancelled,1);
+    r=await execute([404,404,404,200]);assertEqual(models(r).join(','),'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-2.5-flash');assertEqual(r.body.model,'gemini-2.5-flash');assert(r.body.data.uncertain_fields.includes('date')&&r.body.data.uncertain_fields.includes('amount'),'no guessing');
+    r=await execute([404,404,404,404,404],{model:'custom'});assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,5);
+    r=await execute([404,404,404,404],{model:'gemini-3.6-flash'});assertEqual(new Set(models(r)).size,4,'deduplicated');
+    for(const status of [400,401,403,429,500,503]){r=await execute([status,200]);assertEqual(r.calls.length,1,'no retry for '+status);assertEqual(r.response.status,status===429?429:502);}
+    for(const options of [{network:true},{timeoutAt:0},{bodyTimeout:true},{invalidSchema:true}]){r=await execute([200,200],options);assertEqual(r.calls.length,1);assertEqual(r.response.status,options.network?500:options.invalidSchema?422:504);}
+    r=await execute([404,200],{abortAfter404:true});assertEqual(r.response.status,504);assertEqual(r.calls.length,1,'no candidate after deadline');
+    for(const options of [{quotaError:true},{denied:true},{invalidJwt:true},{payload:{mimeType:'bad'}}]){r=await execute([],options);assertEqual(r.calls.length,0,'fail closed before Gemini');}
+    r=await execute([],{model:' configured ',payload:{action:'health'}});assertEqual(r.body.model,'configured');assertEqual(r.rpc,0);assertEqual(r.calls.length,0);
+    r=await execute([200],{model:'   '});assertEqual(r.body.model,'gemini-3.8-flash');
+  });
+
   // SUITE 5: Frontend Logic, DOM, Financial Calculation, Offline Sync & Backup Tests
   // =========================================================================
   console.log('\n[Suite 5] Frontend Logic, DOM, Financial Calculation, Offline Sync & Backup Tests');

@@ -4,6 +4,14 @@
 
 ---
 
+## ธีม FinTrack และการสแกนด้วย AI (TASK-SLIPSENSE-V4-012)
+
+ผู้ใช้ใหม่เริ่มด้วยธีม **FinTrack** พื้นเข้ม `#090a0f` การ์ด `#12141c` ขอบ `#1e2230` สี Emerald `#10b981` สำหรับรายรับ/การทำงานหลัก สี Indigo `#6366f1` สำหรับ AI และสี Rose `#f43f5e` สำหรับรายจ่าย หน้าแรกแสดงยอดคงเหลือ รายรับ/รายจ่าย หมวดรายจ่าย และรายการล่าสุดพร้อมตัวกรองทั้งหมด/รายจ่าย/รายรับที่แยกจากตัวกรองประวัติ
+
+เลือกธีมผ่านตัวเลือกธีมในแผงตั้งค่าอัตโนมัติ (`themeSelect`) ได้ทั้ง FinTrack, light, dark, blue และ dark-red แอปเคารพค่าที่เคยเลือกไว้ ไม่บันทึก preference อัตโนมัติเมื่อเริ่มแอป และใช้ light หากพบค่าที่ไม่รู้จัก หน้าจอใหญ่มีกรอบเรืองแสงกับ Dynamic Island; CSS รองรับ safe-area, backdrop-filter fallback และ prefers-reduced-motion
+
+กดปุ่มกล้องกลางแถบล่างหรือ **“สแกนสลิปหรือใบเสร็จด้วย AI”** เพื่อเข้าสู่ขั้นตอนเลือกรูป/ถ่ายภาพเดิม แถบล่างมีหน้าหลัก กระปุกเงิน วิเคราะห์ และประวัติ โดยปุ่มสแกนเป็น action แยกจากแท็บ ระหว่างวิเคราะห์จะแสดงสถานะและเส้นสแกนเฉพาะพื้นที่ภาพ เมื่อเสร็จให้ตรวจร้านค้า ประเภท หมวดหมู่ กระปุก วันที่ และยอดเงินใน **Verification Form** แล้วแก้ไขก่อนยืนยันบันทึกทุกครั้ง ห้ามเดาวันที่หรือยอดเงินที่อ่านไม่ชัด ป้าย ✨ AI แสดงสำหรับรายการจากใบเสร็จหรือสลิปโอนเงินเท่านั้น
+
 ## สารบัญ (20 หัวข้อหลักตามมาตรฐาน Production)
 
 1. [ภาพรวม Architecture](#1-ภาพรวม-architecture)
@@ -200,10 +208,10 @@ ORDER BY tablename, policyname;
 
 ## 8. การตั้งค่า Model ID (`GEMINI_MODEL`)
 
-SlipSense แยกชื่อโมเดล AI ออกจากโค้ดผ่านตัวแปรแวดล้อม `GEMINI_MODEL` โดยมีค่าเริ่มต้นคือ `gemini-2.5-flash` ซึ่งเป็นโมเดลที่รวดเร็ว แม่นยำต่อการอ่านภาษาไทย และรองรับ Structured Output (`responseSchema`):
+SlipSense อ่านตัวแปรแวดล้อม `GEMINI_MODEL` ฝั่ง Edge Function โดยตัดช่องว่างหัวท้าย หากไม่ตั้งค่าหรือเป็นค่าว่าง จะใช้ `gemini-3.8-flash` เป็นค่าเริ่มต้นในโค้ด:
 
 ```powershell
-npx supabase secrets set GEMINI_MODEL="gemini-2.5-flash"
+npx supabase secrets set GEMINI_MODEL="gemini-3.8-flash"
 ```
 
 สามารถตรวจสอบรายการ Secrets ที่ตั้งไว้แล้ว (โดยไม่แสดงค่าจริง) ได้ด้วยคำสั่ง:
@@ -211,6 +219,14 @@ npx supabase secrets set GEMINI_MODEL="gemini-2.5-flash"
 ```powershell
 npx supabase secrets list
 ```
+
+การวิเคราะห์จะลองตามลำดับ `GEMINI_MODEL` ที่ตั้งไว้ → `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-2.5-flash` โดยตัดชื่อซ้ำและเรียกทีละโมเดล เปลี่ยนไปโมเดลถัดไปเฉพาะเมื่อได้รับ HTTP **404** และยังมีตัวเลือกเหลือเท่านั้น หากทุกโมเดลตอบ 404 จะคืน HTTP **502** ตามรูปแบบข้อผิดพลาดเดิม
+
+HTTP 400/401/403/429/5xx, network error, timeout และผล 200 ที่ไม่ผ่าน schema จะยุติคำขอทันที ไม่มี fallback กรอบเวลา 25 วินาทีครอบทั้งชุดรวมการอ่าน response ตรวจ JWT และข้อมูลนำเข้าก่อนจองโควตาผ่าน `consume_ai_rate_limit` เพียงครั้งเดียวต่อคำขอที่ผ่าน validation หากจองไม่สำเร็จจะไม่เรียก Gemini
+
+Health check แสดง **configured model** (ค่าที่ตั้งไว้หรือค่าเริ่มต้น) ส่วน response วิเคราะห์สำเร็จแสดง **model ที่ใช้จริง** ซึ่งอาจเป็นตัวสำรอง การตั้งค่า `GEMINI_MODEL`, `GEMINI_API_KEY` และ key สิทธิ์สูงต้องอยู่ฝั่ง Edge Function เท่านั้น ห้ามเก็บ Gemini API Key หรือ `service_role` ใน frontend, localStorage หรือ IndexedDB; frontend ใช้เฉพาะ Supabase URL กับ publishable/anon key ตามหัวข้อ 10
+
+ชุดทดสอบใช้ mock ตรวจพฤติกรรมของ handler จริง ไม่ได้เรียก Gemini และ **ไม่ยืนยันว่าชื่อโมเดลเหล่านี้มีอยู่จริงหรือบัญชีมีสิทธิ์ใช้** ต้องตรวจการใช้งานจริงกับบริการภายหลัง
 
 ---
 
@@ -393,7 +409,7 @@ SlipSense ออกแบบด้วย Relative Paths (`./manifest.json`, `./s
    ```powershell
    npx supabase functions deploy analyze-receipt
    ```
-3. ทดสอบสแกนใบเสร็จในแอป หน้า Verification Form จะแสดงผลลัพธ์จากโมเดลใหม่พร้อมบันทึกรหัสโมเดลลงในตาราง `public.ai_usage_logs` โดยอัตโนมัติ
+3. ทดสอบสแกนใบเสร็จในแอป ตรวจ `model` ใน response วิเคราะห์เพื่อทราบโมเดลที่ตอบสำเร็จจริง และตรวจทานข้อมูลใน Verification Form ก่อนบันทึก Health check แสดงเพียง configured model; ค่าโมเดลที่จองโควตาใน `public.ai_usage_logs` ไม่ใช่หลักฐานว่า fallback ตัวใดตอบสำเร็จ ดูเงื่อนไข fallback เฉพาะ 404 ในหัวข้อ 8
 
 ---
 

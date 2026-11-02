@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { loadApp } = require('./app_harness');
 module.exports = async function () {
   const html = fs.readFileSync('src/index.template.html', 'utf8');
-  for (const name of ['light', 'dark', 'blue', 'dark-red']) {
+  for (const name of ['light', 'dark', 'blue', 'dark-red', 'fintrack']) {
     const block = html.match(new RegExp('\\[data-theme="' + name + '"\\]\\s*\\{([^}]+)'))[1];
     const alpha = Number(block.match(/--glass:rgba\([^,]+,[^,]+,[^,]+,([\d.]+)\)/)[1]);
     assert(alpha >= .05 && alpha <= .10);
@@ -70,10 +70,10 @@ module.exports = async function () {
   }
   const { api, el, context } = loadApp();
   api.bindAutomationEvents();
-  assert.equal(el('themeSelect').value, 'dark-red', 'new users default to dark red');
-  assert.equal(context.document.documentElement.getAttribute('data-theme'), 'dark-red');
+  assert.equal(el('themeSelect').value, 'fintrack', 'new users default to FinTrack');
+  assert.equal(context.document.documentElement.getAttribute('data-theme'), 'fintrack');
   assert.equal(context.localStorage.getItem('slipsense_theme'), null, 'initialization does not persist a preference');
-  for (const theme of ['light', 'dark', 'blue', 'dark-red']) {
+  for (const theme of ['light', 'dark', 'blue', 'dark-red', 'fintrack']) {
     const saved = loadApp(); saved.context.localStorage.setItem('slipsense_theme', theme);
     saved.api.bindAutomationEvents(); assert.equal(saved.el('themeSelect').value, theme);
     assert.equal(saved.context.document.documentElement.getAttribute('data-theme'), theme);
@@ -88,27 +88,72 @@ module.exports = async function () {
     assert.equal(reloaded.context.document.documentElement.getAttribute('data-theme'), theme);
   }
   const blocked = loadApp(); blocked.context.localStorage.getItem = () => { throw new Error('storage unavailable'); };
-  blocked.api.bindAutomationEvents(); assert.equal(blocked.el('themeSelect').value, 'dark-red');
+  blocked.api.bindAutomationEvents(); assert.equal(blocked.el('themeSelect').value, 'fintrack');
   blocked.context.localStorage.setItem = () => { throw new Error('storage unavailable'); };
   blocked.el('themeSelect').value = 'blue';
   blocked.el('themeSelect').dispatchEvent({ type: 'change', target: blocked.el('themeSelect') });
   assert.equal(blocked.context.document.documentElement.getAttribute('data-theme'), 'blue');
   const early = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   const vm = require('node:vm');
-  for (const stored of [null, 'light', 'dark', 'blue', 'dark-red', 'invalid']) {
+  for (const stored of [null, 'light', 'dark', 'blue', 'dark-red', 'fintrack', 'invalid']) {
     let actual;
     vm.runInNewContext(early, { localStorage: { getItem: () => stored }, document: { documentElement: { setAttribute: (_, value) => { actual = value; } } } });
-    const expected = stored === 'invalid' ? 'light' : stored ?? 'dark-red';
+    const expected = stored === 'invalid' ? 'light' : stored ?? 'fintrack';
     assert.equal(actual, expected, 'theme applied before first paint');
     const app = loadApp();
     if (stored !== null) app.context.localStorage.setItem('slipsense_theme', stored);
     app.api.bindAutomationEvents();
     assert.equal(app.el('themeSelect').value, expected);
   }
-  assert.match(html, /<html[^>]*data-theme="dark-red"/);
+  assert.match(html, /<html[^>]*data-theme="fintrack"/);
   vm.runInNewContext(early, { localStorage: { getItem: () => { throw new Error('blocked'); } } });
   context.localStorage.setItem('slipsense_theme', 'blue'); api.bindAutomationEvents();
   assert.equal(el('themeSelect').value, 'blue');
   for (const id of ['batchPayDate', 'fatherAnchor', 'fatherInterval', 'themeSelect']) assert(html.includes(`for="${id}"`));
   for (const id of ['captureStatus', 'voiceStatus', 'batchPayStatus', 'fatherCycleStatus']) assert.match(html, new RegExp(`id="${id}"[^>]+aria-live="polite"`));
+  for (const color of ['#090a0f', '#12141c', '#1e2230', '#10b981', '#6366f1', '#f43f5e']) assert(html.includes(color));
+  for (const token of ['mobile-frame-glow', 'dynamic-island', '@keyframes scanLaser', '.laser-line', 'repeat(5,minmax(0,1fr))', 'min-width:1024px']) assert(html.includes(token));
+  assert(!/overflow-x:\s*hidden/.test(html), 'no page-wide overflow suppression');
+  for (const variant of ['source', 'built']) {
+    const app = loadApp(undefined, variant), { api, el, context } = app;
+    let captures = 0; el('btnChooseGallery').click = () => captures++;
+    api.bindAppNavigation(); api.bindAppNavigation();
+    for (const name of ['home', 'funds', 'analytics', 'history']) {
+      el('tab-' + name).click();
+      assert.equal(el('tab-' + name).getAttribute('aria-selected'), 'true');
+      assert.equal(el('tab-' + name).tabIndex, 0);
+      assert.equal(el('panel-' + name).hidden, false);
+    }
+    await el('tab-funds').emit('keydown', { key:'ArrowRight' });
+    assert.equal(context.document.activeElement.id, 'tab-analytics', 'arrow skips action FAB');
+    for (const id of ['heroCapture', 'btnBottomCenterScan', 'btnAiReceiptCallout']) el(id).click();
+    assert.equal(captures, 3, 'capture handlers bound once');
+    api.getState().isAnalyzingAi = true; el('btnBottomCenterScan').click(); assert.equal(captures, 3);
+    api.getState().isAnalyzingAi = false;
+    const tx = (id, type, source_type, date='2026-11-01', user_id=null) => ({ id, type, source_type, transaction_date:date, user_id, amount:100, currency:'THB', merchant:'<long unsafe merchant>', category:type==='income'?'salary_income':'food_drink', fund_bucket:'general_expense', sync_status:'local_only' });
+    api.getState().transactions = [tx('a','expense','receipt'), tx('b','income','manual'), tx('c','income','transfer_slip'), tx('d','expense','receipt','2026-10-01'), tx('e','expense','receipt','2026-11-01','another-user')];
+    el('dashboardMonthPicker').value = '2026-11';
+    const list = el('latestTransactionList');
+    // DOM mock innerHTML is a plain property; emulate its child clearing for repeated renders.
+    Object.defineProperty(list, 'innerHTML', { set() { this.children.length=0; }, get() { return ''; } });
+    const allNodes = node => [node, ...(node.children || []).flatMap(allNodes)];
+    api.renderLatestTransactions(); assert.equal(list.children.length, 3);
+    const nodes = allNodes(list);
+    assert.equal(nodes.filter(n=>n.className==='ai-badge').length, 2);
+    assert(nodes.some(n=>n.className==='tx-merchant' && n.textContent==='<long unsafe merchant>'));
+    assert(nodes.some(n=>n.className==='tx-amount income' && n.textContent.startsWith('+฿')));
+    assert(nodes.some(n=>n.className==='tx-amount expense' && n.textContent.startsWith('-฿')));
+    el('filterTypeSelect').value='income'; el('latest-expense').click();
+    assert.equal(list.children.length, 1); assert.equal(el('filterTypeSelect').value,'income');
+    el('latest-income').click(); assert.equal(list.children.length, 2);
+    api.getState().transactions=[]; api.renderLatestTransactions(); assert.equal(list.children[0].className,'empty-state');
+    api.getState().currentCompressedImage={mimeType:'image/jpeg',base64:'AAAA'};
+    // An unconfigured client rejects through the actual analysis catch/finally path.
+    const pending = api.triggerAiAnalysisForCurrentImage();
+    assert.equal(el('imagePreviewPanel').getAttribute('aria-busy'),'true');
+    assert.equal(el('scanLaserLine').hidden,false); assert.equal(el('btnBottomCenterScan').disabled,true);
+    await pending;
+    assert.equal(api.getState().isAnalyzingAi,false); assert.equal(el('scanLaserLine').hidden,true);
+    assert.equal(el('imagePreviewPanel').getAttribute('aria-busy'),'false'); assert.equal(el('btnBottomCenterScan').disabled,false);
+  }
 };

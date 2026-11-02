@@ -1,8 +1,30 @@
 # รายงานสถานะโปรเจกต์ (STATUS.md) — SlipSense (`slipsense-expense-tracker`)
 
-**วันที่อัปเดตล่าสุด:** 1 พฤศจิกายน 2026
+**วันที่อัปเดตล่าสุด:** 2 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-009 ผ่านการทดสอบ (36/36 รายการ), Antigravity QA Review (Gate 12), ได้รับอนุมัติ Release (Gate 16), รวมโค้ดเข้า main และพุชขึ้น GitHub Pages เรียบร้อยแล้ว
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-012 งาน Developer เสร็จใน isolated worktree; self-test ผ่าน 37/37 (exit code 0) รอ Independent QA และการตรวจ Antigravity ที่ Gate 12 ตาม Runner ยังไม่ใช่การอนุมัติ release ของงานนี้
+
+## ผลงาน TASK-SLIPSENSE-V4-012
+
+ธีมเริ่มต้น FinTrack ใช้พื้นเข้ม Emerald/Indigo/Rose พร้อมยอดคงเหลือเด่น รายรับ/รายจ่ายมีเครื่องหมาย รายการล่าสุดและตัวกรองแยกจากประวัติ ป้าย AI ตามแหล่งรายการ สถานะซิงก์จริง ปุ่มสแกนกลางและ AI callout ใช้ capture flow เดิม คงธีม light/dark/blue/dark-red และ preference เดิม รวมถึง Verification Form ให้ตรวจทานก่อนบันทึก
+
+Edge Function ใช้ค่าเริ่มต้น `gemini-3.8-flash` และลำดับสำรองที่ตัดชื่อซ้ำ เปลี่ยนโมเดลเฉพาะ HTTP 404 ใช้ timeout เดียวทั้งชุด ตรวจ JWT/input และจอง atomic rate-limit ครั้งเดียวก่อนเรียกโมเดล คง schema และการไม่เดาวันที่/ยอดเงิน Health check แสดง configured model ส่วน response วิเคราะห์แสดงโมเดลที่สำเร็จจริง
+
+### หลักฐานและข้อจำกัดการตรวจ
+
+- ตรวจ repository root และ branch จริง: `C:/Users/SlipSense/.agent_loop/worktrees/TASK-SLIPSENSE-V4-012`, `agent-task/TASK-SLIPSENSE-V4-012` ใช้ System Node.js `v24.16.0` และ Git จาก runtime ตาม AGENTS.md
+- รับช่วง source และ build artifacts ที่พัฒนาและ build แล้ว 10 ไฟล์ตามคำสั่ง รอบดำเนินการต่อนี้แก้เฉพาะ `README.md` และ `STATUS.md` ไม่รัน production builder เขียนทับ artifacts ใหม่
+- รัน `node scripts/run_tests.js`: ผ่าน **37/37**, ล้มเหลว **0**, exit code **0** รวมการ build/ตรวจ source และ built ในหน่วยความจำ, production security gate, Edge handler ใน VM พร้อม mock RPC/fetch/timers และ behavioral UI tests
+- ตรวจธีม/first paint/preference, IDs, CSS responsive/reduced motion, navigation/FAB, analysis lifecycle, signed amounts, AI badges, latest filtering และการ bind ผ่าน Node.js ตามชุดทดสอบ ตรวจ build manifest hashes และ output ผ่าน production build tests
+- Step 17 ใช้ CSS rules และ Node.js tests แทนเบราว์เซอร์ตามข้อกำหนด Headless Sandbox **ไม่ได้เปิดเบราว์เซอร์หรือใช้ Computer Use** จึงยังไม่ยืนยันภาพจริง/overflow ที่ 320, 375, 390, 768px และจอใหญ่ รวมถึง native controls, modal และอุปกรณ์จริง
+- ไม่เรียก Supabase/Gemini จริง ผล mock ไม่ยืนยันการมีอยู่จริงของชื่อโมเดล สิทธิ์บัญชี หรือคุณภาพ OCR; ไม่สามารถยืนยัน baseline ก่อน build ของรอบก่อนจากการรับช่วงเพียงอย่างเดียว
+- ขอบเขต diff รวม 12 ไฟล์: `supabase/functions/analyze-receipt/index.ts`, `src/index.template.html`, `src/app.ts`, `index.html`, `sw.js`, `dist/index.html`, `dist/sw.js`, `dist/BUILD_MANIFEST.json`, `scripts/run_tests.js`, `tests/aurora_theme.test.js`, `README.md`, `STATUS.md` เอกสารบันทึก UTF-8 without BOM
+
+### ส่งต่อ Runner และ Gate 12
+
+ให้ Independent QARunner ตรวจ diff และผลทดสอบจริง หากไม่ผ่านให้ Runner จัดการซ่อมเฉพาะ worktree ไม่เกิน 3 รอบ การสร้าง `QA_REVIEW_REQUEST.json` และตั้ง `QA_RUNNING` / `active_agent: Antigravity` เป็นหน้าที่ Runner เมื่อสอดคล้องกับ policy ข้อความนี้เป็นสถานะส่งต่อ ไม่ได้อ้างว่าแก้ workflow state แล้ว ผู้พัฒนาไม่แก้ protected workflow files ไม่สร้าง `RELEASE_MANIFEST.json` และไม่ merge เข้า main รอ Antigravity ตรวจทั้งแผนและ QA ที่ Gate 12
+
+---
 
 ## ผลงาน TASK-SLIPSENSE-V4-009
 

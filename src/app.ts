@@ -1943,7 +1943,20 @@ interface DashboardMetrics {
           });
           document.getElementById('shortcut-' + name)?.addEventListener('click', () => selectAppPanel(name));
         });
-        document.getElementById('heroCapture')?.addEventListener('click', () => document.getElementById('btnChooseGallery')?.click());
+        const openReceiptCapture = () => {
+          if (appState.isAnalyzingAi || activeShare) return;
+          selectAppPanel('home', false);
+          document.getElementById('btnChooseGallery')?.click();
+        };
+        for (const id of ['heroCapture', 'btnBottomCenterScan', 'btnAiReceiptCallout']) {
+          document.getElementById(id)?.addEventListener('click', openReceiptCapture);
+        }
+        for (const type of ['all', 'expense', 'income']) {
+          document.getElementById('latest-' + type)?.addEventListener('click', () => {
+            latestTypeFilter = type;
+            renderLatestTransactions();
+          });
+        }
         document.getElementById('shortcut-salary')?.addEventListener('click', () => document.getElementById('btnOpenSalarySplitModal')?.click());
         document.getElementById('btnReviewLegacyInsurance')?.addEventListener('click', async () => {
           const month = document.getElementById('dashboardMonthPicker').value || getBangkokTodayIso().slice(0, 7);
@@ -2354,8 +2367,8 @@ interface DashboardMetrics {
       function bindAutomationEvents() {
         const on = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         const safe = (fn) => async () => { try { await fn(); } catch (err) { showToast(err.message || 'ดำเนินการไม่สำเร็จ', 'error'); } };
-        let theme = 'dark-red'; try { theme = localStorage.getItem('slipsense_theme') ?? 'dark-red'; } catch (_) {}
-        if (!['light', 'dark', 'blue', 'dark-red'].includes(theme)) theme = 'light';
+        let theme = 'fintrack'; try { theme = localStorage.getItem('slipsense_theme') ?? 'fintrack'; } catch (_) {}
+        if (!['light', 'dark', 'blue', 'dark-red', 'fintrack'].includes(theme)) theme = 'light';
         document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeSelect').value = theme;
         if (automationBound) return; automationBound = true;
         on('themeSelect', 'change', event => { document.documentElement.setAttribute('data-theme', event.target.value); try { localStorage.setItem('slipsense_theme', event.target.value); } catch (_) {} });
@@ -2666,6 +2679,11 @@ interface DashboardMetrics {
           btnMigrate.hidden = true;
         }
 
+        const syncText = document.getElementById('syncIndicatorText');
+        const syncDot = document.getElementById('syncIndicatorDot');
+        const cloud = appState.supabaseConnected && appState.currentUser;
+        if (syncText) syncText.textContent = !navigator.onLine ? 'ออฟไลน์' : !cloud ? 'บันทึกในเครื่อง' : unsyncedCount ? 'รอซิงก์ ' + unsyncedCount + ' รายการ' : 'ซิงก์แล้ว';
+        if (syncDot) syncDot.className = 'status-dot ' + (navigator.onLine && cloud && !unsyncedCount ? 'green' : 'amber');
         // สถานะ AI
         if (aiLabel && aiDot) {
           aiLabel.textContent = appState.aiStatusMessage;
@@ -2721,8 +2739,8 @@ interface DashboardMetrics {
         const elExpenseSub = document.getElementById('kpiExpenseSub');
         const elSyncSub = document.getElementById('kpiSyncSummarySub');
 
-        if (elIncome) elIncome.textContent = formatCurrency(metrics.totalIncome, 'THB');
-        if (elExpense) elExpense.textContent = formatCurrency(metrics.totalExpense, 'THB');
+        if (elIncome) elIncome.textContent = '+' + formatCurrency(metrics.totalIncome, 'THB');
+        if (elExpense) elExpense.textContent = '-' + formatCurrency(metrics.totalExpense, 'THB');
         if (elNet) {
           const sign = metrics.netBalance < 0 ? '-' : '';
           elNet.textContent = `${sign}${formatCurrency(Math.abs(metrics.netBalance), 'THB')}`;
@@ -2777,6 +2795,7 @@ interface DashboardMetrics {
 
         renderFundBucketsAndChecklist(metrics, selectedMonth);
         renderFilteredTransactionList();
+        renderLatestTransactions();
       }
 
       function renderFundBucketsAndChecklist(metrics: any, selectedMonth: string) {
@@ -3050,13 +3069,21 @@ interface DashboardMetrics {
           return;
         }
 
-        for (const tx of filtered) {
+        for (const tx of filtered) listContainer.appendChild(createTransactionCard(tx));
+      }
+
+      function createTransactionCard(tx: any) {
           const card = document.createElement('article');
           card.className = 'tx-item';
 
           const top = document.createElement('div');
           top.className = 'tx-top';
 
+          const direction = document.createElement('span');
+          direction.className = 'tx-direction ' + tx.type;
+          direction.textContent = tx.type === 'income' ? '↙' : '↗';
+          direction.setAttribute('aria-hidden', 'true');
+          top.appendChild(direction);
           const leftInfo = document.createElement('div');
           const merchantEl = document.createElement('div');
           merchantEl.className = 'tx-merchant';
@@ -3104,6 +3131,11 @@ interface DashboardMetrics {
           syncBadge.className = `badge ${statusClass}`;
           syncBadge.textContent = SYNC_STATUS_LABELS[tx.sync_status] || 'บันทึกในเครื่อง';
 
+          if (['receipt', 'transfer_slip'].includes(tx.source_type)) {
+            const aiBadge = document.createElement('span');
+            aiBadge.className = 'ai-badge'; aiBadge.textContent = '✨ AI';
+            badgesRow.appendChild(aiBadge);
+          }
           badgesRow.appendChild(typeBadge);
           badgesRow.appendChild(catBadge);
           badgesRow.appendChild(fundBadge);
@@ -3152,8 +3184,26 @@ interface DashboardMetrics {
           actions.appendChild(btnDel);
           card.appendChild(actions);
 
-          listContainer.appendChild(card);
+
+        return card;
+      }
+
+      let latestTypeFilter = 'all';
+      function renderLatestTransactions() {
+        const container = document.getElementById('latestTransactionList');
+        if (!container) return;
+        const month = document.getElementById('dashboardMonthPicker')?.value || getBangkokTodayIso().slice(0, 7);
+        const rows = appState.transactions.filter(tx => !tx.deleted_at && !tx.pending_delete &&
+          (!tx.user_id || tx.user_id === appState.currentUser?.id) &&
+          String(tx.transaction_date).startsWith(month) && (latestTypeFilter === 'all' || tx.type === latestTypeFilter))
+          .sort((a, b) => String(b.transaction_date).localeCompare(String(a.transaction_date)) || String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5);
+        container.innerHTML = '';
+        for (const tx of rows) container.appendChild(createTransactionCard(tx));
+        if (!rows.length) {
+          const empty = document.createElement('p'); empty.className = 'empty-state';
+          empty.textContent = 'ยังไม่มีรายการที่ตรงกับเดือนและตัวกรองนี้'; container.appendChild(empty);
         }
+        for (const type of ['all', 'expense', 'income']) document.getElementById('latest-' + type)?.setAttribute('aria-pressed', String(type === latestTypeFilter));
       }
 
       // =====================================================================
@@ -3334,6 +3384,15 @@ interface DashboardMetrics {
         }
       }
 
+      function updateAnalysisPresentation() {
+        const busy = appState.isAnalyzingAi;
+        document.getElementById('imagePreviewPanel')?.setAttribute('aria-busy', String(busy));
+        const laser = document.getElementById('scanLaserLine'); if (laser) laser.hidden = !busy;
+        for (const id of ['heroCapture', 'btnBottomCenterScan', 'btnAiReceiptCallout', 'btnChooseGallery', 'btnStartScanCamera']) {
+          const button = document.getElementById(id); if (button) button.disabled = busy;
+        }
+      }
+
       async function triggerAiAnalysisForCurrentImage() {
         if (appState.isAnalyzingAi) return;
         if (!appState.currentCompressedImage) {
@@ -3347,6 +3406,7 @@ interface DashboardMetrics {
         const errBox = document.getElementById('aiAnalysisErrorBox');
 
         appState.isAnalyzingAi = true;
+        updateAnalysisPresentation();
         if (btnAnalyze) btnAnalyze.disabled = true;
         if (btnReanalyze) btnReanalyze.disabled = true;
         if (progressBox) progressBox.hidden = false;
@@ -3373,6 +3433,7 @@ interface DashboardMetrics {
           showToast(err.message || 'ไม่สามารถวิเคราะห์ด้วย AI ได้', 'error');
         } finally {
           appState.isAnalyzingAi = false;
+          updateAnalysisPresentation();
           if (btnAnalyze) btnAnalyze.disabled = false;
           if (btnReanalyze) btnReanalyze.disabled = false;
           if (progressBox) progressBox.hidden = true;
@@ -3930,7 +3991,7 @@ interface DashboardMetrics {
         normalizeMerchant, learnConfirmedRecord, suggestMerchantCategory, applyQuickChip,
         startVoiceEntry, validReceiptFile, handleReceiptPaste, handleImageFileSelected,
         resumeSharedReceipt, releaseSharedReceipt, shareInboxChange, bindAutomationEvents,
-        triggerAiAnalysisForCurrentImage,
+        triggerAiAnalysisForCurrentImage, renderDashboardAndHistory, renderLatestTransactions, updateStatusBannersAndPills,
         getState: () => appState,
         FUND_BUCKET_LABELS,
         FIXED_MONTHLY_PRESETS,

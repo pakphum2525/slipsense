@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="th" dir="ltr" data-theme="dark-red">
+<html lang="th" dir="ltr" data-theme="fintrack">
 <head>
   <meta charset="utf-8">
   <script>
     // ตั้งโทนสีก่อนแสดงหน้าให้ตรงกับค่าที่ผู้ใช้บันทึกไว้
     try {
-      const theme = localStorage.getItem('slipsense_theme') ?? 'dark-red';
-      document.documentElement.setAttribute('data-theme', ['light', 'dark', 'blue', 'dark-red'].includes(theme) ? theme : 'light');
+      const theme = localStorage.getItem('slipsense_theme') ?? 'fintrack';
+      document.documentElement.setAttribute('data-theme', ['light', 'dark', 'blue', 'dark-red', 'fintrack'].includes(theme) ? theme : 'light');
     } catch (_) {}
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -71,7 +71,7 @@
       font-size: 16px;
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+
     }
 
     button, input, select, textarea {
@@ -999,9 +999,81 @@
     .fund-card-header { flex-wrap:wrap; }
     @media (max-width:400px) { .app-panels .card { padding:14px; } .fund-grid,.kpi-grid { grid-template-columns:1fr; } .filters-grid { grid-template-columns:1fr; } .batch-row { flex-wrap:wrap; } }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+    [data-theme="fintrack"] {
+      color-scheme:dark; --bg-app:#090a0f; --bg-surface:#12141c; --bg-subtle:#191c27;
+      --border-color:#1e2230; --border-strong:#67728a; --glass-border:#1e2230;
+      --brand-primary:#10b981; --brand-primary-hover:#059669; --brand-soft:#10382d;
+      --ai-color:#6366f1; --expense-color:#f43f5e; --expense-bg:#351722; --income-color:#10b981; --income-bg:#10382d;
+      --text-main:#f3f5fa; --text-secondary:#c1c6d5; --text-muted:#9ba3b8;
+      --glass:rgba(18,20,28,0.08); --aurora-blue:rgba(99,102,241,0.08); --aurora-green:rgba(16,185,129,0.08); --aurora-purple:rgba(99,102,241,0.08);
+    }
+    [data-theme="fintrack"] body { background:#090a0f; }
+    .mobile-frame-glow { min-width:0; margin:auto; }
+    .dynamic-island { display:none; }
+    .brand-wallet { color:#10b981; flex-shrink:0; }
+    .ai-badge { display:inline-block; border:1px solid #6366f1; border-radius:8px; padding:3px 7px; font-size:.65rem; color:#bfc2ff; background:#202244; white-space:nowrap; }
+    .sync-indicator { display:flex; align-items:center; gap:6px; font-size:.72rem; color:var(--text-secondary); }
+    .app-header { position:sticky; top:0; z-index:35; }
+    .header-inner,.header-actions,.brand-group { min-width:0; flex-wrap:wrap; }
+    .header-actions { gap:8px; }
+    .brand-title { font-size:1.2rem; }
+    .brand-subtitle { font-size:.7rem; }
+    [data-theme="fintrack"] .card,[data-theme="fintrack"] .fund-card,[data-theme="fintrack"] .kpi-box,[data-theme="fintrack"] .tx-item { background:#12141c; border-color:#1e2230; }
+    [data-theme="fintrack"] .app-header { background:rgba(18,20,28,.92); }
+    [data-theme="fintrack"] .form-control { background:#191c27; color:var(--text-main); }
+    [data-theme="fintrack"] .form-group.uncertain-field .form-control { background:#3b2410; }
+    [data-theme="fintrack"] .btn-primary { color:#052c20; font-weight:700; }
+    [data-theme="fintrack"] :focus-visible { outline-color:#10b981; }
+    .balance-hero { position:relative; isolation:isolate; border-radius:24px; }
+    .balance-hero::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none; background:radial-gradient(ellipse at 90% 0,rgba(16,185,129,.18),transparent 65%); }
+    .balance-hero .kpi-box.net { background:transparent; border:0; padding:12px 0 24px; }
+    .balance-hero .kpi-box.net .kpi-value { font-size:clamp(2rem,8vw,3rem); color:var(--text-main); letter-spacing:-.04em; }
+    .balance-hero .kpi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .balance-hero .kpi-grid .kpi-box { min-width:0; padding:12px; background:var(--bg-subtle); }
+    .balance-hero .kpi-grid .kpi-value { font-size:clamp(1rem,4vw,1.5rem); overflow-wrap:anywhere; }
+    .kpi-sub { overflow-wrap:anywhere; }
+    .progress-track { height:7px; background:var(--bg-subtle); border-radius:99px; }
+    .progress-fill { background:linear-gradient(90deg,#10b981,#6366f1); border-radius:99px; }
+    .hero-action { background:var(--bg-surface); color:var(--text-main); border:1px solid var(--border-color); padding:18px; }
+    .hero-action p { color:var(--text-secondary); }
+    .ai-callout { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:20px 16px; margin-bottom:20px; text-align:left; border:1px solid #6366f1; background:linear-gradient(120deg,#202244,#12141c); color:#f3f5fa; }
+    .ai-callout small { display:block; color:#c1c6d5; margin-top:6px; }
+    .scan-preview { position:relative; overflow:hidden; border-radius:16px; }
+    .scan-preview .preview-img { display:block; margin:auto; }
+    .laser-line { position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg,#10b981,#2dd4bf,#6366f1); box-shadow:0 0 20px #10b981; animation:scanLaser 2.4s ease-in-out infinite alternate; pointer-events:none; }
+    @keyframes scanLaser { from { top:0; } to { top:calc(100% - 3px); } }
+    .latest-filters { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+    .latest-filters button { padding:8px 14px; }
+    .latest-filters [aria-pressed="true"] { border-color:var(--brand-primary); color:var(--income-color); }
+    .tx-top { gap:12px; flex-wrap:wrap; }
+    .tx-top > div { min-width:0; }
+    .tx-merchant,.tx-item p,.tx-purpose-box,.status-pill { overflow-wrap:anywhere; }
+    .tx-direction { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; flex-shrink:0; font-size:24px; background:var(--expense-bg); color:var(--expense-color); }
+    .tx-direction.income { background:var(--income-bg); color:var(--income-color); }
+    .tx-amount.income { color:var(--income-color); } .tx-amount.expense { color:var(--expense-color); }
+    .bottom-nav { display:block; width:100%; max-width:900px; margin:auto; }
+    .nav-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
+    #tab-analytics { grid-column:4; } #tab-history { grid-column:5; }
+    .bottom-nav .center-scan-fab { position:absolute; left:50%; top:-19px; transform:translateX(-50%); width:60px; height:60px; min-height:60px; border-radius:50%; background:linear-gradient(135deg,#10b981,#0d9488); color:#052c20; border:5px solid var(--bg-app); box-shadow:0 0 24px #10b98155; }
+    .bottom-nav .center-scan-fab:hover { transform:translateX(-50%); }
+    [data-theme="fintrack"] .bottom-nav [aria-selected="true"] { background:#10382d; color:#10b981; }
+    .app-panels,.header-inner { width:100%; max-width:900px; margin:auto; }
+    .card-header { flex-wrap:wrap; gap:10px; } .card-header > div { min-width:0; flex-wrap:wrap; }
+    .modal-panel { max-width:calc(100vw - 24px); } .form-grid > * { min-width:0; }
+    @media (min-width:1024px) {
+      body { padding:32px 0 0; }
+      .mobile-frame-glow { width:480px; border:1px solid #1e2230; border-radius:40px 40px 0 0; box-shadow:0 0 80px #10b98120,0 0 130px #6366f118; padding-top:12px; background:var(--bg-app); padding-bottom:100px; }
+      .dynamic-island { display:block; width:104px; height:26px; border-radius:99px; background:#000; margin:0 auto 14px; }
+      .mobile-frame-glow .bottom-nav { max-width:480px; }
+    }
+    @supports not (backdrop-filter:blur(1px)) { [data-theme="fintrack"] .app-header { background:#12141c; } }
+    @media (prefers-reduced-motion:reduce) { .laser-line { animation:none !important; top:50%; } .bottom-nav .center-scan-fab { transform:translateX(-50%) !important; } }
+
   </style>
 </head>
 <body>
+  <div class="mobile-frame-glow">
+  <div class="dynamic-island" aria-hidden="true"></div>
   <!-- แถบแจ้งสถานะโหมดการทำงานและการซิงก์ -->
   <div id="systemModeBanner" class="system-banner" role="status" aria-live="polite">
     <span id="systemModeText">โหมดบันทึกข้อมูลในเครื่อง — ข้อมูลยังไม่ซิงก์ข้ามอุปกรณ์</span>
@@ -1015,14 +1087,15 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="brand-group">
-        <img src="./icons/icon-192.png" alt="โลโก้ SlipSense" class="brand-logo" width="40" height="40">
+        <svg class="brand-wallet" aria-hidden="true" viewBox="0 0 32 32" width="40" height="40"><rect x="3" y="6" width="26" height="22" rx="7" fill="currentColor"/><path d="M7 6V4h18M29 14H19v8h10" fill="none" stroke="#090a0f" stroke-width="2"/><circle cx="23" cy="18" r="1.5" fill="#090a0f"/></svg>
         <div>
-          <h1 class="brand-title">SlipSense</h1>
+          <h1 class="brand-title">SlipSense <span class="ai-badge">AI PWA</span></h1>
           <p class="brand-subtitle">บันทึกใบเสร็จและรายรับ-รายจ่ายด้วย AI</p>
         </div>
       </div>
 
       <div class="header-actions">
+        <span id="syncIndicator" class="sync-indicator" role="status" aria-live="polite"><span id="syncIndicatorDot" class="status-dot" aria-hidden="true"></span><span id="syncIndicatorText">บันทึกในเครื่อง</span></span>
         <div class="status-pill" id="aiStatusPill" title="สถานะการเชื่อมต่อบริการวิเคราะห์ใบเสร็จด้วย AI">
           <span id="aiStatusDot" class="status-dot amber"></span>
           <span id="aiStatusLabel">ยังไม่ได้ตั้งค่า AI</span>
@@ -1042,7 +1115,46 @@
   <!-- พื้นที่ทำงานหลัก -->
   <main class="app-container app-panels">
     <section id="panel-home" role="tabpanel" aria-labelledby="tab-home" tabindex="-1">
-      <div class="hero-action"><p>สลิปเซนส์ • ผู้ช่วยการเงินของคุณ</p><h1>บันทึกวันนี้ วางแผนวันหน้า</h1><p>สแกนและตรวจข้อมูลก่อนบันทึกทุกครั้ง</p><button id="heroCapture" class="btn btn-primary" type="button">ถ่ายภาพ / เลือกสลิป</button></div>
+      <section class="card balance-hero" aria-labelledby="dashboardSectionTitle">
+        <div class="card-header">
+          <h2 id="dashboardSectionTitle" class="card-title">สรุปการเงินประจำเดือน</h2>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <label for="dashboardMonthPicker" class="sr-only">เลือกเดือน</label>
+            <input type="month" id="dashboardMonthPicker" class="form-control" style="min-height:36px;padding:0.25rem 0.55rem;width:auto;">
+          </div>
+        </div>
+
+                  <div class="kpi-box net">
+            <div class="kpi-label">ยอดเงินคงเหลือสุทธิ</div>
+            <div id="kpiNetBalance" class="kpi-value">฿0.00</div>
+            <div id="kpiSyncSummarySub" class="kpi-sub">0 รายการ</div>
+          </div>
+        <div class="kpi-grid">
+          <div class="kpi-box income">
+            <div class="kpi-label">รายรับรวมของเดือน</div>
+            <div id="kpiTotalIncome" class="kpi-value">+฿0.00</div>
+            <div id="kpiIncomeSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
+          </div>
+          <div class="kpi-box expense">
+            <div class="kpi-label">รายจ่ายรวมของเดือน</div>
+            <div id="kpiTotalExpense" class="kpi-value">-฿0.00</div>
+            <div id="kpiExpenseSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
+          </div>
+
+        </div>
+
+        <div>
+          <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:0.65rem;color:var(--text-secondary);">
+            สรุปยอดรายจ่ายตามหมวดหมู่
+          </h3>
+          <div id="categoryBreakdownContainer" class="category-list">
+            <p class="empty-state" style="padding:1rem 0;">ยังไม่มีรายการรายจ่ายในเดือนที่เลือก</p>
+          </div>
+        </div>
+      </section>
+      <div class="hero-action"><p>ผู้ช่วยการเงินของคุณ</p><h2>สแกนและตรวจทานก่อนบันทึก</h2><button id="heroCapture" class="btn btn-primary" type="button">ถ่ายภาพ / เลือกสลิป</button></div>
+      <button id="btnAiReceiptCallout" type="button" class="ai-callout"><span aria-hidden="true">✨</span><span>สแกนสลิปหรือใบเสร็จด้วย AI<small>ตรวจทานข้อมูลก่อนยืนยันทุกครั้ง</small></span><span class="ai-badge">Gemini</span></button>
+      <section class="card" aria-labelledby="latestTitle"><h2 id="latestTitle" class="card-title">รายการล่าสุด</h2><div class="latest-filters" role="group" aria-label="กรองรายการล่าสุด"><button id="latest-all" type="button" aria-pressed="true">ทั้งหมด</button><button id="latest-expense" type="button" aria-pressed="false">รายจ่าย</button><button id="latest-income" type="button" aria-pressed="false">รายรับ</button></div><div id="latestTransactionList" class="transaction-list"></div></section>
       <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">◉</span>กระปุก 6 ส่วน</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">▥</span>กราฟการเงิน</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">≡</span>ประวัติรายการ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">฿</span>แบ่งเงินเดือน</button></div>
       <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
@@ -1074,7 +1186,7 @@
 
         <!-- พื้นที่แสดงภาพตัวอย่างและผลลัพธ์การบีบอัดก่อนส่งให้ AI -->
         <div id="imagePreviewPanel" class="preview-container" hidden>
-          <img id="receiptPreviewImg" class="preview-img" alt="ตัวอย่างภาพใบเสร็จที่จะใช้ในการวิเคราะห์">
+          <div class="scan-preview"><img id="receiptPreviewImg" class="preview-img" alt="ตัวอย่างภาพใบเสร็จที่จะใช้ในการวิเคราะห์"><span id="scanLaserLine" class="laser-line" aria-hidden="true" hidden></span></div>
           <div id="compressionInfoBox" class="compression-meta"></div>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
             <button type="button" id="btnAnalyzeWithAi" class="btn btn-primary" style="flex:1;">
@@ -1089,47 +1201,12 @@
           </div>
         </div>
 
-        <div id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
+        <div role="status" aria-live="polite" id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
           กำลังส่งภาพที่ย่อแล้วไปยัง Supabase Edge Function เพื่อวิเคราะห์ด้วย Gemini AI กรุณารอสักครู่...
         </div>
         <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
       </section>
-      <section class="card" aria-labelledby="dashboardSectionTitle">
-        <div class="card-header">
-          <h2 id="dashboardSectionTitle" class="card-title">สรุปการเงินประจำเดือน</h2>
-          <div style="display:flex;align-items:center;gap:0.4rem;">
-            <label for="dashboardMonthPicker" class="sr-only">เลือกเดือน</label>
-            <input type="month" id="dashboardMonthPicker" class="form-control" style="min-height:36px;padding:0.25rem 0.55rem;width:auto;">
-          </div>
-        </div>
 
-        <div class="kpi-grid">
-          <div class="kpi-box income">
-            <div class="kpi-label">รายรับรวมของเดือน</div>
-            <div id="kpiTotalIncome" class="kpi-value">฿0.00</div>
-            <div id="kpiIncomeSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
-          </div>
-          <div class="kpi-box expense">
-            <div class="kpi-label">รายจ่ายรวมของเดือน</div>
-            <div id="kpiTotalExpense" class="kpi-value">฿0.00</div>
-            <div id="kpiExpenseSub" class="kpi-sub">ซิงก์แล้ว ฿0.00</div>
-          </div>
-          <div class="kpi-box net">
-            <div class="kpi-label">เงินสุทธิของเดือน</div>
-            <div id="kpiNetBalance" class="kpi-value">฿0.00</div>
-            <div id="kpiSyncSummarySub" class="kpi-sub">0 รายการ</div>
-          </div>
-        </div>
-
-        <div>
-          <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:0.65rem;color:var(--text-secondary);">
-            สรุปยอดรายจ่ายตามหมวดหมู่
-          </h3>
-          <div id="categoryBreakdownContainer" class="category-list">
-            <p class="empty-state" style="padding:1rem 0;">ยังไม่มีรายการรายจ่ายในเดือนที่เลือก</p>
-          </div>
-        </div>
-      </section>
     </section>
     <section id="panel-funds" role="tabpanel" aria-labelledby="tab-funds" tabindex="-1" hidden>
       <section class="card" aria-labelledby="fundBucketsSectionTitle">
@@ -1165,7 +1242,7 @@
       <details class="card"><summary>ผู้ช่วยและรายการจ่ายประจำเดือน</summary><section class="card automation-panel" aria-labelledby="automationTitle">
       <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
       <div class="automation-bar">
-        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
+        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="fintrack">ฟินแทร็ก เขียวมรกต</option><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
         <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
         <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
         <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
@@ -1273,12 +1350,16 @@
         </div>
       </section></section>
   </main>
-  <nav class="bottom-nav" role="tablist" aria-label="เมนูหลัก">
+  <nav class="bottom-nav" aria-label="เมนูหลัก">
+    <div class="nav-tabs" role="tablist" aria-label="หน้าหลักของแอป">
     <button id="tab-home" type="button" role="tab" aria-controls="panel-home" aria-selected="true">⌂<span>หน้าหลัก</span></button>
     <button id="tab-funds" type="button" role="tab" aria-controls="panel-funds" aria-selected="false" tabindex="-1">◉<span>กระปุก</span></button>
     <button id="tab-analytics" type="button" role="tab" aria-controls="panel-analytics" aria-selected="false" tabindex="-1">▥<span>กราฟ</span></button>
     <button id="tab-history" type="button" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1">≡<span>ประวัติ</span></button>
+    </div>
+    <button id="btnBottomCenterScan" class="center-scan-fab" type="button" aria-label="สแกนบิลด้วยกล้องหรือเลือกรูป"><svg aria-hidden="true" viewBox="0 0 24 24" width="26" height="26"><path d="M4 6h4l2-3h4l2 3h4v15H4Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
   </nav>
+  </div>
 
   <!-- ======================================================================= -->
   <!-- MODAL 1: ฟอร์มตรวจสอบผลการวิเคราะห์ AI และเพิ่ม/แก้ไขธุรกรรม (Verification Form) -->
