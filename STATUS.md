@@ -2,7 +2,21 @@
 
 **วันที่อัปเดตล่าสุด:** 2 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-012 ผ่านการอนุมัติ Release Gate (Gate 16: `RELEASE_APPROVED`) รวมเข้าสาขา `main` และ Deploy Edge Function `analyze-receipt` (v8 ACTIVE) บน Supabase เรียบร้อยแล้ว; ชุดทดสอบอัตโนมัติผ่านครบ 37/37 รายการ (exit code 0)
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-013 พัฒนาใน isolated worktree แล้ว รัน self-tests ผ่าน 40/40 รายการ (exit code 0) รอ runner ตรวจ Scope/Independent QA และ Antigravity ตรวจตาม gate; ยังไม่ merge/deploy งานนี้
+
+## ผลงาน TASK-SLIPSENSE-V4-013
+
+Edge Function รองรับ fallback เมื่อได้รับ HTTP 404/503/504/408 และยังมีโมเดลสำรอง โดยคงลำดับ candidate เดิมและตัดชื่อซ้ำ ยกเลิก response body ก่อนเปลี่ยนโมเดล รอ 300ms สำหรับ 503/504/408 ส่วน 404 ไม่รอ ใช้ AbortController กับ timeout รวม 25 วินาทีเดียว รวมการยกเลิก body ช่วงรอ และการอ่านผลลัพธ์ หยุดรอเมื่อ abort และไม่เริ่มคำขอใหม่หลังหมดเวลา จอง `consume_ai_rate_limit` เพียงครั้งเดียวต่อคำขอ คง JWT/input/schema validation และ Verification Form เดิม
+
+HTTP 400/401/403/429 และสถานะนอกชุด fallback หยุดทันที รวมถึง network error, timeout รวม และผลลัพธ์ผิด schema เมื่อหมด candidate ใช้เส้นทาง error เดิมโดยไม่ยกเลิก body สุดท้าย หากยกเลิก body ไม่สำเร็จจะเข้าตัวจัดการข้อผิดพลาดเดิม นโยบายหยุด 429 และ delay 300ms เป็นข้อกำหนดของงานนี้; [Google แนะนำ retry ด้วย exponential backoff](https://ai.google.dev/gemini-api/docs/troubleshooting) สำหรับ transient errors รวมถึง 429
+
+### ผลตรวจจริงและขอบเขตงาน
+
+- ทำงานที่ `C:/Users/SlipSense/.agent_loop/worktrees/TASK-SLIPSENSE-V4-013` สาขา `agent-task/TASK-SLIPSENSE-V4-013` ด้วย System Node.js `v24.16.0` และ Git จาก codex runtime
+- รัน `node scripts/run_tests.js` ผ่าน **40/40** ล้มเหลว **0**, exit code **0**; Suite 4 ทดสอบ handler จริงใน VM พร้อม mock fetch/RPC และนาฬิกา deterministic แยก timeout รวมจาก delay โดยไม่มีการเรียก Gemini จริง
+- แยกกรณีสำเร็จหลัง 503, 504 และ 408 ตรวจ URL ตามลำดับ, cancellation ก่อนรอ, delay 300ms, payload/signal เดิม และ quota ครั้งเดียว รวม regression 404 ไม่รอ, ตัด candidate ซ้ำ, หมด candidate, หยุด 400/401/403/429/500, cancellation ล้มเหลว, timeout ระหว่างรอ/attempt/อ่าน body และการล้าง timer/listener
+- แก้เฉพาะ `supabase/functions/analyze-receipt/index.ts`, `scripts/run_tests.js`, `README.md`, `STATUS.md` เป็น UTF-8 without BOM ไม่แก้ไฟล์ควบคุมหรือ protected paths
+- ตาม AGENTS.md งาน implementation ต้องผ่าน **Dual-Agent V4 failover** ใน isolated worktree และหยุดรอ Antigravity ที่ **Gate 12** (`QA_RUNNING`, `active_agent: Antigravity`) ห้ามออก `RELEASE_MANIFEST.json` หรือ merge/deploy ก่อนตรวจครบ รอบ Developer นี้รับงานจาก runner ที่สถานะ `IMPLEMENTING` พร้อมแผนอนุมัติแล้ว ผล self-tests นี้ยังไม่ใช่ Independent QA หรือหลักฐานว่าถึง Gate 12 และไม่อนุมัติ release
 
 ## ผลงาน TASK-SLIPSENSE-V4-012
 

@@ -780,49 +780,114 @@ async function main() {
 
   // =========================================================================
 
-  await runTest('Suite 4', '4.4 handler จริง: ลำดับโมเดล, 404 เท่านั้น, quota ครั้งเดียว และ timeout เดียว', async () => {
-    const { stripTypeScriptTypes } = require('node:module');
-    const code = stripTypeScriptTypes(edgeContent.replace(/^import .*createClient.*;\r?\n/m, ''));
-    async function execute(statuses, options={}) {
-      let handler, rpc=0, cleared=0, scheduled=0, timerCallback, cancelled=0;
-      const calls=[], timers=new Map();
-      const env={ SUPABASE_URL:'https://example.invalid', SUPABASE_ANON_KEY:'public', GEMINI_API_KEY:'test-server-key', GEMINI_MODEL:options.model ?? '' };
-      const context = vm.createContext({ Request, Response, Headers, AbortController, Error, Date, Set, Map, Number, JSON,
-        Deno:{ env:{get:key=>env[key]}, serve:fn=>handler=fn },
-        createClient:()=>({auth:{getUser:async()=>options.invalidJwt ? {error:true} : {data:{user:{id:'test-user'}}}}, rpc:async()=>{rpc++;return options.quotaError?{error:true}:{data:{allowed:!options.denied}};}}),
-        setTimeout:fn=>{scheduled++;timerCallback=fn; timers.set(1,fn);return 1;}, clearTimeout:id=>{cleared++;timers.delete(id);},
-        fetch:async(url, init)=>{
-          calls.push({url,init});
-          const index=calls.length-1, status=statuses[index];
-          if (options.network) throw new Error('network');
-          if (options.timeoutAt===index) { timerCallback(); init.signal.throwIfAborted(); }
-          if (status===404) return {status,ok:false,body:{cancel:async()=>{cancelled++; if(options.abortAfter404)timerCallback();}}};
-          return { status, ok:status===200, json:async()=>{
-            if(options.bodyTimeout){timerCallback();init.signal.throwIfAborted();}
-            return {candidates:[{content:{parts:[{text:options.invalidSchema?'null':JSON.stringify({date:null,amount:null,type:'unknown',currency:'THB',category:'unknown',source_type:'receipt',warnings:[],uncertain_fields:[]})}]}}]};
-          }};
-        }
-      });
-      vm.runInContext(code,context);
-      const request = new Request('https://edge.invalid',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer jwt'},body:JSON.stringify(options.payload || {mimeType:'image/jpeg',imageBase64:'A'.repeat(64)})});
-      const response=await handler(request), body=await response.json();
-      assertEqual(timers.size,0,'timer cleared');
-      assertEqual(cleared,scheduled,'one clear for every timer');
-      if(calls.length) {
-        assertEqual(rpc,1,'atomic reservation exactly once'); assertEqual(scheduled,1,'single deadline');
-        for(const call of calls) {assertEqual(call.init.signal,calls[0].init.signal,'shared signal');assertEqual(call.init.body,calls[0].init.body,'same payload');assertEqual(call.init.headers['x-goog-api-key'],'test-server-key','key only in header');assert(!call.url.includes('test-server-key'),'no URL key');}
+  // โหลด handler จริงและแยกนาฬิกาจำลองของ deadline ออกจากช่วงรอ fallback
+  const { stripTypeScriptTypes } = require('node:module');
+  const edgeHandlerCode = stripTypeScriptTypes(edgeContent.replace(/^import .*createClient.*;\r?\n/m, ''));
+  async function executeEdge(statuses, options = {}) {
+    let handler, rpc = 0, now = 0, nextId = 0, listeners = 0;
+    const calls = [], events = [], timers = new Map(), scheduled = [], cancelled = [];
+    class TrackedAbortController extends AbortController {
+      constructor() {
+        super();
+        const signal = this.signal;
+        const add = signal.addEventListener.bind(signal), remove = signal.removeEventListener.bind(signal);
+        signal.addEventListener = (...args) => { listeners++; return add(...args); };
+        signal.removeEventListener = (...args) => { listeners--; return remove(...args); };
       }
-      return {response,body,calls,rpc,cancelled};
     }
+    const expire = () => scheduled.find(timer => timer.ms === 25000).fn();
+    const env = { SUPABASE_URL: 'https://example.invalid', SUPABASE_ANON_KEY: 'public', GEMINI_API_KEY: 'test-server-key', GEMINI_MODEL: options.model ?? '' };
+    const context = vm.createContext({ Request, Response, Headers, AbortController: TrackedAbortController, Error, Date, Set, Map, Number, JSON,
+      Deno: { env: { get: key => env[key] }, serve: fn => handler = fn },
+      createClient: () => ({ auth: { getUser: async () => options.invalidJwt ? { error: true } : { data: { user: { id: 'test-user' } } } }, rpc: async () => { rpc++; return options.quotaError ? { error: true } : { data: { allowed: !options.denied } }; } }),
+      setTimeout: (fn, ms) => {
+        const id = ++nextId, timer = { fn, ms, due: now + ms };
+        timers.set(id, timer); scheduled.push(timer); events.push('timer:' + ms); return id;
+      },
+      clearTimeout: id => { assert(timers.delete(id), 'timer ต้องถูกล้างเพียงครั้งเดียว'); },
+      fetch: async (url, init) => {
+        assert(!init.signal.aborted, 'ห้าม fetch หลัง timeout');
+        const index = calls.length, status = statuses[index];
+        calls.push({ url, init, at: now }); events.push('fetch:' + index);
+        if (options.network) throw new Error('network');
+        if (options.timeoutAt === index) { expire(); init.signal.throwIfAborted(); }
+        if (index === 0 && options.elapsed) now += options.elapsed;
+        return { status, ok: status === 200,
+          body: { cancel: async () => {
+            cancelled.push(index); events.push('cancel:' + index);
+            if (options.cancelError) throw new Error('cancel failed');
+            if (options.abortAfterCancel) expire();
+          } },
+          json: async () => {
+            if (options.bodyTimeout) { expire(); init.signal.throwIfAborted(); }
+            return { candidates: [{ content: { parts: [{ text: options.invalidSchema ? 'null' : JSON.stringify({ date: null, amount: null, type: 'unknown', currency: 'THB', category: 'unknown', source_type: 'receipt', warnings: [], uncertain_fields: [] }) }] } }] };
+          }
+        };
+      }
+    });
+    vm.runInContext(edgeHandlerCode, context);
+    const request = new Request('https://edge.invalid', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer jwt' }, body: JSON.stringify(options.payload || { mimeType: 'image/jpeg', imageBase64: 'A'.repeat(64) }) });
+    let settled = false;
+    const result = handler(request).finally(() => { settled = true; });
+    // ให้ microtasks ทำงานจนว่างก่อนเดินนาฬิกา ไปยัง timer ที่ถึงก่อนเสมอ
+    for (let turn = 0; !settled; turn++) {
+      assert(turn < 20, 'handler ต้องจบโดยไม่มี retry ไม่จำกัด');
+      await new Promise(resolve => setImmediate(resolve));
+      if (settled) break;
+      const entry = [...timers.entries()].sort((a, b) => a[1].due - b[1].due)[0];
+      assert(entry, 'handler ค้างโดยไม่มี timer');
+      now = entry[1].due; events.push('fire:' + entry[1].ms); entry[1].fn();
+    }
+    const response = await result, body = await response.json();
+    assertEqual(timers.size, 0, 'ล้าง timer ทุกเส้นทาง');
+    assertEqual(listeners, 0, 'ล้าง abort listener ทุกเส้นทาง');
+    if (calls.length) {
+      assertEqual(rpc, 1, 'จอง atomic quota ครั้งเดียว');
+      assertEqual(scheduled.filter(timer => timer.ms === 25000).length, 1, 'deadline เดียว');
+      for (const call of calls) {
+        assertEqual(call.init.signal, calls[0].init.signal, 'signal เดียว');
+        assertEqual(call.init.body, calls[0].init.body, 'payload เดิม');
+        assertEqual(call.init.headers['x-goog-api-key'], 'test-server-key');
+        assert(!call.url.includes('test-server-key'), 'key อยู่ใน header เท่านั้น');
+      }
+    }
+    return { response, body, calls, rpc, cancelled, scheduled, events };
+  }
+
+  for (const status of [503, 504, 408]) {
+    await runTest('Suite 4', `4.4 HTTP ${status}: ยกเลิก body รอ 300ms แล้วใช้โมเดลถัดไป`, async () => {
+      const r = await executeEdge([status, 200]);
+      assertEqual(r.response.status, 200);
+      assertEqual(r.body.model, 'gemini-3.6-flash');
+      assertEqual(r.calls.length, 2);
+      assert(r.calls[0].url.includes('/gemini-3.8-flash:generateContent'));
+      assert(r.calls[1].url.includes('/gemini-3.6-flash:generateContent'));
+      assertEqual(r.cancelled.join(','), '0');
+      assertEqual(r.calls[1].at - r.calls[0].at, 300);
+      assertEqual(r.events.join(','), 'timer:25000,fetch:0,cancel:0,timer:300,fire:300,fetch:1');
+    });
+  }
+
+  await runTest('Suite 4', '4.5 handler จริง: regression 404, quota, timeout และ validation', async () => {
+    const execute = executeEdge;
     const models=r=>r.calls.map(c=>decodeURIComponent(c.url.split('/models/')[1].split(':')[0]));
     let r=await execute([200]);assertEqual(r.body.model,'gemini-3.8-flash','default');assertEqual(r.calls.length,1);
-    r=await execute([404,200],{model:' custom-model '});assertEqual(models(r).join(','),'custom-model,gemini-3.8-flash');assertEqual(r.body.model,'gemini-3.8-flash');assertEqual(r.cancelled,1);
+    r=await execute([404,200],{model:' custom-model '});assertEqual(models(r).join(','),'custom-model,gemini-3.8-flash');assertEqual(r.body.model,'gemini-3.8-flash');assertEqual(r.cancelled.length,1);assertEqual(r.calls[1].at,0,'404 ไม่รอ');assertEqual(r.scheduled.length,1);
     r=await execute([404,404,404,200]);assertEqual(models(r).join(','),'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-2.5-flash');assertEqual(r.body.model,'gemini-2.5-flash');assert(r.body.data.uncertain_fields.includes('date')&&r.body.data.uncertain_fields.includes('amount'),'no guessing');
     r=await execute([404,404,404,404,404],{model:'custom'});assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,5);
     r=await execute([404,404,404,404],{model:'gemini-3.6-flash'});assertEqual(new Set(models(r)).size,4,'deduplicated');
-    for(const status of [400,401,403,429,500,503]){r=await execute([status,200]);assertEqual(r.calls.length,1,'no retry for '+status);assertEqual(r.response.status,status===429?429:502);}
+    for(const status of [400,401,403,429,500]){r=await execute([status,200]);assertEqual(r.calls.length,1,'no retry for '+status);assertEqual(r.response.status,status===429?429:502);assertEqual(r.body.code,status===429?'GEMINI_RATE_LIMIT':[400,403].includes(status)?'GEMINI_CONFIG_ERROR':'GEMINI_UPSTREAM_ERROR');assertEqual(r.cancelled.length,0);assertEqual(r.scheduled.length,1);}
     for(const options of [{network:true},{timeoutAt:0},{bodyTimeout:true},{invalidSchema:true}]){r=await execute([200,200],options);assertEqual(r.calls.length,1);assertEqual(r.response.status,options.network?500:options.invalidSchema?422:504);}
-    r=await execute([404,200],{abortAfter404:true});assertEqual(r.response.status,504);assertEqual(r.calls.length,1,'no candidate after deadline');
+    for (const status of [404,503,504,408]) {
+      r=await execute([status,200],{abortAfterCancel:true});assertEqual(r.response.status,504);assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,1,'no candidate after deadline');
+      r=await execute([status,200],{cancelError:true});assertEqual(r.response.status,500);assertEqual(r.body.code,'INTERNAL_EDGE_ERROR');assertEqual(r.calls.length,1);
+      r=await execute([status,status,status,status]);assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,4);assertEqual(r.cancelled.join(','),'0,1,2','ไม่ยกเลิก body สุดท้าย');assertEqual(r.scheduled.filter(t=>t.ms===300).length,status===404?0:3);
+    }
+    for (const status of [503,504,408]) {
+      r=await execute([status,200],{elapsed:24900});assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,1,'timeout ระหว่างรอ 300ms');assert(r.events.includes('fire:25000'));assert(!r.events.includes('fire:300'));
+      r=await execute([status,200],{timeoutAt:1});assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,2,'timeout ระหว่าง attempt ถัดไป');
+    }
+    r=await execute([503,504,408,404,200],{model:'custom'});assertEqual(r.response.status,200);assertEqual(r.calls[4].at,900,'delay รวมโดยไม่มี delay สำหรับ 404');
     for(const options of [{quotaError:true},{denied:true},{invalidJwt:true},{payload:{mimeType:'bad'}}]){r=await execute([],options);assertEqual(r.calls.length,0,'fail closed before Gemini');}
     r=await execute([],{model:' configured ',payload:{action:'health'}});assertEqual(r.body.model,'configured');assertEqual(r.rpc,0);assertEqual(r.calls.length,0);
     r=await execute([200],{model:'   '});assertEqual(r.body.model,'gemini-3.8-flash');

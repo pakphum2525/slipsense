@@ -623,8 +623,23 @@ Deno.serve(async (req: Request) => {
       })
     });
 
-    if (geminiRes.status === 404 && model !== candidates[candidates.length - 1]) {
+    if ([404, 503, 504, 408].includes(geminiRes.status) && model !== candidates[candidates.length - 1]) {
       await geminiRes.body?.cancel();
+      if (geminiRes.status !== 404) {
+        controller.signal.throwIfAborted();
+        let delayId: ReturnType<typeof setTimeout> | undefined;
+        let onAbort: (() => void) | undefined;
+        try {
+          await new Promise<void>((resolve, reject) => {
+            onAbort = () => reject(controller.signal.reason);
+            controller.signal.addEventListener('abort', onAbort, { once: true });
+            delayId = setTimeout(resolve, 300);
+          });
+        } finally {
+          clearTimeout(delayId);
+          if (onAbort) controller.signal.removeEventListener('abort', onAbort);
+        }
+      }
       continue;
     }
 

@@ -220,9 +220,11 @@ npx supabase secrets set GEMINI_MODEL="gemini-3.8-flash"
 npx supabase secrets list
 ```
 
-การวิเคราะห์จะลองตามลำดับ `GEMINI_MODEL` ที่ตั้งไว้ → `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-2.5-flash` โดยตัดชื่อซ้ำและเรียกทีละโมเดล เปลี่ยนไปโมเดลถัดไปเฉพาะเมื่อได้รับ HTTP **404** และยังมีตัวเลือกเหลือเท่านั้น หากทุกโมเดลตอบ 404 จะคืน HTTP **502** ตามรูปแบบข้อผิดพลาดเดิม
+การวิเคราะห์จะลองตามลำดับ `GEMINI_MODEL` ที่ตั้งไว้ → `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-2.5-flash` โดยตัดชื่อซ้ำและเรียกทีละโมเดล เปลี่ยนไปโมเดลถัดไปเมื่อได้รับ HTTP **404** (หาโมเดลไม่พบ), **503** (บริการไม่พร้อมหรือโมเดลโหลดสูง), **504** (gateway timeout) หรือ **408** (request timeout) และยังมีตัวเลือกเหลือ โดยยกเลิก response body เดิมให้เสร็จก่อน สำหรับ 503/504/408 จะรอ **300ms** ก่อนเปลี่ยนโมเดล ส่วน 404 เปลี่ยนได้ทันที ไม่ลองโมเดลเดิมซ้ำ หากตัวเลือกสุดท้ายล้มเหลวจะใช้เส้นทางข้อผิดพลาดเดิม (สถานะ fallback เหล่านี้คืน HTTP **502**) โดยไม่ยกเลิก body สุดท้ายก่อนตัวจัดการข้อผิดพลาด
 
-HTTP 400/401/403/429/5xx, network error, timeout และผล 200 ที่ไม่ผ่าน schema จะยุติคำขอทันที ไม่มี fallback กรอบเวลา 25 วินาทีครอบทั้งชุดรวมการอ่าน response ตรวจ JWT และข้อมูลนำเข้าก่อนจองโควตาผ่าน `consume_ai_rate_limit` เพียงครั้งเดียวต่อคำขอที่ผ่าน validation หากจองไม่สำเร็จจะไม่เรียก Gemini
+HTTP **400/401/403/429** และสถานะอื่นนอกชุด fallback, network error, timeout รวม และผล 200 ที่ไม่ผ่าน schema จะยุติคำขอทันที กรอบเวลา **25 วินาที** และ AbortController เดียวครอบทุก attempt รวมการยกเลิก body การรอ 300ms และการอ่าน response เมื่อหมดเวลา การรอจะสิ้นสุดและไม่เริ่ม attempt ใหม่ (คืน `AI_TIMEOUT` / HTTP 504) จึงต่างจาก HTTP 408 ของ upstream ซึ่งยังเปลี่ยนโมเดลได้เมื่อมีเวลาเหลือ ระบบล้าง timer/listener ทั้งเมื่อสำเร็จ ล้มเหลว และ timeout ตรวจ JWT และข้อมูลนำเข้าก่อนจองโควตาผ่าน `consume_ai_rate_limit` **เพียงครั้งเดียว** ต่อคำขอที่ผ่าน validation หากจองไม่สำเร็จจะไม่เรียก Gemini
+
+การหยุดทันทีสำหรับ 400/401/403/429 และการรอคงที่ 300ms เป็น **นโยบายของงาน TASK-SLIPSENSE-V4-013** ตาม [คู่มือ Google Gemini API](https://ai.google.dev/gemini-api/docs/troubleshooting) Google แนะนำ retry สำหรับ transient errors เช่น 408, 429 และ 5xx โดยใช้ exponential backoff พร้อม jitter และจำกัดจำนวนครั้ง จึงไม่ได้กำหนดให้หยุด 429 หรือใช้ delay 300ms
 
 Health check แสดง **configured model** (ค่าที่ตั้งไว้หรือค่าเริ่มต้น) ส่วน response วิเคราะห์สำเร็จแสดง **model ที่ใช้จริง** ซึ่งอาจเป็นตัวสำรอง การตั้งค่า `GEMINI_MODEL`, `GEMINI_API_KEY` และ key สิทธิ์สูงต้องอยู่ฝั่ง Edge Function เท่านั้น ห้ามเก็บ Gemini API Key หรือ `service_role` ใน frontend, localStorage หรือ IndexedDB; frontend ใช้เฉพาะ Supabase URL กับ publishable/anon key ตามหัวข้อ 10
 
@@ -409,7 +411,7 @@ SlipSense ออกแบบด้วย Relative Paths (`./manifest.json`, `./s
    ```powershell
    npx supabase functions deploy analyze-receipt
    ```
-3. ทดสอบสแกนใบเสร็จในแอป ตรวจ `model` ใน response วิเคราะห์เพื่อทราบโมเดลที่ตอบสำเร็จจริง และตรวจทานข้อมูลใน Verification Form ก่อนบันทึก Health check แสดงเพียง configured model; ค่าโมเดลที่จองโควตาใน `public.ai_usage_logs` ไม่ใช่หลักฐานว่า fallback ตัวใดตอบสำเร็จ ดูเงื่อนไข fallback เฉพาะ 404 ในหัวข้อ 8
+3. ทดสอบสแกนใบเสร็จในแอป ตรวจ `model` ใน response วิเคราะห์เพื่อทราบโมเดลที่ตอบสำเร็จจริง และตรวจทานข้อมูลใน Verification Form ก่อนบันทึก Health check แสดงเพียง configured model; ค่าโมเดลที่จองโควตาใน `public.ai_usage_logs` ไม่ใช่หลักฐานว่า fallback ตัวใดตอบสำเร็จ ดูเงื่อนไข fallback 404/503/504/408 ในหัวข้อ 8
 
 ---
 
