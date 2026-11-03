@@ -12,7 +12,7 @@ interface SwMessageData {
 }
 
 const CACHE_PREFIX: string = 'slipsense-app-shell-';
-const CACHE_VERSION: string = `${CACHE_PREFIX}v4-3d-cute-1`;
+const CACHE_VERSION: string = `${CACHE_PREFIX}v4-3d-cute-2`;
 
 const SHARE_TTL = 24 * 60 * 60 * 1000;
 function openShareInbox(): Promise<any> {

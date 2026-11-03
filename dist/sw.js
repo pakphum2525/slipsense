@@ -1,5 +1,5 @@
 const CACHE_PREFIX='slipsense-app-shell-';
-const CACHE_VERSION=`${CACHE_PREFIX}v4-3d-cute-1`;
+const CACHE_VERSION=`${CACHE_PREFIX}v4-3d-cute-2`;
 const SHARE_TTL=24*60*60*1000;
 function openShareInbox(){
 return new Promise((resolve,reject)=>{

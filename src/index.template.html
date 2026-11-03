@@ -972,17 +972,12 @@
     @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; transform:none !important; scroll-behavior:auto !important; } }
       /* หน้าจอแอป: คงสองคอลัมน์ที่ความกว้าง 320px และรองรับขอบจอ */
     [hidden] { display:none !important; }
-    body { padding-bottom:calc(92px + env(safe-area-inset-bottom,0px)); }
-    .app-panels { display:block; max-width:900px; margin:auto; padding:12px; }
+    body { padding-bottom:calc(84px + env(safe-area-inset-bottom,0px)); }
+    .app-panels { display:block; max-width:680px; margin:auto; padding:8px 10px; }
     .app-panels > section { min-width:0; }
-    .app-panels .card { margin-bottom:16px; min-width:0; }    .app-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
-    .app-shortcut { min-height:118px; padding:16px 8px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-main); display:flex; align-items:center; flex-direction:column; gap:10px; font:inherit; }
-    .shortcut-icon { border-radius:50%; background:#406bd5; color:white; width:48px; height:48px; display:grid; place-items:center; font-size:26px; }
-    .app-shortcut:nth-child(2) .shortcut-icon { background:#168065; }
-    .app-shortcut:nth-child(3) .shortcut-icon { background:#a45813; }
-    .app-shortcut:nth-child(4) .shortcut-icon { background:#a13878; }
-    .bottom-nav { position:fixed; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px)); background:var(--bg-surface); border-top:1px solid var(--border-color); z-index:40; }
-    .bottom-nav button { display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; min-height:52px; border:0; background:transparent; color:var(--text-main); font:inherit; }
+    .app-panels .card { margin-bottom:12px; padding:14px 12px; border-radius:20px; min-width:0; }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; display:block; width:100%; max-width:680px; margin:auto; padding:4px 6px calc(6px + env(safe-area-inset-bottom,0px)); background:var(--bg-surface); border-top:1px solid var(--border-color); z-index:40; }
+    .bottom-nav button { display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; min-height:48px; border:0; background:transparent; color:var(--text-main); font:inherit; font-size:0.72rem; font-weight:600; border-radius:12px; }
     .bottom-nav [aria-selected="true"] { background:#244780; color:#fff; border-radius:14px; }
     button, .btn, input, select, summary { min-height:44px !important; }
     :focus-visible { outline:3px solid #efac24; outline-offset:3px; }
@@ -1022,14 +1017,14 @@
     [data-theme="fintrack"] :focus-visible { outline-color:#10b981; }
     .balance-hero { position:relative; isolation:isolate; border-radius:24px; }
     .balance-hero::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none; background:radial-gradient(ellipse at 90% 0,rgba(16,185,129,.18),transparent 65%); }
-    .balance-hero .kpi-box.net { background:transparent; border:0; padding:12px 0 24px; }
-    .balance-hero .kpi-box.net .kpi-value { font-size:clamp(2rem,8vw,3rem); color:var(--text-main); letter-spacing:-.04em; }
-    .balance-hero .kpi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-    .balance-hero .kpi-grid .kpi-box { min-width:0; padding:12px; background:var(--bg-subtle); }
-    .balance-hero .kpi-grid .kpi-value { font-size:clamp(1rem,4vw,1.5rem); overflow-wrap:anywhere; }
+    .balance-hero .kpi-box.net { background:transparent; border:0; padding:4px 0 10px; }
+    .balance-hero .kpi-box.net .kpi-value { font-size:clamp(1.8rem,6.5vw,2.3rem); color:var(--text-main); letter-spacing:-.04em; }
+    .balance-hero .kpi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:6px; }
+    .balance-hero .kpi-grid .kpi-box { min-width:0; padding:8px 10px; background:var(--bg-subtle); border-radius:14px; }
+    .balance-hero .kpi-grid .kpi-value { font-size:clamp(1rem,3.5vw,1.25rem); overflow-wrap:anywhere; }
     .kpi-sub { overflow-wrap:anywhere; }
     .progress-track { height:7px; background:var(--bg-subtle); border-radius:99px; }
-    .progress-fill { background:linear-gradient(90deg,#10b981,#6366f1); border-radius:99px; }    .ai-callout { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:20px 16px; margin-bottom:20px; text-align:left; border:1px solid #6366f1; background:linear-gradient(120deg,#202244,#12141c); color:#f3f5fa; }
+    .progress-fill { background:linear-gradient(90deg,#10b981,#6366f1); border-radius:99px; }    .ai-callout { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:20px 16px; margin-bottom:20px; text-align:left; border:1px solid #6366f1; background:linear-gradient(120deg,#202244,#12141c); color:#f3f5fa; }
     .ai-callout small { display:block; color:#c1c6d5; margin-top:6px; }
     .scan-preview { position:relative; overflow:hidden; border-radius:16px; }
     .scan-preview .preview-img { display:block; margin:auto; }
@@ -1044,10 +1039,12 @@
     .tx-direction { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; flex-shrink:0; font-size:24px; background:var(--expense-bg); color:var(--expense-color); }
     .tx-direction.income { background:var(--income-bg); color:var(--income-color); }
     .tx-amount.income { color:var(--income-color); } .tx-amount.expense { color:var(--expense-color); }
-    .bottom-nav { display:block; width:100%; max-width:900px; margin:auto; }
-    .nav-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
+    .bottom-nav { display:block; width:100%; max-width:680px; margin:auto; }
+    .nav-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; }
     #tab-analytics { grid-column:4; } #tab-history { grid-column:5; }
-    .bottom-nav .center-scan-fab { position:absolute; left:50%; top:-19px; transform:translateX(-50%); width:60px; height:60px; min-height:60px; border-radius:50%; background:linear-gradient(135deg,#10b981,#0d9488); color:#052c20; border:5px solid var(--bg-app); box-shadow:0 0 24px #10b98155; }
+    .tab-3d-icon { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; }
+    .tab-3d-icon .icon-3d-badge { width:26px !important; height:26px !important; border-radius:8px; box-shadow:none; }
+    .bottom-nav .center-scan-fab { position:absolute; left:50%; top:-16px; transform:translateX(-50%); width:54px; height:54px; min-height:54px; border-radius:50%; background:linear-gradient(135deg,#10b981,#0d9488); color:#052c20; border:4px solid var(--bg-app); box-shadow:0 0 20px #10b98155; }
     .bottom-nav .center-scan-fab:hover { transform:translateX(-50%); }
     [data-theme="fintrack"] .bottom-nav [aria-selected="true"] { background:#10382d; color:#10b981; }
     .app-panels,.header-inner { width:100%; max-width:900px; margin:auto; }
@@ -1075,15 +1072,20 @@
     /* Local illustrated clay artwork and softly raised jar shelves. */
     .icon-3d-badge { display:inline-flex; align-items:center; justify-content:center; flex:none; vertical-align:middle; border-radius:30%; background:radial-gradient(circle at 30% 20%,#fff7ed,#eddefb 75%); box-shadow:inset 0 2px 2px #fff9,0 5px 10px #49305c18; }
     .cute-3d-svg { display:block; width:100%; height:100%; overflow:visible; }
-    .jar-caption { color:var(--text-secondary); font-size:.85rem; margin:8px 0 16px; }
-    .jar-shelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:16px 12px; padding:8px 8px 24px; border-bottom:14px solid #bca2cb; border-radius:18px; background:linear-gradient(transparent 82%,#dbc7e4); box-shadow:0 10px 10px -9px #49305c88; }
-    .jar-shelf-card,.jar-add-card { color:var(--text-main); font:inherit; min-width:0; border:1px solid var(--border-color); border-radius:24px; padding:16px 10px; background:var(--bg-surface); box-shadow:0 7px 0 #a590bd22,0 10px 20px #49305c12; cursor:pointer; }
-    .jar-add-card { min-height:180px; border:2px dashed #a58abc; font-weight:700; }
-    .jar-presentation { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; margin-bottom:12px; }
-    .jar-name { font-weight:800; font-size:1rem; overflow-wrap:anywhere; text-align:center; }
-    .jar-progress { width:min(100%,180px); height:10px; border-radius:20px; overflow:hidden; background:#b8a5cd33; box-shadow:inset 0 2px 3px #49305c18; }
+    .jar-caption { color:var(--text-secondary); font-size:.78rem; margin:4px 0 10px; }
+    .jar-shelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:10px 8px; padding:6px 6px 16px; border-bottom:10px solid #bca2cb; border-radius:16px; background:linear-gradient(transparent 82%,#dbc7e4); box-shadow:0 8px 10px -8px #49305c66; }
+    .jar-shelf-card,.jar-add-card { color:var(--text-main); font:inherit; min-width:0; border:1px solid var(--border-color); border-radius:18px; padding:10px 6px; background:var(--bg-surface); box-shadow:0 5px 0 #a590bd22,0 8px 16px #49305c10; cursor:pointer; }
+    .jar-add-card { min-height:115px; border:2px dashed #a58abc; font-weight:700; font-size:.85rem; }
+    .jar-presentation { display:flex; flex-direction:column; align-items:center; gap:6px; width:100%; margin-bottom:6px; }
+    .jar-name { font-weight:700; font-size:.88rem; overflow-wrap:anywhere; text-align:center; }
+    .jar-progress { width:min(100%,140px); height:8px; border-radius:20px; overflow:hidden; background:#b8a5cd33; box-shadow:inset 0 1px 2px #49305c18; }
     .jar-progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#b5a2eb,#efabc6); }
-    .jar-shelf-balance { font-size:.82rem; font-weight:700; overflow-wrap:anywhere; }
+    .jar-shelf-balance { font-size:.78rem; font-weight:700; overflow-wrap:anywhere; }
+    .category-3d-picker { display:flex; gap:8px; overflow-x:auto; padding:6px 2px 10px; margin-bottom:8px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
+    .cat-picker-btn { display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 8px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-main); font-size:0.75rem; font-weight:600; cursor:pointer; flex-shrink:0; min-width:60px; transition:all .15s ease; }
+    .cat-picker-btn .icon-3d-badge { width:30px !important; height:30px !important; }
+    .cat-picker-btn[aria-checked="true"] { border-color:var(--brand-primary,#10b981); background:var(--brand-soft,#10382d); color:var(--brand-primary,#10b981); box-shadow:0 0 10px rgba(16,185,129,.25); }
+    .cat-picker-btn:focus-visible { outline:2px solid var(--brand-primary,#10b981); outline-offset:2px; }
     #fundBucketsContainer { grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); }
     #fundBucketsContainer .fund-card { border-radius:26px; min-width:0; padding:20px; }
     .fund-card-header { flex-wrap:wrap; gap:12px; }
@@ -1183,8 +1185,7 @@
       </section>
       <section class="card" aria-labelledby="latestTitle"><h2 id="latestTitle" class="card-title">รายการล่าสุด</h2><div class="latest-filters" role="group" aria-label="กรองรายการล่าสุด"><button id="latest-all" type="button" aria-pressed="true">ทั้งหมด</button><button id="latest-expense" type="button" aria-pressed="false">รายจ่าย</button><button id="latest-income" type="button" aria-pressed="false">รายรับ</button></div><div id="latestTransactionList" class="transaction-list"></div></section>
       <section class="card jar-shelf-section" aria-labelledby="homeJarShelfTitle"><h2 id="homeJarShelfTitle" class="card-title">กระปุกของฉัน</h2><p class="jar-caption">ค่อย ๆ เติมความฝัน ทีละนิดทุกวัน</p><div id="homeJarShelf" class="jar-shelf"></div></section>
-      <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🐷</span>กระปุก</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">📊</span>กราฟ</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🧾</span>ประวัติ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">💰</span>แบ่งงบ</button></div>
-      <section class="card" aria-labelledby="scanSectionTitle">
+            <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
           <h2 id="scanSectionTitle" class="card-title">สแกนด่วน</h2>
         </div>
@@ -1374,10 +1375,10 @@
   </main>
   <nav class="bottom-nav" aria-label="เมนูหลัก">
     <div class="nav-tabs" role="tablist" aria-label="หน้าหลักของแอป">
-    <button id="tab-home" type="button" role="tab" aria-controls="panel-home" aria-selected="true">⌂<span>หน้าหลัก</span></button>
-    <button id="tab-funds" type="button" role="tab" aria-controls="panel-funds" aria-selected="false" tabindex="-1">◉<span>กระปุก</span></button>
-    <button id="tab-analytics" type="button" role="tab" aria-controls="panel-analytics" aria-selected="false" tabindex="-1">▥<span>กราฟ</span></button>
-    <button id="tab-history" type="button" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1">≡<span>ประวัติ</span></button>
+    <button id="tab-home" type="button" role="tab" aria-controls="panel-home" aria-selected="true"><span class="tab-3d-icon" data-icon="house"></span><span>หน้าหลัก</span></button>
+    <button id="tab-funds" type="button" role="tab" aria-controls="panel-funds" aria-selected="false" tabindex="-1"><span class="tab-3d-icon" data-icon="pig"></span><span>กระปุก</span></button>
+    <button id="tab-analytics" type="button" role="tab" aria-controls="panel-analytics" aria-selected="false" tabindex="-1"><span class="tab-3d-icon" data-icon="stock"></span><span>กราฟ</span></button>
+    <button id="tab-history" type="button" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1"><span class="tab-3d-icon" data-icon="bills"></span><span>ประวัติ</span></button>
     </div>
     <button id="btnBottomCenterScan" class="center-scan-fab" type="button" aria-label="สแกนบิลด้วยกล้องหรือเลือกรูป"><svg aria-hidden="true" viewBox="0 0 24 24" width="26" height="26"><path d="M4 6h4l2-3h4l2 3h4v15H4Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
   </nav>
@@ -1424,6 +1425,7 @@
               <span>หมวดหมู่ *</span>
               <span id="badgeUncertainCategory" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
             </label>
+            <div id="txCategoryPicker" class="category-3d-picker" role="radiogroup" aria-label="เลือกหมวดหมู่"></div>
             <select id="txFormCategory" class="form-control" required>
               <option value="unknown">-- กรุณาเลือกหมวดหมู่ --</option>
               <option value="food_drink">อาหารและเครื่องดื่ม</option>

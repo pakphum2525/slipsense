@@ -87,6 +87,24 @@ interface DashboardMetrics {
         unknown: 'ยังไม่ระบุหมวดหมู่'
       };
 
+      const CATEGORY_SHORT_LABELS: Record<string, string> = {
+        food_drink: 'อาหาร',
+        groceries: 'ของใช้',
+        transport: 'เดินทาง',
+        utilities_bills: 'บิล/น้ำไฟ',
+        shopping_general: 'ช้อปปิ้ง',
+        home_repair: 'ซ่อมบ้าน',
+        health_medical: 'สุขภาพ',
+        education_work: 'ศึกษา/งาน',
+        entertainment: 'บันเทิง',
+        transfer_other: 'โอนเงิน',
+        salary_income: 'เงินเดือน',
+        business_income: 'ธุรกิจ',
+        refund_other_income: 'เงินคืน',
+        unknown: 'ทั่วไป'
+      };
+
+
       const SOURCE_LABELS: Record<SourceType, string> = {
         receipt: 'ใบเสร็จรับเงิน',
         transfer_slip: 'สลิปโอนเงิน',
@@ -168,6 +186,71 @@ interface DashboardMetrics {
         for (const x of [37,64]) svg.appendChild(node('ellipse', {cx:x,cy:faceY+4,rx:4,ry:2,fill:'#f28cac',opacity:.65}));
         badge.appendChild(svg); return badge;
       }
+      function renderBottomNavIcons() {
+        const tabs: Array<[string, string]> = [
+          ['tab-home', 'house'],
+          ['tab-funds', 'pig'],
+          ['tab-analytics', 'stock'],
+          ['tab-history', 'bills']
+        ];
+        for (const [id, iconKey] of tabs) {
+          const btn = document.getElementById(id);
+          if (!btn) continue;
+          const holder = (Array.isArray(btn.children) && btn.children.find((c: any) => c.className === 'tab-3d-icon')) || btn.querySelector?.('.tab-3d-icon');
+          if (holder) {
+            holder.replaceChildren(render3dIcon(iconKey, 26));
+          }
+        }
+      }
+
+      const CATEGORY_PICKER_ITEMS = [
+        'food_drink', 'groceries', 'transport', 'utilities_bills',
+        'shopping_general', 'home_repair', 'health_medical', 'education_work',
+        'entertainment', 'transfer_other'
+      ];
+      function renderCategoryPicker() {
+        const container = document.getElementById('txCategoryPicker');
+        if (!container) return;
+        container.replaceChildren();
+        for (const catKey of CATEGORY_PICKER_ITEMS) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cat-picker-btn';
+          btn.setAttribute('data-category', catKey);
+          btn.setAttribute('role', 'radio');
+          btn.setAttribute('aria-checked', 'false');
+          btn.setAttribute('aria-label', CATEGORY_LABELS[catKey] || catKey);
+          btn.appendChild(render3dIcon(catKey, 30));
+          const lbl = document.createElement('span');
+          lbl.textContent = CATEGORY_SHORT_LABELS[catKey] || catKey;
+          btn.appendChild(lbl);
+          btn.onclick = () => {
+            const select = document.getElementById('txFormCategory') as HTMLSelectElement | null;
+            if (select) {
+              select.value = catKey;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            updateCategoryPickerSelection(catKey);
+          };
+          container.appendChild(btn);
+        }
+      }
+
+      function updateCategoryPickerSelection(selectedCat: string) {
+        const container = document.getElementById('txCategoryPicker');
+        if (!container) return;
+        const buttons = container.querySelectorAll && container.querySelectorAll('.cat-picker-btn').length > 0
+          ? container.querySelectorAll('.cat-picker-btn')
+          : (container.children || []);
+        for (const btn of Array.from(buttons) as any[]) {
+          const match = btn.getAttribute('data-category') === selectedCat;
+          btn.setAttribute('aria-checked', match ? 'true' : 'false');
+          if (match && typeof btn.scrollIntoView === 'function') {
+            try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch {}
+          }
+        }
+      }
+
       const BUCKET_SHORT_NAMES: Record<string, string> = { investment_stock:'หุ้น', home_building:'บ้าน', fixed_expense:'รายเดือน', emergency_personal:'ฉุกเฉิน', general_expense:'กิน / ใช้', dan_insurance:'ประกันแดน' };
       function jarProgress(balance: any, target: any) {
         return Number.isFinite(balance) && Number.isFinite(target) && target > 0 ? Math.max(0, Math.min(100, balance / target * 100)) : 0;
@@ -2330,6 +2413,7 @@ interface DashboardMetrics {
       }
 
       function bindAppNavigation() {
+        renderBottomNavIcons();
         if (navigationBound) return; navigationBound = true;
         const panels = ['home', 'funds', 'analytics', 'history'];
         panels.forEach((name, i) => {
@@ -2626,7 +2710,7 @@ interface DashboardMetrics {
           const state = entryFields[field], el = document.getElementById(id);
           if (!state || !tx || !['default', 'history'].includes(state.origin) || el.value !== before[field]) continue;
           if (validEntryValue(field, tx[field])) {
-            el.value = tx[field]; state.value = el.value; state.origin = 'history';
+            el.value = tx[field]; state.value = el.value; state.origin = 'history'; if (field === 'category') updateCategoryPickerSelection(el.value);
           }
         }
       }
@@ -3175,10 +3259,16 @@ interface DashboardMetrics {
               const top = document.createElement('div');
               top.className = 'category-row-top';
               const nameSpan = document.createElement('span');
-              nameSpan.textContent = item.label;
+              nameSpan.className = 'cat-name-badge';
+              nameSpan.style.display = 'inline-flex';
+              nameSpan.style.alignItems = 'center';
+              nameSpan.style.gap = '8px';
+              nameSpan.appendChild(render3dIcon(item.category, 32));
+              const nameText = document.createElement('span');
+              nameText.textContent = CATEGORY_SHORT_LABELS[item.category] || item.label;
+              nameSpan.appendChild(nameText);
               const valSpan = document.createElement('span');
               valSpan.textContent = `${formatCurrency(item.amount, 'THB')} (${item.percentage}%)`;
-              nameSpan.appendChild(render3dIcon(item.category, 40));
               top.appendChild(nameSpan);
               top.appendChild(valSpan);
 
@@ -3496,7 +3586,7 @@ interface DashboardMetrics {
           direction.className = 'tx-direction ' + tx.type;
           direction.textContent = tx.type === 'income' ? '↙' : '↗';
           direction.setAttribute('aria-hidden', 'true');
-          top.appendChild(render3dIcon(tx.category, 52));
+          top.appendChild(render3dIcon(tx.category, 40));
           top.appendChild(direction);
           const leftInfo = document.createElement('div');
           const merchantEl = document.createElement('div');
@@ -3528,7 +3618,7 @@ interface DashboardMetrics {
 
           const catBadge = document.createElement('span');
           catBadge.className = 'badge badge-category';
-          catBadge.textContent = CATEGORY_LABELS[tx.category] || tx.category;
+          catBadge.textContent = CATEGORY_SHORT_LABELS[tx.category] || CATEGORY_LABELS[tx.category] || tx.category;
 
           const resolvedBucket: FundBucket = (FUND_BUCKET_LABELS as Record<string, string>)[tx.fund_bucket]
             ? tx.fund_bucket
@@ -3650,6 +3740,7 @@ interface DashboardMetrics {
         document.getElementById('txFormAmount').value = normalized.amount !== null ? String(normalized.amount) : '';
         document.getElementById('txFormCurrency').value = normalized.currency || 'THB';
         document.getElementById('txFormCategory').value = normalized.category || 'unknown';
+        updateCategoryPickerSelection(normalized.category || 'unknown');
         document.getElementById('txFormSourceType').value = normalized.source_type || 'receipt';
         const fundBucketSelectAi = document.getElementById('txFormFundBucket') as HTMLSelectElement | null;
         if (fundBucketSelectAi) {
@@ -3705,6 +3796,7 @@ interface DashboardMetrics {
         document.getElementById('txFormAmount').value = '';
         document.getElementById('txFormCurrency').value = appState.settings.defaultCurrency || 'THB';
         document.getElementById('txFormCategory').value = defaultCategory;
+        updateCategoryPickerSelection(defaultCategory);
         document.getElementById('txFormSourceType').value = sourceType;
         const fundBucketSelectManual = document.getElementById('txFormFundBucket') as HTMLSelectElement | null;
         if (fundBucketSelectManual) {
@@ -3731,6 +3823,7 @@ interface DashboardMetrics {
         document.getElementById('txFormAmount').value = tx.amount !== undefined ? String(tx.amount) : '';
         document.getElementById('txFormCurrency').value = tx.currency || 'THB';
         document.getElementById('txFormCategory').value = tx.category || 'shopping_general';
+        updateCategoryPickerSelection(tx.category || 'shopping_general');
         document.getElementById('txFormSourceType').value = tx.source_type || 'manual';
         const fundBucketSelectEdit = document.getElementById('txFormFundBucket') as HTMLSelectElement | null;
         if (fundBucketSelectEdit) {
@@ -3858,7 +3951,12 @@ interface DashboardMetrics {
       function bindUiEvents() {
         bindBucketEvents();
         renderShortcutIcons();
+        renderBottomNavIcons();
+        renderCategoryPicker();
         if (uiBound) return; uiBound = true;
+        document.getElementById('txFormCategory')?.addEventListener('change', (e: any) => {
+          updateCategoryPickerSelection(e.target.value);
+        });
         bindAppNavigation();
         bindAutomationEvents();
         // ปุ่มกล้องและอัลบั้ม
@@ -4399,7 +4497,7 @@ interface DashboardMetrics {
 
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
-        init: initApp, render3dIcon, jarProgress, renderFundBucketsAndChecklist, 'registerServiceWorkerSafe': registerServiceWorkerSafe, renderShortcutIcons,
+        init: initApp, render3dIcon, renderBottomNavIcons, renderCategoryPicker, updateCategoryPickerSelection, jarProgress, renderFundBucketsAndChecklist, 'registerServiceWorkerSafe': registerServiceWorkerSafe, renderShortcutIcons, CATEGORY_SHORT_LABELS,
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
         upgradeSalaryTemplate, legacyInsuranceReview, upgradeLegacyInsurance,
         aggregateFinancialCharts, renderFinancialCharts, selectAppPanel, bindAppNavigation,

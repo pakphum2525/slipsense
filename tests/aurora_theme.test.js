@@ -11,8 +11,13 @@ module.exports = async function () {
     assert.equal(html.match(new RegExp('<button[^>]*id="' + id + '"[^>]*>([\\s\\S]*?)</button>'))[1].trim(), label);
   }
   assert.match(html, /\.camera-btn-pair \{ display:grid; grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  const shortcuts = html.match(/<div class="app-grid">([\s\S]*?)<\/div>/)[1];
-  for (const label of ['กระปุก', 'กราฟ', 'ประวัติ', 'แบ่งงบ']) assert(shortcuts.includes('</span>' + label));
+  assert(!html.includes('class="app-grid"'));
+  for (const [id, label, icon] of [['tab-home', 'หน้าหลัก', 'house'], ['tab-funds', 'กระปุก', 'pig'], ['tab-analytics', 'กราฟ', 'stock'], ['tab-history', 'ประวัติ', 'bills']]) {
+    assert(html.includes('id="' + id + '"'));
+    assert(html.includes('>' + label + '</span>'));
+    assert(html.includes('data-icon="' + icon + '"'));
+  }
+  assert(html.includes('id="txCategoryPicker"'));
   for (const id of ['bucketFormName', 'bucketFormIcon', 'bucketFormColor', 'bucketFormCumulative', 'bucketDeleteTarget', 'bucketDeleteConfirm']) assert(html.includes('for="' + id + '"'));
   assert.match(html, /id="bucketModal"[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-labelledby="bucketModalTitle"/);
   assert.match(html, /id="bucketIconPicker"[^>]*role="group"[^>]*aria-label=/);
@@ -84,7 +89,7 @@ module.exports = async function () {
       assert(png.equals(fs.readFileSync(`dist/icons/${name}.png`)), 'deployed wallpaper matches source');
       assert.equal(new URL(`./icons/${name}.png`, 'https://example.com/slipsense/').pathname, `/slipsense/icons/${name}.png`);
     }
-    assert(sw.includes('v4-3d-cute-1'));
+    assert(sw.includes('v4-3d-cute-2'));
   }
   const { api, el, context } = loadApp();
   api.bindAutomationEvents();
