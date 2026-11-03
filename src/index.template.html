@@ -1071,6 +1071,33 @@
 #bucketModal[hidden] { display:none; }
 #bucketModal label { display:block; margin-top:12px; }
 #bucketModal :focus-visible { outline:3px solid var(--accent-primary,#6366f1); outline-offset:3px; }
+
+    /* Local illustrated clay artwork and softly raised jar shelves. */
+    .icon-3d-badge { display:inline-flex; align-items:center; justify-content:center; flex:none; vertical-align:middle; border-radius:30%; background:radial-gradient(circle at 30% 20%,#fff7ed,#eddefb 75%); box-shadow:inset 0 2px 2px #fff9,0 5px 10px #49305c18; }
+    .cute-3d-svg { display:block; width:100%; height:100%; overflow:visible; }
+    .jar-caption { color:var(--text-secondary); font-size:.85rem; margin:8px 0 16px; }
+    .jar-shelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:16px 12px; padding:8px 8px 24px; border-bottom:14px solid #bca2cb; border-radius:18px; background:linear-gradient(transparent 82%,#dbc7e4); box-shadow:0 10px 10px -9px #49305c88; }
+    .jar-shelf-card,.jar-add-card { color:var(--text-main); font:inherit; min-width:0; border:1px solid var(--border-color); border-radius:24px; padding:16px 10px; background:var(--bg-surface); box-shadow:0 7px 0 #a590bd22,0 10px 20px #49305c12; cursor:pointer; }
+    .jar-add-card { min-height:180px; border:2px dashed #a58abc; font-weight:700; }
+    .jar-presentation { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; margin-bottom:12px; }
+    .jar-name { font-weight:800; font-size:1rem; overflow-wrap:anywhere; text-align:center; }
+    .jar-progress { width:min(100%,180px); height:10px; border-radius:20px; overflow:hidden; background:#b8a5cd33; box-shadow:inset 0 2px 3px #49305c18; }
+    .jar-progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#b5a2eb,#efabc6); }
+    .jar-shelf-balance { font-size:.82rem; font-weight:700; overflow-wrap:anywhere; }
+    #fundBucketsContainer { grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); }
+    #fundBucketsContainer .fund-card { border-radius:26px; min-width:0; padding:20px; }
+    .fund-card-header { flex-wrap:wrap; gap:12px; }
+    .fund-title,.fund-meta,.tx-merchant { overflow-wrap:anywhere; }
+    .category-row-top > span:first-child { display:flex; align-items:center; gap:10px; }
+    .chart-legend li { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .chart-legend .icon-3d-badge { order:-1; }
+    #bucketIconPicker { grid-template-columns:repeat(auto-fit,minmax(58px,1fr)); }
+    #bucketIconPicker .btn { display:flex; justify-content:center; padding:6px; }
+    #bucketIconPicker [aria-pressed="true"] { outline:3px solid var(--brand-primary); outline-offset:1px; }
+    .jar-shelf-card:focus-visible,.jar-add-card:focus-visible,#bucketIconPicker .btn:focus-visible { outline:3px solid var(--brand-primary); outline-offset:4px; }
+    .app-shortcut .shortcut-icon { display:flex; justify-content:center; }
+    .tx-top > div:first-of-type { min-width:0; flex:1; }
+    @media(max-width:420px) { .jar-shelf { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 8px; } .tx-top { flex-wrap:wrap; } .tx-top .tx-amount { margin-left:auto; } .category-row-top { flex-wrap:wrap; gap:6px; } }
 </style>
 </head>
 <body>
@@ -1155,6 +1182,7 @@
         </div>
       </section>
       <section class="card" aria-labelledby="latestTitle"><h2 id="latestTitle" class="card-title">รายการล่าสุด</h2><div class="latest-filters" role="group" aria-label="กรองรายการล่าสุด"><button id="latest-all" type="button" aria-pressed="true">ทั้งหมด</button><button id="latest-expense" type="button" aria-pressed="false">รายจ่าย</button><button id="latest-income" type="button" aria-pressed="false">รายรับ</button></div><div id="latestTransactionList" class="transaction-list"></div></section>
+      <section class="card jar-shelf-section" aria-labelledby="homeJarShelfTitle"><h2 id="homeJarShelfTitle" class="card-title">กระปุกของฉัน</h2><p class="jar-caption">ค่อย ๆ เติมความฝัน ทีละนิดทุกวัน</p><div id="homeJarShelf" class="jar-shelf"></div></section>
       <div class="app-grid"><button type="button" id="shortcut-funds" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🐷</span>กระปุก</button><button type="button" id="shortcut-analytics" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">📊</span>กราฟ</button><button type="button" id="shortcut-history" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">🧾</span>ประวัติ</button><button type="button" id="shortcut-salary" class="app-shortcut"><span class="shortcut-icon" aria-hidden="true">💰</span>แบ่งงบ</button></div>
       <section class="card" aria-labelledby="scanSectionTitle">
         <div class="card-header">
@@ -1212,7 +1240,7 @@
       <section class="card" aria-labelledby="fundBucketsSectionTitle">
         <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
           <div>
-            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกเงินเดือน 6 ส่วน & รายการ Fix</h2>
+            <h2 id="fundBucketsSectionTitle" class="card-title">กระปุกของฉัน</h2>
             <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">
               เลือกถอน/ตัดจ่ายจาก 6 ส่วนนี้ (ไม่เก็บรูปสลิปต้นฉบับเพื่อความเป็นส่วนตัว)
             </p>

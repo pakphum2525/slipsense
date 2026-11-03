@@ -1,8 +1,19 @@
 # รายงานสถานะโปรเจกต์ (STATUS.md) — SlipSense (`slipsense-expense-tracker`)
 
-**วันที่อัปเดตล่าสุด:** 2 พฤศจิกายน 2026
+**วันที่อัปเดตล่าสุด:** 3 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-013 ผ่านการอนุมัติ Release Gate (Gate 16: `RELEASE_APPROVED`), รวมเข้าสาขา `main`, และ Deploy Supabase Edge Function `analyze-receipt` (v10 ACTIVE) รองรับ Automatic Fallback สำหรับ 404, 503, 504 และ 408 เรียบร้อยแล้ว; ชุดทดสอบอัตโนมัติผ่านครบ 40/40 รายการ (exit code 0)
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **41/41 รายการ (exit code 0)**
+
+## ผลงาน TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & ชั้นวางกระปุกของฉัน)
+
+- **สิ่งที่ทำเสร็จแล้ว:**
+  - เพิ่มคลังภาพเวกเตอร์ 3 มิติแบบพาสเทล (`ICON_ARTWORK`, `ICON_KEYS`, `render3dIcon`) ใน `src/app.ts` รองรับ 19 ไอคอนกระปุกและทุกหมวดหมู่ธุรกรรม พร้อมแสงเงา 3 มิติ (`radialGradient`, `linearGradient`, `feDropShadow`) และใบหน้าตัวการ์ตูน Kawaii
+  - เพิ่มชั้นวาง **กระปุกของฉัน** (`#homeJarShelf`) บนหน้าแรก (`#panel-home`) และอัปเกรดการ์ดกระปุกในแท็บกระปุก (`#panel-funds`) ให้แสดงไอคอน 3D ขนาดใหญ่ ชื่อสั้นอ่านง่าย แถบความคืบหน้า (`jarProgress`) และการ์ดปุ่ม **+ เพิ่มกระปุก** (`.jar-add-card`)
+  - เชื่อมไอคอน 3D เข้ากับแถวรายการธุรกรรม (`createTransactionCard`), สรุปหมวดหมู่รายจ่าย (`#categoryBreakdownContainer`), คำอธิบายกราฟโดนัท (`.chart-legend`), ทางลัดหน้าแรก (`renderShortcutIcons`) และแผงเลือกไอคอนกระปุก (`#bucketIconPicker` ครบ 19 แบบ)
+  - อัปเดต `CACHE_VERSION` ใน `src/sw.ts` และ `sw.js` เป็น `slipsense-app-shell-v4-3d-cute-1` และสั่ง `registration.update()` ใน `registerServiceWorkerSafe()` เพื่อให้เบราว์เซอร์ดึงหน้าตาใหม่ทันที
+  - รัน `node scripts/build_prod.js` และ `node scripts/run_tests.js`: ผ่านครบ **41/41** รายการ (ล้มเหลว 0)
+- **บั๊กค้าง:** ไม่มี
+- **งานถัดไป:** เปิดใช้งานหรือรีเฟรชหน้าเว็บที่ `http://127.0.0.1:8080` (กด `Ctrl+F5` หากเปิดค้างไว้) หรือนำขึ้น GitHub Pages
 
 ## ผลงาน TASK-SLIPSENSE-V4-013
 

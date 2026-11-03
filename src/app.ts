@@ -100,7 +100,121 @@ interface DashboardMetrics {
         sync_failed: 'ซิงก์ไม่สำเร็จ'
       };
 
-      const BUCKET_ICONS = ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕'];
+      const BUCKET_ICONS = ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕', '🍔', '🎓', '📌', '🌈', '🍄', '🍎', '🐝'];
+      // All artwork is local geometry. No user input is interpreted as SVG markup.
+      const ICON_ARTWORK: Record<string, [string, string, Array<[string, Record<string, string | number>]>]> = {
+        pig: ['#ffbdd8', '#df6f9a', [['ellipse',{cx:49,cy:54,rx:31,ry:25}], ['path',{d:'M25 36 L23 16 Q40 16 41 33 M58 32 Q61 14 76 20 L73 39'}], ['rect',{x:28,y:70,width:12,height:15,rx:5}], ['rect',{x:61,y:70,width:12,height:15,rx:5}], ['ellipse',{cx:70,cy:57,rx:16,ry:12,fill:'#ffcddd'}], ['path',{d:'M65 55v4 M74 55v4',stroke:'#a64d77','stroke-width':3}], ['path',{d:'M40 29h17',stroke:'#9d537b','stroke-width':4,'stroke-linecap':'round'}]]],
+        house: ['#a9e6cb', '#43a58f', [['rect',{x:24,y:38,width:54,height:43,rx:10}], ['path',{d:'M13 43 Q10 39 17 34 L45 13 Q50 8 56 13 L86 36 Q91 44 81 45Z',fill:'#f6a4b9'}], ['rect',{x:57,y:57,width:13,height:24,rx:5,fill:'#fff0cb'}], ['rect',{x:30,y:47,width:15,height:15,rx:4,fill:'#e6faff'}]]],
+        stock: ['#b2e8de', '#53a7bd', [['rect',{x:19,y:17,width:64,height:67,rx:16}], ['path',{d:'M30 59 L44 44 L55 50 L72 29 M60 29h12v13',fill:'none',stroke:'#fff6c5','stroke-width':7,'stroke-linecap':'round','stroke-linejoin':'round'}]]],
+        noodles: ['#ffcc9a', '#e88e73', [['path',{d:'M20 47h64 Q80 83 52 84 Q25 83 20 47'}], ['ellipse',{cx:52,cy:47,rx:32,ry:10,fill:'#fff1c6'}], ['path',{d:'M28 44q6-25 12 0q6-26 12 0q6-26 12 0q6-25 12 0',fill:'none',stroke:'#e6b55d','stroke-width':4}], ['path',{d:'M57 26L86 12 M61 32L91 20',stroke:'#bd795c','stroke-width':4,'stroke-linecap':'round'}]]],
+        burger: ['#ffd585', '#d9964d', [['path',{d:'M19 41Q22 13 51 15Q80 15 84 41Z'}], ['rect',{x:18,y:45,width:67,height:10,rx:5,fill:'#9ec975'}], ['rect',{x:19,y:56,width:65,height:12,rx:6,fill:'#a36753'}], ['path',{d:'M20 68h63q0 16-15 16H35Q20 84 20 68'}], ['path',{d:'M34 27l3-2 M51 23l3 1 M66 29l3 2',stroke:'#fff5d8','stroke-width':3,'stroke-linecap':'round'}]]],
+        gift: ['#ffafc8', '#d96aa1', [['rect',{x:23,y:35,width:56,height:47,rx:9}], ['rect',{x:18,y:29,width:66,height:17,rx:6}], ['path',{d:'M48 30Q14 28 28 13Q40 8 51 29Q64 7 76 16Q84 33 51 30',fill:'#c5b4f4'}], ['path',{d:'M50 35v47',stroke:'#fff2cd','stroke-width':9}]]],
+        travel: ['#a1dcd7', '#4caaa7', [['ellipse',{cx:50,cy:80,rx:37,ry:9,fill:'#ffdea0'}], ['path',{d:'M52 25L44 78',stroke:'#bb8260','stroke-width':5}], ['path',{d:'M16 39Q40 1 77 30L84 37Q71 29 61 40Q48 28 37 42Q27 31 16 39'}], ['path',{d:'M37 42Q40 22 50 16Q59 24 61 40',fill:'#ffb8cd'}], ['circle',{cx:80,cy:15,r:8,fill:'#ffdd84'}]]],
+        cat: ['#ffdbad', '#d8a172', [['path',{d:'M22 45L20 15L42 28Q52 23 63 28L81 15L80 49Q89 81 51 84Q14 81 22 45'}], ['path',{d:'M25 66L12 63 M28 72L14 76 M74 66L88 63 M73 72L88 76',stroke:'#b58068','stroke-width':3,'stroke-linecap':'round'}], ['path',{d:'M47 57h8l-4 5Z',fill:'#e489a8'}]]],
+        education: ['#c6b5f5', '#8571b8', [['rect',{x:25,y:44,width:51,height:30,rx:10}], ['path',{d:'M10 34L50 13L91 34L50 55Z'}], ['path',{d:'M86 36v33',stroke:'#f6cc72','stroke-width':4}], ['circle',{cx:86,cy:72,r:5,fill:'#f6cc72'}]]],
+        emergency: ['#ffbcba', '#df7a91', [['circle',{cx:51,cy:49,r:34}], ['path',{d:'M23 28l16 13 M64 59l16 13 M25 73l15-15 M65 39l15-14',stroke:'#fff5e7','stroke-width':15}], ['circle',{cx:51,cy:49,r:16,fill:'#c6e9ef'}]]],
+        shield: ['#adcff6', '#648ec9', [['path',{d:'M50 11Q68 23 83 23V51Q81 73 50 89Q19 73 18 51V23Q34 23 50 11'}], ['path',{d:'M33 43l12 12 23-24',fill:'none',stroke:'#fff2cb','stroke-width':8,'stroke-linecap':'round','stroke-linejoin':'round'}]]],
+        bills: ['#ffe4ab', '#d8ab65', [['path',{d:'M24 14h52v72l-9-6-9 6-9-6-9 6-8-6-8 6Z'}], ['path',{d:'M35 33h30 M35 43h22',stroke:'#c59978','stroke-width':5,'stroke-linecap':'round'}], ['circle',{cx:54,cy:16,r:9,fill:'#f39cac'}]]],
+        car: ['#b8c9ff', '#7e8ed8', [['path',{d:'M20 49L31 25Q34 20 44 20h19q7 0 10 9l9 20'}], ['rect',{x:14,y:44,width:75,height:32,rx:13}], ['path',{d:'M34 28h29l8 18H28Z',fill:'#dcf6fc'}], ['circle',{cx:29,cy:77,r:10,fill:'#686582'}], ['circle',{cx:75,cy:77,r:10,fill:'#686582'}], ['circle',{cx:24,cy:55,r:5,fill:'#fff3c3'}], ['circle',{cx:80,cy:55,r:5,fill:'#fff3c3'}]]],
+        diamond: ['#bfedff', '#8d9fdf', [['path',{d:'M14 34L31 15h39l18 19-37 52Z'}], ['path',{d:'M14 34h74 M31 15l8 19 12 52 13-52 6-19 M39 34l12-19 13 19',fill:'none',stroke:'#eefaff','stroke-width':3}]]],
+        coffee: ['#ffd1ad', '#cc9479', [['path',{d:'M73 38Q98 32 88 59Q83 67 72 62',fill:'none',stroke:'#eeb696','stroke-width':9}], ['path',{d:'M23 32h51v29Q74 80 50 81Q24 80 23 61Z'}], ['ellipse',{cx:49,cy:32,rx:25,ry:8,fill:'#996b59'}], ['path',{d:'M35 20q-6-7 0-13 M52 19q-6-7 0-13',fill:'none',stroke:'#fff3dd','stroke-width':4,'stroke-linecap':'round'}], ['ellipse',{cx:50,cy:85,rx:33,ry:5,fill:'#e8c1b2'}]]],
+        rainbow: ['#daeafa', '#9fbbdf', [['path',{d:'M15 57a35 35 0 0170 0',fill:'none',stroke:'#f4a9bb','stroke-width':13}], ['path',{d:'M27 57a23 23 0 0146 0',fill:'none',stroke:'#ffe29b','stroke-width':11}], ['path',{d:'M37 57a13 13 0 0126 0',fill:'none',stroke:'#b4e0cd','stroke-width':9}], ['path',{d:'M17 80Q1 76 13 62Q9 46 27 46Q38 31 50 48Q66 39 72 56Q93 52 92 69Q90 83 72 81Z'}]]],
+        mushroom: ['#ffb7b7', '#d36c91', [['rect',{x:34,y:48,width:33,height:36,rx:13,fill:'#ffedcb'}], ['path',{d:'M12 51Q18 9 51 12Q85 11 91 51Q52 66 12 51'}], ['ellipse',{cx:33,cy:33,rx:8,ry:7,fill:'#fff2df'}], ['ellipse',{cx:64,cy:25,rx:7,ry:6,fill:'#fff2df'}], ['ellipse',{cx:74,cy:46,rx:6,ry:5,fill:'#fff2df'}]]],
+        apple: ['#ff9e9e', '#d95076', [['path',{d:'M51 29Q23 13 18 42Q8 67 33 84Q44 90 51 83Q64 91 76 78Q97 49 79 29Q65 19 51 29'}], ['path',{d:'M51 29Q46 14 55 8',stroke:'#a4775a','stroke-width':5,fill:'none'}], ['path',{d:'M55 22Q59 4 78 13Q72 29 55 22',fill:'#91c895'}]]],
+        bee: ['#ffe59d', '#e5b962', [['ellipse',{cx:34,cy:30,rx:14,ry:20,fill:'#def4ff',transform:'rotate(-30 34 30)'}], ['ellipse',{cx:66,cy:30,rx:14,ry:20,fill:'#def4ff',transform:'rotate(30 66 30)'}], ['ellipse',{cx:51,cy:57,rx:30,ry:24}], ['path',{d:'M36 36q-9 20 0 42 M65 36q9 20 0 42',fill:'none',stroke:'#927154','stroke-width':7}], ['path',{d:'M37 36L32 23 M64 36l5-13',stroke:'#927154','stroke-width':3,'stroke-linecap':'round'}]]]
+      };
+      const ICON_KEYS: Record<string, string> = {
+        '🐷':'pig', '🏡':'house', '📈':'stock', '🍜':'noodles', '🍔':'burger', '🎁':'gift', '✈️':'travel', '🐱':'cat',
+        '🎓':'education', '🛟':'emergency', '🛡️':'shield', '📌':'bills', '🚗':'car', '💎':'diamond', '☕':'coffee',
+        '🌈':'rainbow', '🍄':'mushroom', '🍎':'apple', '🐝':'bee', '📊':'stock', '🧾':'bills', '💰':'pig',
+        food_drink:'noodles', groceries:'apple', transport:'car', utilities_bills:'bills', shopping_general:'gift',
+        home_repair:'house', health_medical:'shield', education_work:'education', entertainment:'rainbow',
+        transfer_other:'pig', salary_income:'pig', business_income:'stock', refund_other_income:'gift', unknown:'mushroom'
+      };
+      let icon3dSequence = 0;
+      function render3dIcon(iconKey: any, size = 52) {
+        const key = Object.prototype.hasOwnProperty.call(ICON_KEYS, iconKey) ? ICON_KEYS[iconKey]
+          : Object.prototype.hasOwnProperty.call(ICON_ARTWORK, iconKey) ? iconKey : 'pig';
+        const [light, dark, shapes] = ICON_ARTWORK[key];
+        const safeSize = typeof size === 'number' && Number.isFinite(size) ? Math.max(24, Math.min(160, size)) : 52;
+        const badge = document.createElement('span'); badge.className = 'icon-3d-badge';
+        badge.style.width = safeSize + 'px'; badge.style.height = safeSize + 'px';
+        badge.setAttribute('aria-hidden', 'true'); badge.setAttribute('data-icon-key', key);
+        const node = (tag: string, attrs: Record<string, string | number> = {}) => {
+          const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+          for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, String(value));
+          return el;
+        };
+        const id = 'clay-' + (++icon3dSequence);
+        const svg = node('svg', {viewBox:'0 0 100 100', class:'cute-3d-svg', width:safeSize, height:safeSize, focusable:'false'});
+        const defs = node('defs');
+        const radial = node('radialGradient', {id:id+'-body', cx:'30%', cy:'20%', r:'85%'});
+        radial.appendChild(node('stop', {offset:0, 'stop-color':light}));
+        radial.appendChild(node('stop', {offset:1, 'stop-color':dark})); defs.appendChild(radial);
+        const shine = node('linearGradient', {id:id+'-shine', x1:0,y1:0,x2:0,y2:1});
+        shine.appendChild(node('stop', {offset:0,'stop-color':'#fff','stop-opacity':.8}));
+        shine.appendChild(node('stop', {offset:1,'stop-color':'#fff','stop-opacity':0})); defs.appendChild(shine);
+        const filter = node('filter', {id:id+'-shadow', x:'-30%', y:'-30%', width:'160%', height:'170%'});
+        filter.appendChild(node('feDropShadow', {dx:0,dy:3,stdDeviation:2,'flood-color':'#624766','flood-opacity':.22})); defs.appendChild(filter);
+        svg.appendChild(defs);
+        svg.appendChild(node('ellipse', {cx:51,cy:91,rx:30,ry:4,fill:'#63476b',opacity:.13}));
+        const body = node('g', {fill:'url(#'+id+'-body)', filter:'url(#'+id+'-shadow)'});
+        for (const [tag, attrs] of shapes) body.appendChild(node(tag, attrs));
+        svg.appendChild(body);
+        svg.appendChild(node('ellipse', {cx:35,cy:30,rx:8,ry:4,fill:'url(#'+id+'-shine)',transform:'rotate(-25 35 30)'}));
+        const faceY = key === 'mushroom' ? 71 : key === 'rainbow' ? 66 : key === 'education' ? 64 : 65;
+        for (const x of [43,58]) svg.appendChild(node('circle', {cx:x,cy:faceY,r:2,fill:'#60445c'}));
+        svg.appendChild(node('path', {d:'M47 '+(faceY+4)+'q4 5 8 0',fill:'none',stroke:'#60445c','stroke-width':1.8,'stroke-linecap':'round'}));
+        for (const x of [37,64]) svg.appendChild(node('ellipse', {cx:x,cy:faceY+4,rx:4,ry:2,fill:'#f28cac',opacity:.65}));
+        badge.appendChild(svg); return badge;
+      }
+      const BUCKET_SHORT_NAMES: Record<string, string> = { investment_stock:'หุ้น', home_building:'บ้าน', fixed_expense:'รายเดือน', emergency_personal:'ฉุกเฉิน', general_expense:'กิน / ใช้', dan_insurance:'ประกันแดน' };
+      function jarProgress(balance: any, target: any) {
+        return Number.isFinite(balance) && Number.isFinite(target) && target > 0 ? Math.max(0, Math.min(100, balance / target * 100)) : 0;
+      }
+      function createJarPresentation(f: any, compact = false) {
+        const bucket = bucketRegistry?.buckets.find((b: any) => b.bucket_key === f.bucket);
+        const host = document.createElement('div'); host.className = 'jar-presentation';
+        host.appendChild(render3dIcon(bucket?.icon || '🐷', compact ? 80 : 112));
+        const name = document.createElement('div'); name.className = 'jar-name';
+        name.textContent = BUCKET_SHORT_NAMES[f.bucket] || bucket?.name || f.label;
+        name.title = f.label; name.setAttribute('aria-label', f.label); host.appendChild(name);
+        // Only insurance has a defined savings goal. Other bars show funds remaining from recorded income.
+        const target = f.bucket === 'dan_insurance' ? 34800 : f.isCumulative ? f.allTimeIncome : f.monthIncome;
+        const percent = jarProgress(f.availableBalance, target);
+        const track = document.createElement('div'); track.className = 'jar-progress';
+        track.setAttribute('role','progressbar'); track.setAttribute('aria-label', f.label + (f.bucket === 'dan_insurance' ? ' เป้าหมาย 34,800 บาท' : ' สัดส่วนเงินคงเหลือจากเงินเข้า'));
+        track.setAttribute('aria-valuemin','0'); track.setAttribute('aria-valuemax','100'); track.setAttribute('aria-valuenow', String(Math.round(percent)));
+        const fill = document.createElement('span'); fill.style.width = percent + '%'; track.appendChild(fill); host.appendChild(track);
+        return host;
+      }
+      function createAddJarCard() {
+        const add = document.createElement('button'); add.type = 'button'; add.className = 'jar-add-card';
+        add.textContent = '+ เพิ่มกระปุก'; add.onclick = () => openBucketModal(); return add;
+      }
+      function renderHomeJarShelf(metrics: any) {
+        const shelf = document.getElementById('homeJarShelf'); if (!shelf) return;
+        shelf.replaceChildren();
+        for (const f of metrics.fundBalances || []) {
+          const card = document.createElement('button'); card.type = 'button'; card.className = 'jar-shelf-card';
+          card.setAttribute('aria-label', 'บันทึกรายการ ' + f.label); card.appendChild(createJarPresentation(f, true));
+          const balance = document.createElement('span'); balance.className = 'jar-shelf-balance'; balance.textContent = formatCurrency(f.availableBalance, 'THB'); card.appendChild(balance);
+          card.onclick = () => openVerificationModalForManual('manual', f.bucket); shelf.appendChild(card);
+        }
+        shelf.appendChild(createAddJarCard());
+      }
+      function renderShortcutIcons() {
+        for (const [id, key] of [['funds','🐷'],['analytics','📈'],['history','📌'],['salary','💎']]) {
+          const btn: any = document.getElementById('shortcut-' + id);
+          if (!btn) continue;
+          const icon = (Array.isArray(btn.children) && btn.children.find((c: any) => c.className === 'shortcut-icon')) || btn.querySelector?.('.shortcut-icon');
+          if (icon) {
+            icon.className = 'shortcut-icon';
+            icon.replaceChildren(render3dIcon(key, 56));
+            if (Array.isArray(btn.children) && !btn.children.includes(icon)) btn.appendChild(icon);
+          }
+        }
+      }
       const DEFAULT_BUCKETS = [
         ['investment_stock', 'หุ้น/ลงทุน', '📈', true], ['home_building', 'สร้างบ้าน', '🏡', true],
         ['fixed_expense', 'รายเดือน', '📌', false], ['emergency_personal', 'ฉุกเฉิน', '🛟', true],
@@ -957,7 +1071,12 @@ interface DashboardMetrics {
         const select = el('bucketDeleteTarget'); select.innerHTML = '';
         for (const b of bucketRegistry.buckets.filter(b => b.bucket_key !== key)) { const option = document.createElement('option'); option.value = b.bucket_key; option.textContent = b.icon + ' ' + b.name; select.appendChild(option); }
         select.value = FUND_BUCKET_ORDER.includes('general_expense') && key !== 'general_expense' ? 'general_expense' : FUND_BUCKET_ORDER.find(k => k !== key) || '';
+        updateBucketIconSelection();
         el('bucketModal').hidden = false; (mode === 'delete' ? el('bucketDeleteConfirm') : el('bucketFormName')).focus();
+      }
+      function updateBucketIconSelection() {
+        const picker = document.getElementById('bucketIconPicker');
+        for (const button of Array.from(picker?.children || []) as any[]) button.setAttribute('aria-pressed', String(button.getAttribute('data-icon') === (document.getElementById('bucketFormIcon') as any)?.value));
       }
       function bindBucketEvents() {
         const el = id => document.getElementById(id), modal = el('bucketModal');
@@ -965,9 +1084,10 @@ interface DashboardMetrics {
         el('btnOpenBucketModal').addEventListener('click', () => openBucketModal());
         el('btnCloseBucketModal').addEventListener('click', closeBucketModal);
         for (const icon of BUCKET_ICONS) {
-          const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.textContent = icon;
-          button.setAttribute('aria-label', 'เลือกไอคอน ' + icon); button.onclick = () => { el('bucketFormIcon').value = icon; }; el('bucketIconPicker').appendChild(button);
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.setAttribute('data-icon', icon); button.appendChild(render3dIcon(icon, 48));
+          button.setAttribute('aria-label', 'เลือกไอคอน ' + icon); button.onclick = () => { el('bucketFormIcon').value = icon; updateBucketIconSelection(); }; el('bucketIconPicker').appendChild(button);
         }
+        updateBucketIconSelection()
         modal.addEventListener('keydown', event => {
           if (event.key === 'Escape') { event.preventDefault(); closeBucketModal(); }
           if (event.key === 'Tab') {
@@ -2181,6 +2301,7 @@ interface DashboardMetrics {
           donut.appendChild(svgNode('circle', { cx: 120, cy: 100, r: 65, fill: 'none', stroke: colors[i % colors.length], 'stroke-width': 25,
             pathLength: 100, 'stroke-dasharray': percent + ' ' + (100 - percent), 'stroke-dashoffset': -offset, transform: 'rotate(-90 120 100)' })); offset += percent;
           const li = document.createElement('li'); li.textContent = row.label + ': ' + formatCurrency(row.amount) + ' (' + percent.toFixed(1) + '%)';
+          li.appendChild(render3dIcon(row.category, 40));
           li.style.borderLeft = '5px solid ' + colors[i % colors.length]; legend.appendChild(li);
         });
         donut.appendChild(svgNode('text', { x: 120, y: 104, 'text-anchor': 'middle', fill: 'currentColor', 'font-size': 13 }, sum ? formatCurrency(sum) : 'ยังไม่มีรายจ่าย'));
@@ -3057,6 +3178,7 @@ interface DashboardMetrics {
               nameSpan.textContent = item.label;
               const valSpan = document.createElement('span');
               valSpan.textContent = `${formatCurrency(item.amount, 'THB')} (${item.percentage}%)`;
+              nameSpan.appendChild(render3dIcon(item.category, 40));
               top.appendChild(nameSpan);
               top.appendChild(valSpan);
 
@@ -3080,12 +3202,14 @@ interface DashboardMetrics {
       }
 
       function renderFundBucketsAndChecklist(metrics: any, selectedMonth: string) {
+        renderHomeJarShelf(metrics);
         const fundContainer = document.getElementById('fundBucketsContainer');
         if (fundContainer && Array.isArray(metrics.fundBalances)) {
           fundContainer.innerHTML = '';
           for (const f of metrics.fundBalances) {
             const card = document.createElement('div');
             card.className = 'fund-card';
+            card.appendChild(createJarPresentation(f));
 
             const hdr = document.createElement('div');
             hdr.className = 'fund-card-header';
@@ -3159,6 +3283,7 @@ interface DashboardMetrics {
             }
             fundContainer.appendChild(card);
           }
+          fundContainer.appendChild(createAddJarCard());
         }
 
         const monthLabel = document.getElementById('fixedChecklistMonthLabel');
@@ -3371,6 +3496,7 @@ interface DashboardMetrics {
           direction.className = 'tx-direction ' + tx.type;
           direction.textContent = tx.type === 'income' ? '↙' : '↗';
           direction.setAttribute('aria-hidden', 'true');
+          top.appendChild(render3dIcon(tx.category, 52));
           top.appendChild(direction);
           const leftInfo = document.createElement('div');
           const merchantEl = document.createElement('div');
@@ -3731,6 +3857,7 @@ interface DashboardMetrics {
       let uiBound = false;
       function bindUiEvents() {
         bindBucketEvents();
+        renderShortcutIcons();
         if (uiBound) return; uiBound = true;
         bindAppNavigation();
         bindAutomationEvents();
@@ -4254,8 +4381,9 @@ interface DashboardMetrics {
       }
 
       function registerServiceWorkerSafe() {
-        if ('serviceWorker' in navigator && (globalScope.location.protocol === 'https:' || globalScope.location.hostname === 'localhost' || globalScope.location.hostname === '127.0.0.1')) {
-          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+        const host = globalScope.location.hostname || String(globalScope.location.host || '').split(':')[0];
+        if ('serviceWorker' in navigator && (globalScope.location.protocol === 'https:' || host === 'localhost' || host === '127.0.0.1')) {
+          return navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration: any) => registration?.update?.()).catch(() => {});
         }
       }
 
@@ -4271,7 +4399,7 @@ interface DashboardMetrics {
 
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
-        init: initApp,
+        init: initApp, render3dIcon, jarProgress, renderFundBucketsAndChecklist, 'registerServiceWorkerSafe': registerServiceWorkerSafe, renderShortcutIcons,
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
         upgradeSalaryTemplate, legacyInsuranceReview, upgradeLegacyInsurance,
         aggregateFinancialCharts, renderFinancialCharts, selectAppPanel, bindAppNavigation,
@@ -4280,7 +4408,7 @@ interface DashboardMetrics {
         normalizeMerchant, learnConfirmedRecord, suggestMerchantCategory, applyQuickChip,
         startVoiceEntry, validReceiptFile, handleReceiptPaste, handleImageFileSelected,
         resumeSharedReceipt, releaseSharedReceipt, shareInboxChange, bindAutomationEvents,
-        triggerAiAnalysisForCurrentImage, renderDashboardAndHistory, renderLatestTransactions, updateStatusBannersAndPills,
+        triggerAiAnalysisForCurrentImage, 'renderDashboardAndHistory': renderDashboardAndHistory, renderLatestTransactions, 'updateStatusBannersAndPills': updateStatusBannersAndPills,
         getState: () => appState,
         FUND_BUCKET_LABELS, loadFundBuckets, createFundBucket, saveFundBucket, updateFundBucket, deleteFundBucket, syncFundBuckets, openBucketModal, bindBucketEvents,
         FIXED_MONTHLY_PRESETS,

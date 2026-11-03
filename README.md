@@ -524,4 +524,12 @@ node scripts/build_prod.js
 node scripts/run_tests.js
 ```
 
-Build สร้าง index.html, sw.js และ dist/** จาก source เท่านั้น Service Worker ใช้ cache รุ่น v4-dynamic-buckets-1 อัปเดตเฉพาะ app shell ไม่ล้าง IndexedDB และไม่เก็บข้อมูลบัญชีใน shared cache ชุดทดสอบตรวจทั้ง source และ built app ด้วย DOM/IndexedDB/Cloud จำลอง ผลทดสอบ viewport, upgrade และ offline บนเบราว์เซอร์จริงต้องแยกจากผลจำลอง
+Build สร้าง index.html, sw.js และ dist/** จาก source เท่านั้น Service Worker ใช้ cache รุ่น v4-3d-cute-1 อัปเดตเฉพาะ app shell ไม่ล้าง IndexedDB และไม่เก็บข้อมูลบัญชีใน shared cache ชุดทดสอบตรวจทั้ง source และ built app ด้วย DOM/IndexedDB/Cloud จำลอง ผลทดสอบ viewport, upgrade และ offline บนเบราว์เซอร์จริงต้องแยกจากผลจำลอง
+
+## 23. 3D Cute Kawaii UI และชั้นวางกระปุก (TASK-SLIPSENSE-V4-015)
+
+- **3D Cute Clay / Kawaii SVG Artwork**: ฟังก์ชัน `render3dIcon(iconKey, size)` สร้างไอคอนเวกเตอร์ 3 มิติแบบพาสเทลในเครื่อง (`span.icon-3d-badge` + `svg.cute-3d-svg`) พร้อม `<radialGradient>`, `<linearGradient>` แสงสะท้อน, `<feDropShadow>` เงาตกกระทบ และหน้าตาน่ารัก (ตา รอยยิ้ม แก้มชมพู) รองรับ 19 ไอคอนกระปุกและทุกหมวดหมู่รายรับ-รายจ่ายโดยไม่ต้องใช้เครือข่าย
+- **ชั้นวางกระปุกของฉัน (`#homeJarShelf` & `#panel-funds`)**: แสดงไอคอน 3D ขนาดใหญ่ ชื่อสั้นอ่านง่าย (`บ้าน`, `หุ้น`, `กิน / ใช้`, `รายเดือน`, `ฉุกเฉิน`, `ประกันแดน` หรือชื่อที่ผู้ใช้ตั้งเอง) แถบความคืบหน้า (`.jar-progress`) ยอดคงเหลือ และปุ่มการ์ดเส้นประ **+ เพิ่มกระปุก** (`.jar-add-card`)
+- **รายการธุรกรรม หมวดหมู่ และกราฟ**: แสดงไอคอน 3D ในแถวรายการล่าสุด/ประวัติ (`.tx-item`), สัดส่วนรายจ่ายตามหมวดหมู่ (`#categoryBreakdownContainer`), คำอธิบายกราฟโดนัท (`.chart-legend`), ทางลัดหน้าแรก และตัวเลือกไอคอนกระปุก (`#bucketIconPicker`)
+- **Service Worker Cache**: อัปเดตเป็น `slipsense-app-shell-v4-3d-cute-1` พร้อมเรียก `registration.update()` อัตโนมัติโดยไม่กระทบข้อมูลใน `IndexedDB` (`slipsense_db`)
+

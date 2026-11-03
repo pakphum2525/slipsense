@@ -19,8 +19,9 @@ module.exports = async function () {
   assert.match(html, /id="bucketFormError" role="alert"/);
   assert(!html.includes('รองรับไฟล์ JPEG, PNG, WebP'));
   const bucketApp = loadApp(); bucketApp.api.bindBucketEvents();
-  assert.equal(bucketApp.el('bucketIconPicker').children.length, 12);
-  assert.deepEqual(bucketApp.el('bucketIconPicker').children.map(n => n.textContent), ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕']);
+  assert.equal(bucketApp.el('bucketIconPicker').children.length, 19);
+  assert.deepEqual(bucketApp.el('bucketIconPicker').children.map(n => n.getAttribute('data-icon')), ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕', '🍔', '🎓', '📌', '🌈', '🍄', '🍎', '🐝']);
+  assert(bucketApp.el('bucketIconPicker').children.every(n => n.children[0]?.className === 'icon-3d-badge' && n.children[0]?.children[0]?.getAttribute('class') === 'cute-3d-svg'));
   for (const name of ['light', 'dark', 'blue', 'dark-red', 'fintrack']) {
     const block = html.match(new RegExp('\\[data-theme="' + name + '"\\]\\s*\\{([^}]+)'))[1];
     const alpha = Number(block.match(/--glass:rgba\([^,]+,[^,]+,[^,]+,([\d.]+)\)/)[1]);
@@ -83,7 +84,7 @@ module.exports = async function () {
       assert(png.equals(fs.readFileSync(`dist/icons/${name}.png`)), 'deployed wallpaper matches source');
       assert.equal(new URL(`./icons/${name}.png`, 'https://example.com/slipsense/').pathname, `/slipsense/icons/${name}.png`);
     }
-    assert(sw.includes('v4-dynamic-buckets-1'));
+    assert(sw.includes('v4-3d-cute-1'));
   }
   const { api, el, context } = loadApp();
   api.bindAutomationEvents();
@@ -172,5 +173,26 @@ module.exports = async function () {
     await pending;
     assert.equal(api.getState().isAnalyzingAi,false); assert.equal(el('scanLaserLine').hidden,true);
     assert.equal(el('imagePreviewPanel').getAttribute('aria-busy'),'false'); assert.equal(el('btnBottomCenterScan').disabled,false);
+    // Verify 3D Cute Kawaii UI icons, Jar Shelf, and SW update check
+    const badge = api.render3dIcon('🐷', 64);
+    assert.equal(badge.className, 'icon-3d-badge');
+    assert.equal(badge.getAttribute('data-icon-key'), 'pig');
+    assert.equal(badge.children[0].getAttribute('class'), 'cute-3d-svg');
+    const defs = badge.children[0].children[0];
+    assert.deepEqual(defs.children.map(c => c.tagName), ['RADIALGRADIENT', 'LINEARGRADIENT', 'FILTER']);
+    assert.equal(api.render3dIcon('<svg onload=alert(1)>', -10).getAttribute('data-icon-key'), 'pig');
+    assert.equal(api.jarProgress(17400, 34800), 50);
+    assert.equal(api.jarProgress(-500, 1000), 0);
+    assert.equal(api.jarProgress(5000, 1000), 100);
+    assert.equal(api.jarProgress(100, 0), 0);
+    api.renderDashboardAndHistory();
+    assert.equal(el('homeJarShelf').children.length, 7);
+    assert.equal(el('homeJarShelf').children[6].className, 'jar-add-card');
+    assert.equal(el('fundBucketsContainer').children.at(-1).className, 'jar-add-card');
+    let swUpdated = 0;
+    context.navigator.serviceWorker = { register: () => Promise.resolve({ update: () => { swUpdated++; } }) };
+    await api.registerServiceWorkerSafe();
+    assert.equal(swUpdated, 1, 'SW registration triggers update()');
+
   }
 };
