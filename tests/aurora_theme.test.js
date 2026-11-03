@@ -89,7 +89,7 @@ module.exports = async function () {
       assert(png.equals(fs.readFileSync(`dist/icons/${name}.png`)), 'deployed wallpaper matches source');
       assert.equal(new URL(`./icons/${name}.png`, 'https://example.com/slipsense/').pathname, `/slipsense/icons/${name}.png`);
     }
-    assert(sw.includes('v4-3d-cute-2'));
+    assert(sw.includes('v4-3d-cute-3'));
   }
   const { api, el, context } = loadApp();
   api.bindAutomationEvents();

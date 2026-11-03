@@ -1335,19 +1335,21 @@
             <label for="filterCategorySelect" class="form-label">หมวดหมู่</label>
             <select id="filterCategorySelect" class="form-control">
               <option value="all">ทุกหมวดหมู่</option>
-              <option value="food_drink">อาหารและเครื่องดื่ม</option>
-              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
-              <option value="transport">เดินทางและยานพาหนะ</option>
-              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
-              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
-              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
-              <option value="health_medical">สุขภาพและการแพทย์</option>
-              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
-              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
-              <option value="transfer_other">โอนเงินและอื่นๆ</option>
-              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
-              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
-              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+              <option value="food_drink">🍜 อาหาร</option>
+              <option value="groceries">🍎 ของใช้</option>
+              <option value="transport">🚗 เดินทาง</option>
+              <option value="travel">✈️ ท่องเที่ยว</option>
+              <option value="utilities_bills">📌 บิล/น้ำไฟ</option>
+              <option value="shopping_general">🎁 ช้อปปิ้ง</option>
+              <option value="home_repair">🏡 ที่พัก/บ้าน</option>
+              <option value="health_medical">🛡️ สุขภาพ</option>
+              <option value="entertainment">🌈 บันเทิง</option>
+              <option value="education_work">🎓 ศึกษา/งาน</option>
+              <option value="pet">🐱 สัตว์เลี้ยง</option>
+              <option value="transfer_other">🐷 โอนเงิน/อื่นๆ</option>
+              <option value="salary_income">💰 เงินเดือน</option>
+              <option value="business_income">📈 ธุรกิจ</option>
+              <option value="refund_other_income">✨ รายรับอื่นๆ</option>
             </select>
           </div>
 
@@ -1428,25 +1430,27 @@
             <div id="txCategoryPicker" class="category-3d-picker" role="radiogroup" aria-label="เลือกหมวดหมู่"></div>
             <select id="txFormCategory" class="form-control" required>
               <option value="unknown">-- กรุณาเลือกหมวดหมู่ --</option>
-              <option value="food_drink">อาหารและเครื่องดื่ม</option>
-              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
-              <option value="transport">เดินทางและยานพาหนะ</option>
-              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
-              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
-              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
-              <option value="health_medical">สุขภาพและการแพทย์</option>
-              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
-              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
-              <option value="transfer_other">โอนเงินและอื่นๆ</option>
-              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
-              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
-              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+              <option value="food_drink">🍜 อาหาร</option>
+              <option value="groceries">🍎 ของใช้</option>
+              <option value="transport">🚗 เดินทาง</option>
+              <option value="travel">✈️ ท่องเที่ยว</option>
+              <option value="utilities_bills">📌 บิล/น้ำไฟ</option>
+              <option value="shopping_general">🎁 ช้อปปิ้ง</option>
+              <option value="home_repair">🏡 ที่พัก/บ้าน</option>
+              <option value="health_medical">🛡️ สุขภาพ</option>
+              <option value="entertainment">🌈 บันเทิง</option>
+              <option value="education_work">🎓 ศึกษา/งาน</option>
+              <option value="pet">🐱 สัตว์เลี้ยง</option>
+              <option value="transfer_other">🐷 โอนเงิน/อื่นๆ</option>
+              <option value="salary_income">💰 เงินเดือน</option>
+              <option value="business_income">📈 ธุรกิจ</option>
+              <option value="refund_other_income">✨ รายรับอื่นๆ</option>
             </select>
           </div>
 
           <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
             <label for="txFormFundBucket" class="form-label">
-              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
+              <span id="labelTxFundBucketText">กระปุกตัดจ่าย *</span>
             </label>
             <select id="txFormFundBucket" class="form-control" required></select>
           </div>

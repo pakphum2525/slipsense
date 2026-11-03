@@ -261,19 +261,21 @@
             <label for="filterCategorySelect" class="form-label">หมวดหมู่</label>
             <select id="filterCategorySelect" class="form-control">
               <option value="all">ทุกหมวดหมู่</option>
-              <option value="food_drink">อาหารและเครื่องดื่ม</option>
-              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
-              <option value="transport">เดินทางและยานพาหนะ</option>
-              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
-              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
-              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
-              <option value="health_medical">สุขภาพและการแพทย์</option>
-              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
-              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
-              <option value="transfer_other">โอนเงินและอื่นๆ</option>
-              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
-              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
-              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+              <option value="food_drink">🍜 อาหาร</option>
+              <option value="groceries">🍎 ของใช้</option>
+              <option value="transport">🚗 เดินทาง</option>
+              <option value="travel">✈️ ท่องเที่ยว</option>
+              <option value="utilities_bills">📌 บิล/น้ำไฟ</option>
+              <option value="shopping_general">🎁 ช้อปปิ้ง</option>
+              <option value="home_repair">🏡 ที่พัก/บ้าน</option>
+              <option value="health_medical">🛡️ สุขภาพ</option>
+              <option value="entertainment">🌈 บันเทิง</option>
+              <option value="education_work">🎓 ศึกษา/งาน</option>
+              <option value="pet">🐱 สัตว์เลี้ยง</option>
+              <option value="transfer_other">🐷 โอนเงิน/อื่นๆ</option>
+              <option value="salary_income">💰 เงินเดือน</option>
+              <option value="business_income">📈 ธุรกิจ</option>
+              <option value="refund_other_income">✨ รายรับอื่นๆ</option>
             </select>
           </div>
 
@@ -354,25 +356,27 @@
             <div id="txCategoryPicker" class="category-3d-picker" role="radiogroup" aria-label="เลือกหมวดหมู่"></div>
             <select id="txFormCategory" class="form-control" required>
               <option value="unknown">-- กรุณาเลือกหมวดหมู่ --</option>
-              <option value="food_drink">อาหารและเครื่องดื่ม</option>
-              <option value="groceries">ของใช้และซูเปอร์มาร์เก็ต</option>
-              <option value="transport">เดินทางและยานพาหนะ</option>
-              <option value="utilities_bills">ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค</option>
-              <option value="shopping_general">ช้อปปิ้งและเสื้อผ้า</option>
-              <option value="home_repair">ซ่อมบำรุงและอุปกรณ์บ้าน</option>
-              <option value="health_medical">สุขภาพและการแพทย์</option>
-              <option value="education_work">การศึกษาและอุปกรณ์ทำงาน</option>
-              <option value="entertainment">บันเทิงและไลฟ์สไตล์</option>
-              <option value="transfer_other">โอนเงินและอื่นๆ</option>
-              <option value="salary_income">เงินเดือนและค่าจ้าง</option>
-              <option value="business_income">รายได้ธุรกิจ/ค้าขาย</option>
-              <option value="refund_other_income">เงินคืนและรายรับอื่นๆ</option>
+              <option value="food_drink">🍜 อาหาร</option>
+              <option value="groceries">🍎 ของใช้</option>
+              <option value="transport">🚗 เดินทาง</option>
+              <option value="travel">✈️ ท่องเที่ยว</option>
+              <option value="utilities_bills">📌 บิล/น้ำไฟ</option>
+              <option value="shopping_general">🎁 ช้อปปิ้ง</option>
+              <option value="home_repair">🏡 ที่พัก/บ้าน</option>
+              <option value="health_medical">🛡️ สุขภาพ</option>
+              <option value="entertainment">🌈 บันเทิง</option>
+              <option value="education_work">🎓 ศึกษา/งาน</option>
+              <option value="pet">🐱 สัตว์เลี้ยง</option>
+              <option value="transfer_other">🐷 โอนเงิน/อื่นๆ</option>
+              <option value="salary_income">💰 เงินเดือน</option>
+              <option value="business_income">📈 ธุรกิจ</option>
+              <option value="refund_other_income">✨ รายรับอื่นๆ</option>
             </select>
           </div>
 
           <div class="form-group" id="groupTxFundBucket" style="grid-column: 1 / -1;">
             <label for="txFormFundBucket" class="form-label">
-              <span id="labelTxFundBucketText">ส่วนของเงิน (เลือกจาก 6 ส่วนเมื่อถอนออก/จ่าย หรือเติมเข้า) *</span>
+              <span id="labelTxFundBucketText">กระปุกตัดจ่าย *</span>
             </label>
             <select id="txFormFundBucket" class="form-control" required></select>
           </div>
@@ -702,12 +706,14 @@ const _0x1a4={
 food_drink:'อาหารและเครื่องดื่ม',
 groceries:'ของใช้และซูเปอร์มาร์เก็ต',
 transport:'เดินทางและยานพาหนะ',
+travel:'การท่องเที่ยวและพักผ่อน',
 utilities_bills:'ค่าน้ำ ค่าไฟ และบิลสาธารณูปโภค',
 shopping_general:'ช้อปปิ้งและเสื้อผ้า',
 home_repair:'ซ่อมบำรุงและอุปกรณ์บ้าน',
 health_medical:'สุขภาพและการแพทย์',
 education_work:'การศึกษาและอุปกรณ์ทำงาน',
 entertainment:'บันเทิงและไลฟ์สไตล์',
+pet:'สัตว์เลี้ยงและอุปกรณ์',
 transfer_other:'โอนเงินและอื่นๆ',
 salary_income:'เงินเดือนและค่าจ้าง',
 business_income:'รายได้ธุรกิจ/ค้าขาย',
@@ -718,12 +724,14 @@ const CATEGORY_SHORT_LABELS={
 food_drink:'อาหาร',
 groceries:'ของใช้',
 transport:'เดินทาง',
+travel:'ท่องเที่ยว',
 utilities_bills:'บิล/น้ำไฟ',
 shopping_general:'ช้อปปิ้ง',
 home_repair:'ซ่อมบ้าน',
 health_medical:'สุขภาพ',
 education_work:'ศึกษา/งาน',
 entertainment:'บันเทิง',
+pet:'สัตว์เลี้ยง',
 transfer_other:'โอนเงิน',
 salary_income:'เงินเดือน',
 business_income:'ธุรกิจ',
@@ -767,8 +775,8 @@ const ICON_KEYS={
 '🐷':'pig','🏡':'house','📈':'stock','🍜':'noodles','🍔':'burger','🎁':'gift','✈️':'travel','🐱':'cat',
 '🎓':'education','🛟':'emergency','🛡️':'shield','📌':'bills','🚗':'car','💎':'diamond','☕':'coffee',
 '🌈':'rainbow','🍄':'mushroom','🍎':'apple','🐝':'bee','📊':'stock','🧾':'bills','💰':'pig',
-food_drink:'noodles',groceries:'apple',transport:'car',utilities_bills:'bills',shopping_general:'gift',
-home_repair:'house',health_medical:'shield',education_work:'education',entertainment:'rainbow',
+food_drink:'noodles',groceries:'apple',transport:'car',travel:'travel',utilities_bills:'bills',shopping_general:'gift',
+home_repair:'house',health_medical:'shield',education_work:'education',entertainment:'rainbow',pet:'cat',
 transfer_other:'pig',salary_income:'pig',business_income:'stock',refund_other_income:'gift',unknown:'mushroom'
 };
 let icon3dSequence=0;
@@ -825,15 +833,19 @@ holder.replaceChildren(render3dIcon(iconKey,26));
 }
 }
 const CATEGORY_PICKER_ITEMS=[
-'food_drink','groceries','transport','utilities_bills',
-'shopping_general','home_repair','health_medical','education_work',
-'entertainment','transfer_other'
+'food_drink','groceries','transport','travel','utilities_bills',
+'shopping_general','home_repair','health_medical','entertainment',
+'education_work','pet','transfer_other'
 ];
-function renderCategoryPicker(){
+const CATEGORY_PICKER_INCOME_ITEMS=[
+'salary_income','business_income','refund_other_income','transfer_other'
+];
+function renderCategoryPicker(type='expense'){
 const container=document.getElementById('txCategoryPicker');
 if(!container)return;
 container.replaceChildren();
-for(const catKey of CATEGORY_PICKER_ITEMS){
+const items=type==='income'?CATEGORY_PICKER_INCOME_ITEMS:CATEGORY_PICKER_ITEMS;
+for(const catKey of items){
 const btn=document.createElement('button');
 btn.type='button';
 btn.className='cat-picker-btn';
@@ -1087,6 +1099,12 @@ return'home_building';
 if(category==='health_medical'){
 return'emergency_personal';
 }
+if(category==='travel'||/(เที่ยว|ทริป|โรงแรม|รีสอร์ท|ที่พัก|agoda|booking|ตั๋วเครื่องบิน|การบิน|flight|hotel|travel)/.test(text)){
+return'general_expense';
+}
+if(category==='pet'||/(สัตว์เลี้ยง|อาหารแมว|อาหารสุนัข|อาหารสัตว์|pet|vet)/.test(text)){
+return'general_expense';
+}
 return'general_expense';
 }
 function validateTransactionInput(input={}){
@@ -1196,7 +1214,13 @@ if(!warnings.some((w)=>w.includes('รายรับ')||w.includes('ราย�
 warnings.push('ไม่สามารถสรุปทิศทางเงินเข้า/ออกได้ชัดเจนจากภาพ กรุณาเลือกประเภทรายรับหรือรายจ่ายก่อนบันทึก');
 }
 }
-const rawCategory=typeof raw.category==='string'?raw.category.trim().toLowerCase():'unknown';
+let rawCategory=typeof raw.category==='string'?raw.category.trim().toLowerCase():'unknown';
+const travelText=(String(raw.merchant||'')+' '+String(raw.items_summary||'')).toLowerCase();
+if(rawCategory==='unknown'&&/(เที่ยว|ทริป|โรงแรม|รีสอร์ท|agoda|booking|ตั๋วเครื่องบิน|การบิน|flight|hotel|travel)/.test(travelText)){
+rawCategory='travel';
+}else if(rawCategory==='unknown'&&/(สัตว์เลี้ยง|อาหารแมว|อาหารสุนัข|อาหารสัตว์|pet|vet)/.test(travelText)){
+rawCategory='pet';
+}
 const category=_0x1a4[rawCategory]?rawCategory:'unknown';
 if(category==='unknown'){
 uncertainSet.add('category');
@@ -3575,9 +3599,6 @@ card.appendChild(createJarPresentation(f));
 const hdr=document.createElement('div');
 hdr.className='fund-card-header';
 const titleWrap=document.createElement('div');
-const titleEl=document.createElement('div');
-titleEl.className='fund-title';
-titleEl.textContent=f.label;
 card.style.borderColor=bucketRegistry.buckets.find(b=>b.bucket_key===f.bucket)?.color||'#6366f1';
 for(const[label,mode]of[['✏️ แก้ไข','edit'],['🗑️ ลบ','delete']]){
 const action=document.createElement('button');action.type='button';action.className='btn btn-secondary btn-sm';
@@ -3591,7 +3612,6 @@ modeSub.style.color='var(--text-muted)';
 modeSub.textContent=f.isCumulative
 ?'ยอดสะสมต่อเนื่องข้ามเดือน'
 :`งบใช้จ่ายเฉพาะเดือน ${selectedMonth}`;
-titleWrap.appendChild(titleEl);
 titleWrap.appendChild(modeSub);
 const rightWrap=document.createElement('div');
 rightWrap.style.display='flex';
@@ -3950,6 +3970,7 @@ document.getElementById('verificationModalTitle').textContent='ตรวจส�
 document.getElementById('txFormId').value='';
 document.getElementById('txFormDate').value=normalized.date||'';
 document.getElementById('txFormType').value=normalized.type||'unknown';
+renderCategoryPicker(normalized.type||'expense');
 document.getElementById('txFormMerchant').value=normalized.merchant||'';
 document.getElementById('txFormAmount').value=normalized.amount!==null?String(normalized.amount):'';
 document.getElementById('txFormCurrency').value=normalized.currency||'THB';
@@ -4001,6 +4022,7 @@ document.getElementById('verificationModalTitle').textContent='เพิ่ม�
 document.getElementById('txFormId').value='';
 document.getElementById('txFormDate').value=getBangkokTodayIso();
 document.getElementById('txFormType').value='expense';
+renderCategoryPicker('expense');
 document.getElementById('txFormMerchant').value='';
 document.getElementById('txFormAmount').value='';
 document.getElementById('txFormCurrency').value=_0x1a7.settings.defaultCurrency||'THB';
@@ -4026,6 +4048,7 @@ document.getElementById('verificationModalTitle').textContent='แก้ไข�
 document.getElementById('txFormId').value=tx.id;
 document.getElementById('txFormDate').value=tx.transaction_date||'';
 document.getElementById('txFormType').value=tx.type||'expense';
+renderCategoryPicker(tx.type||'expense');
 document.getElementById('txFormMerchant').value=tx.merchant||'';
 document.getElementById('txFormAmount').value=tx.amount!==undefined?String(tx.amount):'';
 document.getElementById('txFormCurrency').value=tx.currency||'THB';
@@ -4142,8 +4165,12 @@ function _0x1c4(){
 bindBucketEvents();
 renderShortcutIcons();
 renderBottomNavIcons();
-renderCategoryPicker();
+renderCategoryPicker(document.getElementById('txFormType')?.value||'expense');
 if(uiBound)return;uiBound=true;
+document.getElementById('txFormType')?.addEventListener('change',(e)=>{
+renderCategoryPicker(e.target.value);
+updateCategoryPickerSelection(document.getElementById('txFormCategory')?.value||'');
+});
 document.getElementById('txFormCategory')?.addEventListener('change',(e)=>{
 updateCategoryPickerSelection(e.target.value);
 });
