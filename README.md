@@ -533,3 +533,10 @@ Build สร้าง index.html, sw.js และ dist/** จาก source เ�
 - **รายการธุรกรรม หมวดหมู่ และกราฟ**: แสดงไอคอน 3D ในแถวรายการล่าสุด/ประวัติ (`.tx-item`), สัดส่วนรายจ่ายตามหมวดหมู่ (`#categoryBreakdownContainer`), คำอธิบายกราฟโดนัท (`.chart-legend`), ทางลัดหน้าแรก และตัวเลือกไอคอนกระปุก (`#bucketIconPicker`)
 - **Service Worker Cache**: อัปเดตเป็น `slipsense-app-shell-v4-3d-cute-1` พร้อมเรียก `registration.update()` อัตโนมัติโดยไม่กระทบข้อมูลใน `IndexedDB` (`slipsense_db`)
 
+
+### 21. ระบบพอร์ตการลงทุนและสัดส่วนหุ้น (RocketTool-Engine Stock Portfolio & TradingView)
+- **การติดตามหุ้นรายตัว:** รองรับทั้งหุ้นสหรัฐฯ (NVDA, AAPL, TSLA), หุ้นไทย (PTT.BK, CPALL.BK), คริปโต (BTC), และทองคำ
+- **Logic คำนวณกำไร/ขาดทุน (P/L Engine):** ถอดรหัสคณิตศาสตร์จาก Rocket Tool (Weighted Average Cost, Realized P/L, Unrealized P/L) แสดงผลเขียว (+)/แดง (-)
+- **กราฟสัดส่วน Donut & แถบเป้าหมาย:** สร้างด้วย Pure SVG Arc (สูตร cR) พร้อมแถบ .ch-bar และเส้นทอง .tgt
+- **TradingView Real-Time Chart:** ฝังชาร์ตแท่งเทียนสด อินดิเคเตอร์ และแนวรับ-แนวต้าน
+- **Rebalance Simulator:** เครื่องคิดเลขจำลองต้นทุนและสัดส่วนใหม่ พร้อมเตือนสติการเงินเมื่อสัดส่วนเกินเป้าหมาย

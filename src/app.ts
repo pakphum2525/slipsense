@@ -2428,7 +2428,7 @@ interface DashboardMetrics {
           const tab = document.getElementById('tab-' + panel);
           if (tab) { tab.setAttribute('aria-selected', String(panel === name)); tab.tabIndex = panel === name ? 0 : -1; }
         }
-        if (name === 'analytics') renderFinancialCharts(document.getElementById('dashboardMonthPicker').value || getBangkokTodayIso().slice(0, 7));
+        if (name === 'analytics') { renderStockPortfolioUI(); renderFinancialCharts((document.getElementById('dashboardMonthPicker') as HTMLInputElement)?.value || getBangkokTodayIso().slice(0, 7)); }
         if (focus) document.getElementById('panel-' + name)?.focus();
       }
 
@@ -4508,18 +4508,740 @@ interface DashboardMetrics {
         }
       }
 
+      // =======================================================================
+      // ROCKETTOOL-ENGINE STOCK PORTFOLIO & P/L TRACKER (TASK-SLIPSENSE-V4-018)
+      // =======================================================================
+      const STOCK_HOLDINGS_KEY = 'slipsense_stock_holdings_v1';
+      const STOCK_TRANSACTIONS_KEY = 'slipsense_stock_transactions_v1';
+
+      interface StockHolding {
+        id: string;
+        ticker: string;
+        name: string;
+        shares: number;
+        costBasis: number;
+        avgCost: number;
+        currentPrice: number;
+        targetPct: number;
+        currency: string;
+        updatedAt: string;
+      }
+
+      interface StockTransaction {
+        id: string;
+        ticker: string;
+        action: 'buy' | 'sell';
+        quantity: number;
+        price: number;
+        amount: number;
+        realizedPL?: number;
+        fundId?: string;
+        tradeDate: string;
+        createdAt: string;
+      }
+
+      function getStockHoldingsFromStorage(): StockHolding[] {
+        try {
+          const raw = localStorage.getItem(STOCK_HOLDINGS_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch {}
+        // Default initial sample portfolio if empty so user immediately sees how it works
+        return [
+          { id: 'stock-nvda', ticker: 'NVDA', name: 'NVIDIA Corp', shares: 10, costBasis: 1100, avgCost: 110, currentPrice: 142.50, targetPct: 35, currency: 'USD', updatedAt: new Date().toISOString() },
+          { id: 'stock-aapl', ticker: 'AAPL', name: 'Apple Inc', shares: 5, costBasis: 900, avgCost: 180, currentPrice: 225.00, targetPct: 25, currency: 'USD', updatedAt: new Date().toISOString() },
+          { id: 'stock-ptt', ticker: 'PTT.BK', name: 'ปตท.', shares: 100, costBasis: 3200, avgCost: 32, currentPrice: 31.50, targetPct: 15, currency: 'THB', updatedAt: new Date().toISOString() }
+        ];
+      }
+
+      function saveStockHoldingsToStorage(holdings: StockHolding[]) {
+        try {
+          localStorage.setItem(STOCK_HOLDINGS_KEY, JSON.stringify(holdings));
+        } catch {}
+      }
+
+      function getStockTransactionsFromStorage(): StockTransaction[] {
+        try {
+          const raw = localStorage.getItem(STOCK_TRANSACTIONS_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch {}
+        return [];
+      }
+
+      function saveStockTransactionsToStorage(txs: StockTransaction[]) {
+        try {
+          localStorage.setItem(STOCK_TRANSACTIONS_KEY, JSON.stringify(txs));
+        } catch {}
+      }
+
+      function calculateWeightedAverageCost(currentShares: any, currentCostBasis: any, buyQty: any, buyPrice: any) {
+        const shares = Number(currentShares) || 0;
+        const cost = Number(currentCostBasis) || 0;
+        const qty = Number(buyQty) || 0;
+        const price = Number(buyPrice) || 0;
+        if (qty <= 0 || price < 0) return { shares, costBasis: cost, avgCost: shares > 0 ? cost / shares : 0 };
+        const newShares = shares + qty;
+        const newCostBasis = cost + (qty * price);
+        const newAvgCost = newShares > 0 ? newCostBasis / newShares : 0;
+        return { shares: newShares, costBasis: newCostBasis, avgCost: newAvgCost };
+      }
+
+      function calculateSellExecution(currentShares: any, currentAvgCost: any, sellQty: any, sellPrice: any) {
+        const shares = Number(currentShares) || 0;
+        const avgCost = Number(currentAvgCost) || 0;
+        const qty = Number(sellQty) || 0;
+        const price = Number(sellPrice) || 0;
+        if (shares <= 0 || qty <= 0) return { shares, costBasis: shares * avgCost, avgCost, realizedPL: 0 };
+        const actualSellQty = Math.min(shares, qty);
+        const costOfSold = actualSellQty * avgCost;
+        const proceeds = actualSellQty * price;
+        const realizedPL = proceeds - costOfSold;
+        const remainingShares = shares - actualSellQty;
+        const remainingCostBasis = remainingShares * avgCost;
+        return { shares: remainingShares, costBasis: remainingCostBasis, avgCost: remainingShares > 0 ? avgCost : 0, realizedPL };
+      }
+
+      function calculateHoldingPnL(shares: any, costBasis: any, currentPrice: any) {
+        const s = Number(shares) || 0;
+        const cost = Number(costBasis) || 0;
+        const price = Number(currentPrice) || 0;
+        const marketValue = s * price;
+        const unrealizedPL = marketValue - cost;
+        const unrealizedPLPct = cost > 0 ? (unrealizedPL / cost) * 100 : 0;
+        return { marketValue, unrealizedPL, unrealizedPLPct };
+      }
+
+      function calculatePortfolioSummary(holdings: StockHolding[], cashBalance: any) {
+        const cash = Math.max(0, Number(cashBalance) || 0);
+        let totalStockValue = 0;
+        let totalCost = 0;
+        const computedHoldings = (holdings || []).map(h => {
+          const s = Number(h.shares) || 0;
+          const cost = Number(h.costBasis) || 0;
+          const price = Number(h.currentPrice) || 0;
+          const pnl = calculateHoldingPnL(s, cost, price);
+          totalStockValue += pnl.marketValue;
+          totalCost += cost;
+          return { ...h, ...pnl };
+        });
+        const totalPortfolioValue = totalStockValue + cash;
+        const totalUnrealizedPL = totalStockValue - totalCost;
+        const totalUnrealizedPLPct = totalCost > 0 ? (totalUnrealizedPL / totalCost) * 100 : 0;
+        const items = computedHoldings.map(h => ({
+          id: h.id,
+          ticker: h.ticker,
+          name: h.name || h.ticker,
+          shares: h.shares,
+          costBasis: h.costBasis,
+          avgCost: h.avgCost,
+          currentPrice: h.currentPrice,
+          value: h.marketValue,
+          weight: totalPortfolioValue > 0 ? (h.marketValue / totalPortfolioValue) * 100 : 0,
+          targetPct: Number(h.targetPct) || 0,
+          unrealizedPL: h.unrealizedPL,
+          unrealizedPLPct: h.unrealizedPLPct,
+          currency: h.currency || 'USD'
+        }));
+        const cashWeight = totalPortfolioValue > 0 ? (cash / totalPortfolioValue) * 100 : 0;
+        return {
+          totalStockValue,
+          cash,
+          totalPortfolioValue,
+          totalCost,
+          totalUnrealizedPL,
+          totalUnrealizedPLPct,
+          items,
+          cashWeight
+        };
+      }
+
+      function simulateTrade(holding: any, action: string, quantity: any, price: any, currentTotalPortfolioValue: any) {
+        const qty = Number(quantity) || 0;
+        const px = Number(price) || 0;
+        const portVal = Number(currentTotalPortfolioValue) || 0;
+        const targetPct = Number(holding?.targetPct) || 0;
+        if (action === 'buy') {
+          const projected = calculateWeightedAverageCost(holding?.shares || 0, holding?.costBasis || 0, qty, px);
+          const projectedMarketValue = projected.shares * px;
+          const newPortVal = portVal + (qty * px);
+          const projectedWeight = newPortVal > 0 ? (projectedMarketValue / newPortVal) * 100 : 0;
+          let alertType = 'none';
+          let alertText = '';
+          if (targetPct > 0) {
+            if (projectedWeight > targetPct) {
+              alertType = 'warn';
+              alertText = '⚠️ สัดส่วนจะเกินเป้า ' + targetPct + '% ไปเป็น ' + projectedWeight.toFixed(1) + '% — ตั้งใจเพิ่มน้ำหนักตัวนี้จริงไหม?';
+            } else {
+              alertType = 'ok';
+              alertText = '✓ ยังอยู่ในกรอบเป้า ' + targetPct + '% (' + projectedWeight.toFixed(1) + '%)';
+            }
+          }
+          return {
+            projectedShares: projected.shares,
+            projectedAvgCost: projected.avgCost,
+            projectedCostBasis: projected.costBasis,
+            projectedMarketValue,
+            projectedWeight,
+            alertType,
+            alertText
+          };
+        }
+        return null;
+      }
+
+      function createSvgArcPath(cx: number, cy: number, rOuter: number, rInner: number, a0: number, a1: number): string {
+        const pt = (r: number, a: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+        const [ox, oy] = pt(rOuter, a0);
+        const [ux, uy] = pt(rOuter, a1);
+        const [hx, hy] = pt(rInner, a1);
+        const [px, py] = pt(rInner, a0);
+        const largeArc = (a1 - a0 > Math.PI) ? 1 : 0;
+        return 'M ' + ox.toFixed(2) + ' ' + oy.toFixed(2) + ' A ' + rOuter + ' ' + rOuter + ' 0 ' + largeArc + ' 1 ' + ux.toFixed(2) + ' ' + uy.toFixed(2) + ' L ' + hx.toFixed(2) + ' ' + hy.toFixed(2) + ' A ' + rInner + ' ' + rInner + ' 0 ' + largeArc + ' 0 ' + px.toFixed(2) + ' ' + py.toFixed(2) + ' Z';
+      }
+
+      function getStockJarCashBalance(): number {
+        try {
+          const selectedMonth = (document.getElementById('dashboardMonthPicker') as HTMLInputElement)?.value || getBangkokTodayIso().slice(0, 7);
+          const metrics = calculateMonthlyDashboard(appState.transactions, selectedMonth);
+          if (metrics && Array.isArray(metrics.fundBalances)) {
+            const stockFund = metrics.fundBalances.find((f: any) => f.bucket === 'investment_stock');
+            if (stockFund && Number.isFinite(stockFund.availableBalance)) {
+              return Math.max(0, stockFund.availableBalance);
+            }
+          }
+        } catch {}
+        return 0;
+      }
+
+      const DONUT_PALETTE = ['#2dd4bf', '#60a5fa', '#c4b5fd', '#fbbf24', '#f472b6', '#a3e635', '#38bdf8', '#fb923c'];
+
+      function renderStockPortfolioUI() {
+        const holdings = getStockHoldingsFromStorage();
+        const cashBalance = getStockJarCashBalance();
+        const summary = calculatePortfolioSummary(holdings, cashBalance);
+
+        // 1. Update Hero
+        const grandTotalEl = document.getElementById('portfolioGrandTotal');
+        const totalCostEl = document.getElementById('portfolioTotalCost');
+        const cashBalanceEl = document.getElementById('portfolioCashBalance');
+        const pnlBadgeEl = document.getElementById('portfolioTotalPnlBadge');
+        const pnlAmountEl = document.getElementById('portfolioTotalPnlAmount');
+        const pnlPctEl = document.getElementById('portfolioTotalPnlPct');
+
+        if (grandTotalEl) grandTotalEl.textContent = formatCurrency(summary.totalPortfolioValue);
+        if (totalCostEl) totalCostEl.textContent = formatCurrency(summary.totalCost);
+        if (cashBalanceEl) cashBalanceEl.textContent = formatCurrency(summary.cash);
+
+        if (pnlBadgeEl && pnlAmountEl && pnlPctEl) {
+          const isUp = summary.totalUnrealizedPL >= 0;
+          pnlBadgeEl.className = 'pnl-hero-badge ' + (isUp ? 'up' : 'down');
+          pnlAmountEl.textContent = (isUp ? '+' : '') + formatCurrency(summary.totalUnrealizedPL);
+          pnlPctEl.textContent = '(' + (isUp ? '+' : '') + summary.totalUnrealizedPLPct.toFixed(1) + '%)';
+        }
+
+        // 2. Render SVG Donut Chart (RocketTool cR Arc)
+        const donutContainer = document.getElementById('stockDonutContainer');
+        if (donutContainer) {
+          donutContainer.innerHTML = '';
+          const totalVal = summary.totalPortfolioValue;
+
+          if (totalVal <= 0 || (summary.items.length === 0 && summary.cash <= 0)) {
+            donutContainer.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.9rem;">ยังไม่มีรายการหุ้นในพอร์ต — แตะ "+ บันทึกซื้อ/ขายหุ้น" เพื่อเริ่มต้น</div>';
+          } else {
+            // Build segments: each stock + cash
+            const segments: Array<{ name: string; value: number; color: string; pct: number }> = [];
+            summary.items.forEach((item, idx) => {
+              if (item.value > 0) {
+                segments.push({
+                  name: item.ticker,
+                  value: item.value,
+                  color: DONUT_PALETTE[idx % DONUT_PALETTE.length],
+                  pct: item.weight
+                });
+              }
+            });
+            if (summary.cash > 0) {
+              segments.push({
+                name: 'เงินสด',
+                value: summary.cash,
+                color: '#64748b',
+                pct: summary.cashWeight
+              });
+            }
+
+            // SVG Element
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 320 320');
+            svg.setAttribute('class', 'stock-donut-svg');
+            svg.setAttribute('role', 'img');
+            svg.setAttribute('aria-label', 'สัดส่วนสินทรัพย์ในพอร์ต');
+
+            let angle = -Math.PI / 2;
+            segments.forEach(seg => {
+              const fraction = totalVal > 0 ? seg.value / totalVal : 0;
+              const a0 = angle;
+              const a1 = angle + fraction * Math.PI * 2;
+              angle = a1;
+
+              const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              // cR(160, 160, outerR=130, innerR=82, a0, a1)
+              path.setAttribute('d', createSvgArcPath(160, 160, 130, 82, a0, a1));
+              path.setAttribute('fill', seg.color);
+              path.setAttribute('opacity', '0.94');
+
+              const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+              title.textContent = seg.name + ': ' + formatCurrency(seg.value) + ' (' + seg.pct.toFixed(1) + '%)';
+              path.appendChild(title);
+              svg.appendChild(path);
+            });
+
+            // Center Text
+            const centerLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerLabel.setAttribute('x', '160');
+            centerLabel.setAttribute('y', '145');
+            centerLabel.setAttribute('text-anchor', 'middle');
+            centerLabel.setAttribute('font-size', '11.5');
+            centerLabel.setAttribute('font-weight', '700');
+            centerLabel.setAttribute('fill', 'var(--text-muted)');
+            centerLabel.textContent = 'มูลค่าพอร์ตรวม';
+            svg.appendChild(centerLabel);
+
+            const centerVal = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerVal.setAttribute('x', '160');
+            centerVal.setAttribute('y', '172');
+            centerVal.setAttribute('text-anchor', 'middle');
+            centerVal.setAttribute('font-size', '17');
+            centerVal.setAttribute('font-weight', '800');
+            centerVal.setAttribute('fill', 'var(--text-main)');
+            centerVal.textContent = formatCurrency(totalVal);
+            svg.appendChild(centerVal);
+
+            donutContainer.appendChild(svg);
+
+            // Legend
+            const legendGrid = document.createElement('div');
+            legendGrid.className = 'stock-donut-legend';
+            segments.forEach(seg => {
+              const itemEl = document.createElement('div');
+              itemEl.className = 'donut-legend-item';
+              itemEl.innerHTML = '<span class="donut-legend-chip" style="background:' + seg.color + '"></span>' +
+                '<span style="font-weight:700;flex:1;">' + seg.name + '</span>' +
+                '<span style="color:var(--text-muted);font-size:0.78rem;">' + seg.pct.toFixed(1) + '%</span>';
+              legendGrid.appendChild(itemEl);
+            });
+            donutContainer.appendChild(legendGrid);
+          }
+        }
+
+        // 3. Render Holdings List
+        const holdingsListEl = document.getElementById('stockHoldingsList');
+        if (holdingsListEl) {
+          holdingsListEl.innerHTML = '';
+          if (summary.items.length === 0) {
+            holdingsListEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.88rem;">ยังไม่มีหุ้นในพอร์ต แตะปุ่ม "➕ บันทึกซื้อ/ขายหุ้น" ด้านบน</div>';
+          } else {
+            summary.items.forEach(h => {
+              const card = document.createElement('div');
+              card.className = 'stock-holding-item';
+
+              const isUp = h.unrealizedPL >= 0;
+              const pnlClass = isUp ? 'up' : 'down';
+              const pnlSign = isUp ? '+' : '';
+
+              // RocketTool .ch-bar & .tgt
+              const target = h.targetPct || 0;
+              const weight = h.weight || 0;
+              const targetMarkerHtml = target > 0 ? '<span class="tgt" style="left:' + Math.min(100, target) + '%;"></span>' : '';
+              
+              let alertBanner = '';
+              if (target > 0) {
+                if (weight > target) {
+                  alertBanner = '<div class="ch-warn bad">⚠️ สัดส่วนจริง ' + weight.toFixed(1) + '% เกินเป้าที่ตั้งไว้ ' + target + '%</div>';
+                } else {
+                  alertBanner = '<div class="ch-warn ok">✓ อยู่ในกรอบเป้า ' + target + '% (' + weight.toFixed(1) + '%)</div>';
+                }
+              }
+
+              card.innerHTML = 
+                '<div class="stock-holding-top">' +
+                  '<div class="stock-holding-title">' +
+                    '<span>' + h.ticker + '</span>' +
+                    '<small style="font-weight:500;font-size:0.75rem;color:var(--text-muted);">' + (h.name !== h.ticker ? h.name : '') + '</small>' +
+                  '</div>' +
+                  '<div class="stock-pnl-chip ' + pnlClass + '">' +
+                    pnlSign + formatCurrency(h.unrealizedPL) + ' (' + pnlSign + h.unrealizedPLPct.toFixed(1) + '%)' +
+                  '</div>' +
+                '</div>' +
+                '<div class="stock-holding-grid">' +
+                  '<div>จำนวนถือ: <b>' + h.shares.toLocaleString() + '</b> หุ้น</div>' +
+                  '<div>ต้นทุนเฉลี่ย: <b>' + formatCurrency(h.avgCost) + '</b></div>' +
+                  '<div>ราคาตลาด: <b>' + formatCurrency(h.currentPrice) + '</b></div>' +
+                  '<div>มูลค่าปัจจุบัน: <b>' + formatCurrency(h.value) + '</b></div>' +
+                '</div>' +
+                '<div class="ch-bar"><i style="width:' + Math.min(100, weight) + '%;"></i>' + targetMarkerHtml + '</div>' +
+                '<div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">' +
+                  '<span>สัดส่วนในพอร์ต: <b style="color:var(--text-main);">' + weight.toFixed(1) + '%</b></span>' +
+                  '<span>เป้าหมาย: <b style="color:#fbbf24;">' + (target > 0 ? target + '%' : 'ยังไม่ตั้ง') + '</b></span>' +
+                '</div>' +
+                alertBanner +
+                '<div class="stock-action-btns">' +
+                  '<button type="button" class="btn btn-secondary btn-sm btn-view-chart" data-ticker="' + h.ticker + '">📊 ดูกราฟ TradingView</button>' +
+                  '<button type="button" class="btn btn-secondary btn-sm btn-trade-stock" data-ticker="' + h.ticker + '">⚡ ซื้อ/ขายเพิ่ม</button>' +
+                '</div>';
+
+              holdingsListEl.appendChild(card);
+            });
+          }
+        }
+      }
+
+      function openTradingViewModal(ticker: string) {
+        const modal = document.getElementById('tradingViewModal');
+        const container = document.getElementById('tradingViewWidgetContainer');
+        const title = document.getElementById('tradingViewModalTitle');
+        if (!modal || !container) return;
+
+        const cleanTicker = (ticker || 'NVDA').toUpperCase().trim();
+        if (title) title.textContent = 'กราฟ TradingView · ' + cleanTicker;
+
+        modal.hidden = false;
+        container.innerHTML = '';
+
+        let tvSymbol = cleanTicker;
+        if (cleanTicker.endsWith('.BK')) {
+          tvSymbol = 'SET:' + cleanTicker.replace('.BK', '');
+        } else if (cleanTicker === 'BTC' || cleanTicker === 'ETH') {
+          tvSymbol = 'BINANCE:' + cleanTicker + 'USDT';
+        } else if (!cleanTicker.includes(':')) {
+          tvSymbol = 'NASDAQ:' + cleanTicker;
+        }
+
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.setAttribute('loading', 'lazy');
+        iframe.setAttribute('allowtransparency', 'true');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.setAttribute('allowfullscreen', 'true');
+        iframe.src = 'https://s.tradingview.com/widgetembed/?symbol=' + encodeURIComponent(tvSymbol) + '&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Asia%2FBangkok&locale=th_TH';
+        container.appendChild(iframe);
+      }
+
+      function openStockTradeModal(presetTicker = '', defaultAction = 'buy') {
+        const modal = document.getElementById('stockTradeModal');
+        if (!modal) return;
+        const form = document.getElementById('stockTradeForm') as HTMLFormElement;
+        if (form) form.reset();
+
+        const tickerIn = document.getElementById('stockTradeTicker') as HTMLInputElement;
+        const targetPctIn = document.getElementById('stockTradeTargetPct') as HTMLInputElement;
+        const priceIn = document.getElementById('stockTradePrice') as HTMLInputElement;
+        const simOut = document.getElementById('stockTradeSimOutput');
+        if (simOut) simOut.style.display = 'none';
+
+        if (presetTicker && tickerIn) {
+          tickerIn.value = presetTicker;
+          const holdings = getStockHoldingsFromStorage();
+          const found = holdings.find(h => h.ticker.toUpperCase() === presetTicker.toUpperCase());
+          if (found) {
+            if (targetPctIn && found.targetPct) targetPctIn.value = String(found.targetPct);
+            if (priceIn && found.currentPrice) priceIn.value = String(found.currentPrice);
+          }
+        }
+
+        const actionRadios = document.getElementsByName('stockTradeAction') as NodeListOf<HTMLInputElement>;
+        actionRadios.forEach(r => { if (r.value === defaultAction) r.checked = true; });
+
+        modal.hidden = false;
+        tickerIn?.focus();
+      }
+
+      function updateTradeSimulatorUI() {
+        const ticker = ((document.getElementById('stockTradeTicker') as HTMLInputElement)?.value || '').toUpperCase().trim();
+        const shares = Number((document.getElementById('stockTradeShares') as HTMLInputElement)?.value) || 0;
+        const price = Number((document.getElementById('stockTradePrice') as HTMLInputElement)?.value) || 0;
+        const action = ((document.querySelector('input[name="stockTradeAction"]:checked') as HTMLInputElement)?.value || 'buy');
+        const targetPct = Number((document.getElementById('stockTradeTargetPct') as HTMLInputElement)?.value) || 0;
+
+        const totalEl = document.getElementById('stockTradeTotalAmount');
+        if (totalEl) totalEl.textContent = formatCurrency(shares * price);
+
+        const simOut = document.getElementById('stockTradeSimOutput');
+        if (!simOut) return;
+
+        if (shares <= 0 || price <= 0 || !ticker) {
+          simOut.style.display = 'none';
+          return;
+        }
+
+        const holdings = getStockHoldingsFromStorage();
+        const cashBalance = getStockJarCashBalance();
+        const summary = calculatePortfolioSummary(holdings, cashBalance);
+        const existing = holdings.find(h => h.ticker.toUpperCase() === ticker) || {
+          id: 'temp', ticker, name: ticker, shares: 0, costBasis: 0, avgCost: 0, currentPrice: price, targetPct, currency: 'USD', updatedAt: ''
+        };
+
+        if (targetPct > 0) existing.targetPct = targetPct;
+
+        const sim = simulateTrade(existing, action, shares, price, summary.totalPortfolioValue);
+        if (sim) {
+          simOut.style.display = 'block';
+          simOut.className = 'ch-warn ' + (sim.alertType === 'warn' ? 'bad' : 'ok');
+          simOut.innerHTML = '<div>ต้นทุนเฉลี่ยใหม่: <b>' + formatCurrency(sim.projectedAvgCost) + '</b> (รวม ' + sim.projectedShares + ' หุ้น)</div>' +
+            '<div>สัดส่วนใหม่ในพอร์ต: <b>' + sim.projectedWeight.toFixed(1) + '%</b></div>' +
+            (sim.alertText ? '<div style="margin-top:4px;">' + sim.alertText + '</div>' : '');
+        } else {
+          simOut.style.display = 'none';
+        }
+      }
+
+      function openQuickPriceModal() {
+        const modal = document.getElementById('stockPriceModal');
+        const list = document.getElementById('stockPriceInputList');
+        if (!modal || !list) return;
+
+        const holdings = getStockHoldingsFromStorage();
+        list.innerHTML = '';
+        if (holdings.length === 0) {
+          list.innerHTML = '<div style="color:var(--text-muted);padding:10px;">ยังไม่มีหุ้นในพอร์ต</div>';
+        } else {
+          holdings.forEach(h => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;';
+            row.innerHTML = '<span style="font-weight:700;width:90px;">' + h.ticker + '</span>' +
+              '<input class="form-control price-input-item" data-ticker="' + h.ticker + '" type="number" step="any" value="' + h.currentPrice + '" style="text-align:right;">';
+            list.appendChild(row);
+          });
+        }
+        modal.hidden = false;
+      }
+
+      function bindStockPortfolioEvents() {
+        // Sub-tabs
+        const btnPortfolio = document.getElementById('btnSubtabPortfolio');
+        const btnCashflow = document.getElementById('btnSubtabCashflow');
+        const subviewPortfolio = document.getElementById('subviewPortfolio');
+        const subviewCashflow = document.getElementById('subviewCashflow');
+
+        if (btnPortfolio && btnCashflow && subviewPortfolio && subviewCashflow) {
+          btnPortfolio.addEventListener('click', () => {
+            btnPortfolio.classList.add('active');
+            btnPortfolio.setAttribute('aria-selected', 'true');
+            btnCashflow.classList.remove('active');
+            btnCashflow.setAttribute('aria-selected', 'false');
+            subviewPortfolio.hidden = false;
+            subviewCashflow.hidden = true;
+            renderStockPortfolioUI();
+          });
+          btnCashflow.addEventListener('click', () => {
+            btnCashflow.classList.add('active');
+            btnCashflow.setAttribute('aria-selected', 'true');
+            btnPortfolio.classList.remove('active');
+            btnPortfolio.setAttribute('aria-selected', 'false');
+            subviewCashflow.hidden = false;
+            subviewPortfolio.hidden = true;
+            renderFinancialCharts((document.getElementById('dashboardMonthPicker') as HTMLInputElement)?.value || getBangkokTodayIso().slice(0, 7));
+          });
+        }
+
+        // Action Buttons
+        document.getElementById('btnOpenStockTradeModal')?.addEventListener('click', () => openStockTradeModal());
+        document.getElementById('btnQuickPriceUpdate')?.addEventListener('click', () => openQuickPriceModal());
+
+        document.getElementById('btnCancelStockTrade')?.addEventListener('click', () => {
+          const m = document.getElementById('stockTradeModal');
+          if (m) m.hidden = true;
+        });
+
+        document.getElementById('btnCloseTradingView')?.addEventListener('click', () => {
+          const m = document.getElementById('tradingViewModal');
+          if (m) m.hidden = true;
+        });
+
+        document.getElementById('btnCancelStockPrice')?.addEventListener('click', () => {
+          const m = document.getElementById('stockPriceModal');
+          if (m) m.hidden = true;
+        });
+
+        // Delegate buttons in stock list
+        document.getElementById('stockHoldingsList')?.addEventListener('click', (e: any) => {
+          const chartBtn = e.target.closest('.btn-view-chart');
+          if (chartBtn) {
+            const ticker = chartBtn.getAttribute('data-ticker');
+            if (ticker) openTradingViewModal(ticker);
+            return;
+          }
+          const tradeBtn = e.target.closest('.btn-trade-stock');
+          if (tradeBtn) {
+            const ticker = tradeBtn.getAttribute('data-ticker');
+            if (ticker) openStockTradeModal(ticker);
+            return;
+          }
+        });
+
+        // Realtime Trade Simulator
+        ['input', 'change'].forEach(evt => {
+          document.getElementById('stockTradeShares')?.addEventListener(evt, updateTradeSimulatorUI);
+          document.getElementById('stockTradePrice')?.addEventListener(evt, updateTradeSimulatorUI);
+          document.getElementById('stockTradeTicker')?.addEventListener(evt, updateTradeSimulatorUI);
+          document.getElementById('stockTradeTargetPct')?.addEventListener(evt, updateTradeSimulatorUI);
+        });
+
+        document.querySelectorAll('input[name="stockTradeAction"]').forEach(el => {
+          el.addEventListener('change', updateTradeSimulatorUI);
+        });
+
+        // Submit Trade Form
+        document.getElementById('stockTradeForm')?.addEventListener('submit', async (e: Event) => {
+          e.preventDefault();
+          const ticker = ((document.getElementById('stockTradeTicker') as HTMLInputElement)?.value || '').toUpperCase().trim();
+          const shares = Number((document.getElementById('stockTradeShares') as HTMLInputElement)?.value) || 0;
+          const price = Number((document.getElementById('stockTradePrice') as HTMLInputElement)?.value) || 0;
+          const action = ((document.querySelector('input[name="stockTradeAction"]:checked') as HTMLInputElement)?.value || 'buy');
+          const targetPct = Number((document.getElementById('stockTradeTargetPct') as HTMLInputElement)?.value) || 0;
+          const linkCash = (document.getElementById('stockTradeLinkCash') as HTMLInputElement)?.checked;
+
+          if (!ticker || shares <= 0 || price < 0) return;
+
+          const holdings = getStockHoldingsFromStorage();
+          let holding = holdings.find(h => h.ticker.toUpperCase() === ticker);
+          let realizedPL = 0;
+
+          if (action === 'buy') {
+            if (!holding) {
+              holding = {
+                id: 'stock-' + Date.now(),
+                ticker,
+                name: ticker,
+                shares: 0,
+                costBasis: 0,
+                avgCost: 0,
+                currentPrice: price,
+                targetPct,
+                currency: 'USD',
+                updatedAt: new Date().toISOString()
+              };
+              holdings.push(holding);
+            }
+            const updated = calculateWeightedAverageCost(holding.shares, holding.costBasis, shares, price);
+            holding.shares = updated.shares;
+            holding.costBasis = updated.costBasis;
+            holding.avgCost = updated.avgCost;
+            holding.currentPrice = price;
+            if (targetPct > 0) holding.targetPct = targetPct;
+            holding.updatedAt = new Date().toISOString();
+
+            // Link cash deduction
+            if (linkCash) {
+              try {
+                const totalAmount = shares * price;
+                const newTx: any = {
+                  id: generateUuidSafe(),
+                  date: getBangkokTodayIso(),
+                  type: 'expense',
+                  category: 'investment_stock',
+                  amount: totalAmount,
+                  description: 'ซื้อหุ้น ' + ticker + ' (' + shares + ' @ ' + price + ')',
+                  fund_bucket: 'investment_stock',
+                  source: 'manual',
+                  needs_verification: false
+                };
+                appState.transactions.unshift(newTx);
+                await persistTransactionsToLocal();
+              } catch {}
+            }
+          } else if (action === 'sell') {
+            if (!holding || holding.shares <= 0) {
+              alert('ไม่พบหุ้น ' + ticker + ' ในพอร์ตที่สามารถขายได้');
+              return;
+            }
+            const updated = calculateSellExecution(holding.shares, holding.avgCost, shares, price);
+            realizedPL = updated.realizedPL;
+            holding.shares = updated.shares;
+            holding.costBasis = updated.costBasis;
+            holding.currentPrice = price;
+            if (targetPct > 0) holding.targetPct = targetPct;
+            holding.updatedAt = new Date().toISOString();
+
+            // Link cash deposit
+            if (linkCash) {
+              try {
+                const totalAmount = shares * price;
+                const newTx: any = {
+                  id: generateUuidSafe(),
+                  date: getBangkokTodayIso(),
+                  type: 'income',
+                  category: 'investment_stock',
+                  amount: totalAmount,
+                  description: 'ขายหุ้น ' + ticker + ' (' + shares + ' @ ' + price + ')',
+                  fund_bucket: 'investment_stock',
+                  source: 'manual',
+                  needs_verification: false
+                };
+                appState.transactions.unshift(newTx);
+                await persistTransactionsToLocal();
+              } catch {}
+            }
+          }
+
+          saveStockHoldingsToStorage(holdings);
+
+          // Record stock transaction history
+          const txs = getStockTransactionsFromStorage();
+          txs.unshift({
+            id: 'stx-' + Date.now(),
+            ticker,
+            action: action as any,
+            quantity: shares,
+            price,
+            amount: shares * price,
+            realizedPL,
+            tradeDate: getBangkokTodayIso(),
+            createdAt: new Date().toISOString()
+          });
+          saveStockTransactionsToStorage(txs);
+
+          const m = document.getElementById('stockTradeModal');
+          if (m) m.hidden = true;
+          renderStockPortfolioUI();
+        });
+
+        // Submit Price Form
+        document.getElementById('stockPriceForm')?.addEventListener('submit', (e: Event) => {
+          e.preventDefault();
+          const holdings = getStockHoldingsFromStorage();
+          document.querySelectorAll('.price-input-item').forEach((input: any) => {
+            const ticker = input.getAttribute('data-ticker');
+            const newPrice = Number(input.value);
+            if (ticker && Number.isFinite(newPrice) && newPrice >= 0) {
+              const h = holdings.find(item => item.ticker === ticker);
+              if (h) {
+                h.currentPrice = newPrice;
+                h.updatedAt = new Date().toISOString();
+              }
+            }
+          });
+          saveStockHoldingsToStorage(holdings);
+          const m = document.getElementById('stockPriceModal');
+          if (m) m.hidden = true;
+          renderStockPortfolioUI();
+        });
+      }
       async function initApp() {
         loadSettingsFromStorage();
         bindUiEvents();
+        bindStockPortfolioEvents();
         await refreshTransactionsFromLocal();
         await initSupabaseClientAndVerify(false);
         registerServiceWorkerSafe();
         await refreshAutomationUi().catch(() => {});
         await resumeSharedReceipt();
+        renderStockPortfolioUI();
       }
 
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
+        calculateWeightedAverageCost, calculateSellExecution, calculateHoldingPnL, calculatePortfolioSummary, simulateTrade, createSvgArcPath, renderStockPortfolioUI,
         init: initApp, render3dIcon, renderBottomNavIcons, renderCategoryPicker, updateCategoryPickerSelection, jarProgress, renderFundBucketsAndChecklist, 'registerServiceWorkerSafe': registerServiceWorkerSafe, renderShortcutIcons, CATEGORY_SHORT_LABELS,
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
         upgradeSalaryTemplate, legacyInsuranceReview, upgradeLegacyInsurance,

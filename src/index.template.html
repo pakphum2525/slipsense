@@ -1100,7 +1100,44 @@
     .app-shortcut .shortcut-icon { display:flex; justify-content:center; }
     .tx-top > div:first-of-type { min-width:0; flex:1; }
     @media(max-width:420px) { .jar-shelf { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 8px; } .tx-top { flex-wrap:wrap; } .tx-top .tx-amount { margin-left:auto; } .category-row-top { flex-wrap:wrap; gap:6px; } }
-</style>
+
+    /* RocketTool Stock Portfolio & Allocation UI Styles */
+    .analytics-subnav-pills { display:flex; gap:8px; margin-bottom:12px; }
+    .subnav-pill { flex:1; padding:9px 12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-muted); font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s; text-align:center; }
+    .subnav-pill.active { background:linear-gradient(135deg, #168065, #2dd4bf); color:#fff; border-color:transparent; box-shadow:0 2px 8px rgba(45,212,191,0.25); }
+    .portfolio-hero-card { padding:16px; border-radius:16px; margin-bottom:12px; background:linear-gradient(180deg, rgba(45,212,191,0.06), transparent); }
+    .portfolio-hero-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+    .portfolio-hero-label { font-size:0.8rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+    .portfolio-grand-total { font-size:clamp(1.6rem, 5vw, 2.1rem); font-weight:800; color:var(--text-main); margin:4px 0; }
+    .portfolio-substats { font-size:0.82rem; color:var(--text-muted); display:flex; flex-wrap:wrap; align-items:center; }
+    .pnl-hero-badge { display:flex; flex-direction:column; align-items:flex-end; padding:6px 12px; border-radius:10px; font-weight:700; font-size:1.05rem; }
+    .pnl-hero-badge.up { background:rgba(52, 211, 153, 0.15); color:#10b981; }
+    .pnl-hero-badge.down { background:rgba(244, 63, 94, 0.15); color:#f43f5e; }
+    .portfolio-hero-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .stock-donut-container { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; }
+    .stock-donut-svg { max-width:320px; width:100%; height:auto; }
+    .stock-donut-legend { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; width:100%; margin-top:8px; }
+    .donut-legend-item { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); font-size:0.8rem; }
+    .donut-legend-chip { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+    .stock-holding-item { padding:12px; border-radius:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); margin-bottom:10px; }
+    .stock-holding-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+    .stock-holding-title { display:flex; align-items:center; gap:8px; font-weight:700; font-size:1rem; }
+    .stock-pnl-chip { font-size:0.82rem; font-weight:700; padding:3px 8px; border-radius:6px; }
+    .stock-pnl-chip.up { background:rgba(52, 211, 153, 0.15); color:#10b981; }
+    .stock-pnl-chip.down { background:rgba(244, 63, 94, 0.15); color:#f43f5e; }
+    .stock-holding-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:6px 12px; font-size:0.8rem; color:var(--text-muted); margin:6px 0; }
+    .stock-holding-grid b { color:var(--text-main); }
+    .ch-bar { height:9px; border-radius:999px; background:var(--border-color, rgba(255,255,255,0.1)); overflow:hidden; margin:8px 0 5px; position:relative; }
+    .ch-bar i { display:block; height:100%; background:linear-gradient(90deg, #8b5cf6, #2dd4bf); border-radius:999px; }
+    .ch-bar .tgt { position:absolute; top:-3px; bottom:-3px; width:2px; background:#fbbf24; z-index:2; box-shadow:0 0 4px #fbbf24; }
+    .ch-warn { margin-top:6px; font-size:0.78rem; line-height:1.45; border-radius:8px; padding:6px 9px; background:rgba(251,191,36,0.12); color:#fbbf24; font-weight:500; }
+    .ch-warn.ok { background:rgba(52,211,153,0.12); color:#10b981; }
+    .ch-warn.bad { background:rgba(244,63,94,0.12); color:#f43f5e; }
+    .tv-modal-content { max-width:880px; width:95%; height:82vh; display:flex; flex-direction:column; padding:14px; }
+    .tv-widget-container { flex:1; width:100%; min-height:360px; border-radius:12px; overflow:hidden; background:#131722; position:relative; }
+    .stock-action-btns { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+
+  </style>
 </head>
 <body>
   <div class="mobile-frame-glow">
@@ -1302,7 +1339,74 @@
     </section></details>
     </section>
     <section id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics" tabindex="-1" hidden>
-      <div class="card"><h2>วิเคราะห์การเงิน</h2><label for="analyticsMonth">เดือนสุดท้ายของช่วง 6 เดือน</label><input id="analyticsMonth" class="form-control" type="month"><p>ไม่รวมการโอนภายใน เงินเดือนนับจากยอดจัดสรรรวมเพียงครั้งเดียว</p><div id="financialCharts" aria-live="polite"></div></div>
+      <!-- Sub-Tab Segmented Switcher -->
+      <div class="analytics-subnav-pills" role="tablist" aria-label="โหมดการวิเคราะห์">
+        <button type="button" id="btnSubtabPortfolio" class="subnav-pill active" role="tab" aria-selected="true" aria-controls="subviewPortfolio">📈 พอร์ตหุ้น &amp; สัดส่วน</button>
+        <button type="button" id="btnSubtabCashflow" class="subnav-pill" role="tab" aria-selected="false" aria-controls="subviewCashflow">📊 รายจ่าย &amp; กระแสเงินสด</button>
+      </div>
+
+      <!-- View 1: Stock Portfolio & Allocation (RocketTool Logic) -->
+      <div id="subviewPortfolio" class="analytics-subview">
+        <!-- Portfolio Hero Summary Card -->
+        <div class="card portfolio-hero-card">
+          <div class="portfolio-hero-top">
+            <div>
+              <span class="portfolio-hero-label">มูลค่าพอร์ตการลงทุนรวม</span>
+              <div id="portfolioGrandTotal" class="portfolio-grand-total">฿0.00</div>
+              <div class="portfolio-substats">
+                <span>ต้นทุนรวม: <b id="portfolioTotalCost">฿0.00</b></span>
+                <span style="margin:0 6px;">•</span>
+                <span>เงินสดในกระปุกหุ้น: <b id="portfolioCashBalance" style="color:var(--brand-primary,#10b981);">฿0.00</b></span>
+              </div>
+            </div>
+            <div id="portfolioTotalPnlBadge" class="pnl-hero-badge up">
+              <span id="portfolioTotalPnlAmount">+฿0.00</span>
+              <small id="portfolioTotalPnlPct">(+0.0%)</small>
+            </div>
+          </div>
+          <div class="portfolio-hero-actions">
+            <button type="button" id="btnOpenStockTradeModal" class="btn btn-primary btn-sm">➕ บันทึกซื้อ/ขายหุ้น</button>
+            <button type="button" id="btnQuickPriceUpdate" class="btn btn-secondary btn-sm">⚡ อัปเดตราคาตลาด</button>
+          </div>
+        </div>
+
+        <!-- Asset Allocation & Donut Chart (RocketTool SVG Arc Engine) -->
+        <div class="card stock-donut-card">
+          <div class="card-header" style="margin-bottom:0.75rem;">
+            <div>
+              <h3 class="card-title" style="font-size:1.05rem;">🍩 สัดส่วนสินทรัพย์ &amp; หุ้นในพอร์ต</h3>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">สัดส่วนคำนวณตามมูลค่าตลาดสดเทียบกับมูลค่ารวมทั้งพอร์ต (รวมเงินสด)</p>
+            </div>
+          </div>
+          <div id="stockDonutContainer" class="stock-donut-container">
+            <!-- Dynamic SVG Donut and Legend -->
+          </div>
+        </div>
+
+        <!-- Holdings List with Target Allocation Bars (.ch-bar & .tgt) -->
+        <div class="card stock-holdings-card">
+          <div class="card-header" style="margin-bottom:0.75rem;">
+            <div>
+              <h3 class="card-title" style="font-size:1.05rem;">📋 หุ้นที่ถือครอง (Holdings)</h3>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">แตะดูกราฟ TradingView หรือคำนวณการซื้อ/ขายเพิ่ม</p>
+            </div>
+          </div>
+          <div id="stockHoldingsList" class="stock-holdings-list">
+            <!-- Rendered list of stock cards -->
+          </div>
+        </div>
+      </div>
+
+      <!-- View 2: Expense Analysis & 6-Month Cashflow -->
+      <div id="subviewCashflow" class="analytics-subview" hidden>
+        <div class="card">
+          <h2>วิเคราะห์รายจ่าย &amp; กระแสเงินสด</h2>
+          <label for="analyticsMonth">เดือนสุดท้ายของช่วง 6 เดือน</label>
+          <input id="analyticsMonth" class="form-control" type="month">
+          <p>ไม่รวมการโอนภายใน เงินเดือนนับจากยอดจัดสรรรวมเพียงครั้งเดียว</p>
+          <div id="financialCharts" aria-live="polite"></div>
+        </div>
+      </div>
     </section>
     <section id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="-1" hidden><section class="card" aria-labelledby="historySectionTitle">
         <div class="card-header">
@@ -1771,6 +1875,103 @@
 <script>
     /* __SLIPSENSE_APP_BUNDLE_PLACEHOLDER__ */
   </script>
+
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: บันทึกซื้อ/ขายหุ้น & คำนวณ Rebalance Simulator (RocketTool Logic) -->
+  <!-- ======================================================================= -->
+  <div id="stockTradeModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="stockTradeModalTitle" hidden>
+    <div class="modal-content" style="max-width:480px;">
+      <h2 id="stockTradeModalTitle">บันทึกซื้อ/ขายหุ้น</h2>
+      <form id="stockTradeForm">
+        <label for="stockTradeTicker">ชื่อย่อหุ้น / Ticker (เช่น NVDA, AAPL, PTT.BK, BTC) *</label>
+        <input id="stockTradeTicker" class="form-control" placeholder="NVDA" required style="text-transform:uppercase;">
+
+        <div style="display:flex;gap:12px;margin:10px 0;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;">
+            <input type="radio" name="stockTradeAction" value="buy" checked> 🟢 ซื้อ (Buy)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;">
+            <input type="radio" name="stockTradeAction" value="sell"> 🔴 ขาย (Sell)
+          </label>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label for="stockTradeShares">จำนวนหุ้น *</label>
+            <input id="stockTradeShares" class="form-control" type="number" step="any" min="0.0001" placeholder="10" required>
+          </div>
+          <div>
+            <label for="stockTradePrice">ราคาต่อหุ้น *</label>
+            <input id="stockTradePrice" class="form-control" type="number" step="any" min="0" placeholder="125.50" required>
+          </div>
+        </div>
+
+        <div style="margin:8px 0;font-size:0.85rem;color:var(--text-muted);">
+          มูลค่ารวมรายการ: <b id="stockTradeTotalAmount" style="color:var(--text-main);font-size:1rem;">0.00</b>
+        </div>
+
+        <div style="margin:8px 0;">
+          <label for="stockTradeTargetPct">เป้าหมายสัดส่วนในพอร์ต % (Target Allocation)</label>
+          <input id="stockTradeTargetPct" class="form-control" type="number" step="any" min="0" max="100" placeholder="เช่น 20">
+        </div>
+
+        <div style="margin:10px 0;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;">
+            <input type="checkbox" id="stockTradeLinkCash" checked>
+            <span>เชื่อมโยงเงินสดกับกระปุก <b>📈 หุ้น/ลงทุน</b> (หักเงิน/เติมเงินอัตโนมัติ)</span>
+          </label>
+        </div>
+
+        <!-- Realtime Rebalance Simulator Output -->
+        <div id="stockTradeSimOutput" class="ch-warn" style="display:none;margin:10px 0;">
+          <!-- Injected by simulateStockTradeUI -->
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+          <button type="button" id="btnCancelStockTrade" class="btn btn-secondary">ยกเลิก</button>
+          <button type="submit" id="btnSaveStockTrade" class="btn btn-primary">ยืนยันบันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: กราฟ TradingView Real-Time Chart                                 -->
+  <!-- ======================================================================= -->
+  <div id="tradingViewModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tradingViewModalTitle" hidden>
+    <div class="modal-content tv-modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <h2 id="tradingViewModalTitle" style="margin:0;font-size:1.15rem;">TradingView Live Chart</h2>
+          <small id="tradingViewModalSubtitle" style="color:var(--text-muted);">กราฟราคาและแนวรับ-แนวต้านเรียลไทม์</small>
+        </div>
+        <button type="button" id="btnCloseTradingView" class="btn btn-secondary btn-sm">✕ ปิดกราฟ</button>
+      </div>
+      <div id="tradingViewWidgetContainer" class="tv-widget-container">
+        <!-- TradingView Widget iframe/script container -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: Quick Market Price Update                                       -->
+  <!-- ======================================================================= -->
+  <div id="stockPriceModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="stockPriceModalTitle" hidden>
+    <div class="modal-content" style="max-width:440px;">
+      <h2 id="stockPriceModalTitle">⚡ อัปเดตราคาตลาดปัจจุบัน</h2>
+      <p style="font-size:0.8rem;color:var(--text-muted);">กรอกราคาตลาดล่าสุดของหุ้นแต่ละตัวเพื่อคำนวณกำไร/ขาดทุนทันที</p>
+      <form id="stockPriceForm">
+        <div id="stockPriceInputList" style="max-height:280px;overflow-y:auto;margin:10px 0;">
+          <!-- Dynamically populated price inputs -->
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+          <button type="button" id="btnCancelStockPrice" class="btn btn-secondary">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">บันทึกราคา</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 </body>
 </html>

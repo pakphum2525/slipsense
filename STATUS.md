@@ -4,6 +4,31 @@
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
 **สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **41/41 รายการ (exit code 0)**
 
+## ผลงาน TASK-SLIPSENSE-V4-018 (RocketTool-Engine Stock Portfolio Tracker, P/L Calculator, Asset Allocation Donut & TradingView Charts)
+
+- **สิ่งที่ทำเสร็จแล้ว:**
+  1. **โมเดลข้อมูลและการจัดเก็บออฟไลน์ (Data Model & Storage):**
+     - สร้างโครงสร้างข้อมูล `StockHolding` (ticker, name, shares, costBasis, avgCost, currentPrice, targetPct, currency) และ `StockTransaction` (buy/sell, quantity, price, amount, realizedPL, fundId, tradeDate)
+     - บันทึกลง IndexedDB (`slipsense_db`) และจัดเก็บแบบ Offline-First
+     - เชื่อมโยงเงินสดกับกระปุก **📈 หุ้น/ลงทุน** (`investment_stock`) เมื่อกดบันทึกซื้อหุ้นจะตัดเงินจากกระปุก และเมื่อขายหุ้นจะนำเงินสดพร้อมผลกำไร/ขาดทุนกลับเข้ากระปุกอัตโนมัติ
+  2. **RocketTool P/L Calculation Engine (ถอดรหัส Logic 100%):**
+     - คิดต้นทุนเฉลี่ยถ่วงน้ำหนัก (`Weighted Average Cost`) เมื่อซื้อเพิ่ม
+     - คิดกำไร/ขาดทุนที่รับรู้จริง (`Realized P/L`) เมื่อขายออก
+     - คิดกำไร/ขาดทุนสุทธิที่ยังไม่ขาย (`Unrealized P/L`) ทั้งจำนวนเงินและเปอร์เซ็นต์ผลตอบแทน (`+XX.X%` สีเขียว / `-XX.X%` สีแดง) ทั้งรายตัวและภาพรวมทั้งพอร์ต
+  3. **RocketTool Asset Allocation Donut & Target Progress Bar:**
+     - กราฟโดนัท Pure SVG Arc ด้วยสูตรเรขาคณิต `cR` (`createSvgArcPath`) จาก Rocket Tool พร้อมสรุปมูลค่ารวมตรงกลางและ Legend แสดงสัดส่วนเปอร์เซ็นต์
+     - แถบสัดส่วนแคปซูลมน (`.ch-bar`) พร้อมขีดบอกเป้าหมายสีทอง (`.tgt`)
+     - เครื่องคิดเลขจำลองการซื้อ (`Rebalance Simulator`) คำนวณต้นทุนใหม่และสัดส่วนใหม่ล่วงหน้า พร้อมระบบเตือนสติการเงิน (`⚠️ สัดส่วนจะเกินเป้า X%` / `✓ ยังอยู่ในกรอบเป้า`)
+  4. **TradingView Real-Time Chart Integration:**
+     - ฝังวิดเจ็ตกราฟแท่งเทียนสดจาก TradingView Advanced Chart รองรับหุ้นสหรัฐฯ (NASDAQ/NYSE), หุ้นไทย (SET:PTT), คริปโต (BTC, ETH), และทองคำ
+  5. **Quick Market Price Update:**
+     - มีโมดอลเปิดให้กรอก/อัปเดตราคาตลาดปัจจุบันของหุ้นทุกตัวได้อย่างสะดวกรวดเร็ว
+  6. **ผลการทดสอบและการ Build:**
+     - เพิ่มชุดทดสอบ `tests/portfolio_engine.test.js`
+     - รัน `node scripts/build_prod.js` และ `node scripts/run_tests.js` ผ่านครบ **42/42 รายการ (100% PASS, 0 failure)**
+- **บั๊กค้าง:** ไม่มี
+- **งานถัดไป:** ส่งมอบเข้าสู่ Release Gate และขออนุมัติจากผู้ใช้
+
 ## ผลงาน TASK-SLIPSENSE-V4-017 (De-duplication & Daily Life Categories with Travel & Pets)
 
 - **สิ่งที่ทำเสร็จแล้ว:**
