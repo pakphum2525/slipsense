@@ -4714,6 +4714,44 @@ interface DashboardMetrics {
 
       const DONUT_PALETTE = ['#2dd4bf', '#60a5fa', '#c4b5fd', '#fbbf24', '#f472b6', '#a3e635', '#38bdf8', '#fb923c'];
 
+      let stockSortMode = 'pnl_desc';
+      let stockSearchQuery = '';
+      let activeStockSubtab = 'holdings';
+
+      function getStockAvatarInfo(ticker) {
+        const t = (ticker || '').toUpperCase().trim();
+        const known = {
+          'NVDA': { bg: '#76b900', text: 'N' },
+          'AMZN': { bg: '#ff9900', text: 'a' },
+          'META': { bg: '#0668e1', text: 'M' },
+          'GOOGL': { bg: '#ea4335', text: 'G' },
+          'GOOG': { bg: '#ea4335', text: 'G' },
+          'MSFT': { bg: '#00a4ef', text: 'M' },
+          'LLY': { bg: '#d92526', text: 'L' },
+          'MELI': { bg: '#ffe600', text: 'M' },
+          'AVGO': { bg: '#cc092f', text: 'A' },
+          'TSM': { bg: '#e31b23', text: 'T' },
+          'TEM': { bg: '#111111', text: 'T' },
+          'SNOW': { bg: '#29b5e8', text: '❄️' },
+          'CRWD': { bg: '#e01e26', text: '🦅' },
+          'WGS': { bg: '#2b5cbe', text: 'W' },
+          'AAPL': { bg: '#555555', text: '🍎' },
+          'TSLA': { bg: '#cc0000', text: 'T' },
+          'BTC': { bg: '#f7931a', text: '₿' },
+          'ETH': { bg: '#627eea', text: 'Ξ' },
+          'PTT': { bg: '#005baa', text: 'P' },
+          'AOT': { bg: '#003399', text: 'A' }
+        };
+        if (known[t]) return known[t];
+        let hash = 0;
+        for (let i = 0; i < t.length; i++) {
+          hash = (hash << 5) - hash + t.charCodeAt(i);
+          hash |= 0;
+        }
+        const hue = Math.abs(hash) % 360;
+        return { bg: 'hsl(' + hue + ', 65%, 45%)', text: t.slice(0, 2) };
+      }
+
       function renderStockPortfolioUI() {
         const holdings = getStockHoldingsFromStorage();
         const cashBalance = getStockJarCashBalance();
@@ -4832,63 +4870,105 @@ interface DashboardMetrics {
           }
         }
 
-        // 3. Render Holdings List
+        // 3. Render Holdings List (RocketTool Mobile Compact List)
+        let displayedItems = [...summary.items];
+        if (stockSearchQuery) {
+          const q = stockSearchQuery.toLowerCase();
+          displayedItems = displayedItems.filter(item => 
+            item.ticker.toLowerCase().includes(q) || (item.name && item.name.toLowerCase().includes(q))
+          );
+        }
+        if (stockSortMode === 'pnl_desc') {
+          displayedItems.sort((a, b) => b.unrealizedPLPct - a.unrealizedPLPct);
+        } else if (stockSortMode === 'pnl_asc') {
+          displayedItems.sort((a, b) => a.unrealizedPLPct - b.unrealizedPLPct);
+        } else if (stockSortMode === 'weight_desc') {
+          displayedItems.sort((a, b) => b.weight - a.weight);
+        } else if (stockSortMode === 'weight_asc') {
+          displayedItems.sort((a, b) => a.weight - b.weight);
+        }
+
+        const holdingsCountEl = document.getElementById('holdingsCount');
+        if (holdingsCountEl) holdingsCountEl.textContent = 'Holdings (' + summary.items.length + ')';
+
+        const lastUpdatedEl = document.getElementById('portfolioLastUpdated');
+        if (lastUpdatedEl) {
+          try {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            lastUpdatedEl.textContent = 'อัปเดตล่าสุด ' + timeStr + ' น.';
+          } catch {}
+        }
+
         const holdingsListEl = document.getElementById('stockHoldingsList');
         if (holdingsListEl) {
           holdingsListEl.innerHTML = '';
-          if (summary.items.length === 0) {
-            holdingsListEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.88rem;">ยังไม่มีหุ้นในพอร์ต แตะปุ่ม "➕ บันทึกซื้อ/ขายหุ้น" ด้านบน</div>';
+          if (displayedItems.length === 0) {
+            holdingsListEl.innerHTML = '<div style="padding:28px 16px;text-align:center;color:var(--text-muted);font-size:0.88rem;">' +
+              (stockSearchQuery ? 'ไม่พบหุ้นที่ตรงกับคำค้นหา "' + stockSearchQuery + '"' : 'ยังไม่มีหุ้นในพอร์ต แตะปุ่ม "➕" ด้านบนเพื่อเริ่มบันทึก') +
+              '</div>';
           } else {
-            summary.items.forEach(h => {
+            const fragment = document.createDocumentFragment();
+            displayedItems.forEach(h => {
               const card = document.createElement('div');
-              card.className = 'stock-holding-item';
+              card.className = 'stock-compact-card';
+              card.setAttribute('data-ticker', h.ticker);
+              card.setAttribute('role', 'button');
+              card.setAttribute('tabindex', '0');
+              card.setAttribute('title', 'แตะเพื่อเปิดดูกราฟ TradingView สำหรับ ' + h.ticker);
 
               const isUp = h.unrealizedPL >= 0;
               const pnlClass = isUp ? 'up' : 'down';
               const pnlSign = isUp ? '+' : '';
-
-              // RocketTool .ch-bar & .tgt
-              const target = h.targetPct || 0;
-              const weight = h.weight || 0;
-              const targetMarkerHtml = target > 0 ? '<span class="tgt" style="left:' + Math.min(100, target) + '%;"></span>' : '';
-              
-              let alertBanner = '';
-              if (target > 0) {
-                if (weight > target) {
-                  alertBanner = '<div class="ch-warn bad">⚠️ สัดส่วนจริง ' + weight.toFixed(1) + '% เกินเป้าที่ตั้งไว้ ' + target + '%</div>';
-                } else {
-                  alertBanner = '<div class="ch-warn ok">✓ อยู่ในกรอบเป้า ' + target + '% (' + weight.toFixed(1) + '%)</div>';
-                }
-              }
+              const avatar = getStockAvatarInfo(h.ticker);
 
               card.innerHTML = 
-                '<div class="stock-holding-top">' +
-                  '<div class="stock-holding-title">' +
-                    '<span>' + h.ticker + '</span>' +
-                    '<small style="font-weight:500;font-size:0.75rem;color:var(--text-muted);">' + (h.name !== h.ticker ? h.name : '') + '</small>' +
+                '<div class="stock-card-left">' +
+                  '<div class="stock-avatar" style="background:' + avatar.bg + ';">' + avatar.text + '</div>' +
+                  '<div class="stock-info-col">' +
+                    '<div class="stock-ticker-row">' +
+                      '<span class="stock-ticker-symbol">' + h.ticker + '</span>' +
+                      '<span class="stock-pie-badge">◔ ' + h.weight.toFixed(1) + '%</span>' +
+                    '</div>' +
+                    '<div class="stock-shares-avg">' + h.shares.toLocaleString() + ' หุ้น · avg ' + formatCurrency(h.avgCost) + '</div>' +
                   '</div>' +
-                  '<div class="stock-pnl-chip ' + pnlClass + '">' +
-                    pnlSign + formatCurrency(h.unrealizedPL) + ' (' + pnlSign + h.unrealizedPLPct.toFixed(1) + '%)' +
-                  '</div>' +
                 '</div>' +
-                '<div class="stock-holding-grid">' +
-                  '<div>จำนวนถือ: <b>' + h.shares.toLocaleString() + '</b> หุ้น</div>' +
-                  '<div>ต้นทุนเฉลี่ย: <b>' + formatCurrency(h.avgCost) + '</b></div>' +
-                  '<div>ราคาตลาด: <b>' + formatCurrency(h.currentPrice) + '</b></div>' +
-                  '<div>มูลค่าปัจจุบัน: <b>' + formatCurrency(h.value) + '</b></div>' +
-                '</div>' +
-                '<div class="ch-bar"><i style="width:' + Math.min(100, weight) + '%;"></i>' + targetMarkerHtml + '</div>' +
-                '<div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">' +
-                  '<span>สัดส่วนในพอร์ต: <b style="color:var(--text-main);">' + weight.toFixed(1) + '%</b></span>' +
-                  '<span>เป้าหมาย: <b style="color:#fbbf24;">' + (target > 0 ? target + '%' : 'ยังไม่ตั้ง') + '</b></span>' +
-                '</div>' +
-                alertBanner +
-                '<div class="stock-action-btns">' +
-                  '<button type="button" class="btn btn-secondary btn-sm btn-view-chart" data-ticker="' + h.ticker + '">📊 ดูกราฟ TradingView</button>' +
-                  '<button type="button" class="btn btn-secondary btn-sm btn-trade-stock" data-ticker="' + h.ticker + '">⚡ ซื้อ/ขายเพิ่ม</button>' +
+                '<div class="stock-card-right">' +
+                  '<div class="stock-val-text">' + formatCurrency(h.value) + '</div>' +
+                  '<div class="stock-pnl-text ' + pnlClass + '">' + pnlSign + h.unrealizedPLPct.toFixed(2) + '%</div>' +
                 '</div>';
 
-              holdingsListEl.appendChild(card);
+              fragment.appendChild(card);
+            });
+            holdingsListEl.appendChild(fragment);
+          }
+        }
+
+        // 4. Render Transaction History Tab
+        const txListEl = document.getElementById('stockTransactionsList');
+        if (txListEl) {
+          txListEl.innerHTML = '';
+          const txs = getStockTransactionsFromStorage();
+          if (txs.length === 0) {
+            txListEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;">ยังไม่มีประวัติการซื้อ/ขายหุ้น</div>';
+          } else {
+            txs.forEach(t => {
+              const row = document.createElement('div');
+              row.className = 'stock-tx-row';
+              row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border-color);';
+              const isBuy = t.action === 'buy';
+              row.innerHTML = 
+                '<div>' +
+                  '<div style="font-weight:700;font-size:0.92rem;">' +
+                    '<span style="color:' + (isBuy ? '#10b981' : '#f43f5e') + ';font-weight:800;">' + (isBuy ? 'ซื้อ' : 'ขาย') + '</span> ' + t.ticker +
+                  '</div>' +
+                  '<div style="font-size:0.75rem;color:var(--text-muted);">' + t.quantity + ' หุ้น @ ' + formatCurrency(t.price) + ' · ' + t.tradeDate + '</div>' +
+                '</div>' +
+                '<div style="text-align:right;">' +
+                  '<div style="font-weight:700;font-size:0.92rem;">' + formatCurrency(t.amount) + '</div>' +
+                  (!isBuy && t.realizedPL !== undefined ? '<div style="font-size:0.75rem;font-weight:700;color:' + (t.realizedPL >= 0 ? '#10b981' : '#f43f5e') + ';">กำไร ' + (t.realizedPL >= 0 ? '+' : '') + formatCurrency(t.realizedPL) + '</div>' : '') +
+                '</div>';
+              txListEl.appendChild(row);
             });
           }
         }
@@ -5063,20 +5143,78 @@ interface DashboardMetrics {
           if (m) m.hidden = true;
         });
 
-        // Delegate buttons in stock list
-        document.getElementById('stockHoldingsList')?.addEventListener('click', (e: any) => {
-          const chartBtn = e.target.closest('.btn-view-chart');
-          if (chartBtn) {
-            const ticker = chartBtn.getAttribute('data-ticker');
+        // Delegate click on stock compact card -> Directly open TradingView chart modal!
+        document.getElementById('stockHoldingsList')?.addEventListener('click', (e) => {
+          const card = e.target.closest('.stock-compact-card');
+          if (card) {
+            const ticker = card.getAttribute('data-ticker');
             if (ticker) openTradingViewModal(ticker);
-            return;
           }
-          const tradeBtn = e.target.closest('.btn-trade-stock');
-          if (tradeBtn) {
-            const ticker = tradeBtn.getAttribute('data-ticker');
-            if (ticker) openStockTradeModal(ticker);
-            return;
-          }
+        });
+
+        // Search Input Filtering
+        document.getElementById('stockSearchInput')?.addEventListener('input', (e) => {
+          stockSearchQuery = (e.target.value || '').trim();
+          renderStockPortfolioUI();
+        });
+
+        // Sorting Controls: P&L and Allocation Weight
+        document.getElementById('btnSortPnl')?.addEventListener('click', () => {
+          stockSortMode = stockSortMode === 'pnl_desc' ? 'pnl_asc' : 'pnl_desc';
+          document.getElementById('btnSortPnl')?.classList.add('active');
+          document.getElementById('btnSortWeight')?.classList.remove('active');
+          const pnlBtn = document.getElementById('btnSortPnl');
+          if (pnlBtn) pnlBtn.textContent = stockSortMode === 'pnl_desc' ? 'P&L ↓' : 'P&L ↑';
+          renderStockPortfolioUI();
+        });
+
+        document.getElementById('btnSortWeight')?.addEventListener('click', () => {
+          stockSortMode = stockSortMode === 'weight_desc' ? 'weight_asc' : 'weight_desc';
+          document.getElementById('btnSortWeight')?.classList.add('active');
+          document.getElementById('btnSortPnl')?.classList.remove('active');
+          const wtBtn = document.getElementById('btnSortWeight');
+          if (wtBtn) wtBtn.textContent = stockSortMode === 'weight_desc' ? 'สัดส่วน ↓' : 'สัดส่วน ↑';
+          renderStockPortfolioUI();
+        });
+
+        // Subnav tabs (Holdings / History / Donut)
+        function updateStockSubtabView() {
+          const tabHoldings = document.getElementById('tabHoldingsView');
+          const tabTx = document.getElementById('tabTxHistoryView');
+          const tabDonut = document.getElementById('tabDonutView');
+          const cHoldings = document.getElementById('subtabContentHoldings');
+          const cTx = document.getElementById('subtabContentTx');
+          const cDonut = document.getElementById('subtabContentDonut');
+
+          if (tabHoldings) tabHoldings.classList.toggle('active', activeStockSubtab === 'holdings');
+          if (tabTx) tabTx.classList.toggle('active', activeStockSubtab === 'tx');
+          if (tabDonut) tabDonut.classList.toggle('active', activeStockSubtab === 'donut');
+
+          if (cHoldings) cHoldings.hidden = activeStockSubtab !== 'holdings';
+          if (cTx) cTx.hidden = activeStockSubtab !== 'tx';
+          if (cDonut) cDonut.hidden = activeStockSubtab !== 'donut';
+        }
+
+        document.getElementById('tabHoldingsView')?.addEventListener('click', () => {
+          activeStockSubtab = 'holdings';
+          updateStockSubtabView();
+        });
+        document.getElementById('tabTxHistoryView')?.addEventListener('click', () => {
+          activeStockSubtab = 'tx';
+          updateStockSubtabView();
+        });
+        document.getElementById('tabDonutView')?.addEventListener('click', () => {
+          activeStockSubtab = 'donut';
+          updateStockSubtabView();
+        });
+
+        // Rebalance & Header Add buttons
+        document.getElementById('btnPortfolioRebalance')?.addEventListener('click', () => {
+          const holdings = getStockHoldingsFromStorage();
+          openStockTradeModal(holdings[0]?.ticker || '', 'buy');
+        });
+        document.getElementById('btnOpenStockTradeHeader')?.addEventListener('click', () => {
+          openStockTradeModal();
         });
 
         // Realtime Trade Simulator

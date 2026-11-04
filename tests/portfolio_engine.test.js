@@ -163,6 +163,29 @@ function createSvgArcPath(cx, cy, rOuter, rInner, a0, a1) {
   return `M ${ox.toFixed(2)} ${oy.toFixed(2)} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${ux.toFixed(2)} ${uy.toFixed(2)} L ${hx.toFixed(2)} ${hy.toFixed(2)} A ${rInner} ${rInner} 0 ${largeArc} 0 ${px.toFixed(2)} ${py.toFixed(2)} Z`;
 }
 
+
+function sortHoldings(items, sortMode) {
+  const sorted = [...items];
+  if (sortMode === 'pnl_desc') {
+    sorted.sort((a, b) => b.unrealizedPLPct - a.unrealizedPLPct);
+  } else if (sortMode === 'pnl_asc') {
+    sorted.sort((a, b) => a.unrealizedPLPct - b.unrealizedPLPct);
+  } else if (sortMode === 'weight_desc') {
+    sorted.sort((a, b) => b.weight - a.weight);
+  } else if (sortMode === 'weight_asc') {
+    sorted.sort((a, b) => a.weight - b.weight);
+  }
+  return sorted;
+}
+
+function filterHoldings(items, query) {
+  if (!query) return items;
+  const q = query.toLowerCase();
+  return items.filter(item => 
+    item.ticker.toLowerCase().includes(q) || (item.name && item.name.toLowerCase().includes(q))
+  );
+}
+
 module.exports = async function runPortfolioEngineTests() {
   // 1.1 ซื้อหุ้นครั้งแรก
   const r1 = calculateWeightedAverageCost(0, 0, 10, 100);
@@ -228,4 +251,38 @@ module.exports = async function runPortfolioEngineTests() {
   assert.ok(path.includes(' L '));
   assert.ok(path.includes(' A 74 74 0 '));
   assert.ok(path.endsWith(' Z'));
+
+  // 1.8 Sort by P&L % (Desc & Asc)
+  const itemsToSort = [
+    { ticker: 'SNOW', unrealizedPLPct: 105.23, weight: 3.2, name: 'Snowflake' },
+    { ticker: 'NVDA', unrealizedPLPct: -5.73, weight: 6.5, name: 'Nvidia' },
+    { ticker: 'LLY', unrealizedPLPct: 47.76, weight: 6.0, name: 'Eli Lilly' }
+  ];
+  const sortedPnlDesc = sortHoldings(itemsToSort, 'pnl_desc');
+  assert.strictEqual(sortedPnlDesc[0].ticker, 'SNOW');
+  assert.strictEqual(sortedPnlDesc[1].ticker, 'LLY');
+  assert.strictEqual(sortedPnlDesc[2].ticker, 'NVDA');
+
+  const sortedPnlAsc = sortHoldings(itemsToSort, 'pnl_asc');
+  assert.strictEqual(sortedPnlAsc[0].ticker, 'NVDA');
+  assert.strictEqual(sortedPnlAsc[1].ticker, 'LLY');
+  assert.strictEqual(sortedPnlAsc[2].ticker, 'SNOW');
+
+  // 1.9 Sort by Weight (Desc & Asc)
+  const sortedWeightDesc = sortHoldings(itemsToSort, 'weight_desc');
+  assert.strictEqual(sortedWeightDesc[0].ticker, 'NVDA');
+  assert.strictEqual(sortedWeightDesc[1].ticker, 'LLY');
+  assert.strictEqual(sortedWeightDesc[2].ticker, 'SNOW');
+
+  // 1.10 Search Filtering
+  const filtered1 = filterHoldings(itemsToSort, 'snow');
+  assert.strictEqual(filtered1.length, 1);
+  assert.strictEqual(filtered1[0].ticker, 'SNOW');
+
+  const filtered2 = filterHoldings(itemsToSort, 'nvidia');
+  assert.strictEqual(filtered2.length, 1);
+  assert.strictEqual(filtered2[0].ticker, 'NVDA');
+
+  const filteredEmpty = filterHoldings(itemsToSort, 'XYZNONEXISTENT');
+  assert.strictEqual(filteredEmpty.length, 0);
 };

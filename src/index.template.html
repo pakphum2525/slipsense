@@ -1101,42 +1101,78 @@
     .tx-top > div:first-of-type { min-width:0; flex:1; }
     @media(max-width:420px) { .jar-shelf { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 8px; } .tx-top { flex-wrap:wrap; } .tx-top .tx-amount { margin-left:auto; } .category-row-top { flex-wrap:wrap; gap:6px; } }
 
-    /* RocketTool Stock Portfolio & Allocation UI Styles */
+    /* RocketTool Mobile-First Stock Portfolio & Holdings UI Styles */
     .analytics-subnav-pills { display:flex; gap:8px; margin-bottom:12px; }
     .subnav-pill { flex:1; padding:9px 12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-muted); font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s; text-align:center; }
     .subnav-pill.active { background:linear-gradient(135deg, #168065, #2dd4bf); color:#fff; border-color:transparent; box-shadow:0 2px 8px rgba(45,212,191,0.25); }
-    .portfolio-hero-card { padding:16px; border-radius:16px; margin-bottom:12px; background:linear-gradient(180deg, rgba(45,212,191,0.06), transparent); }
-    .portfolio-hero-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
-    .portfolio-hero-label { font-size:0.8rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-    .portfolio-grand-total { font-size:clamp(1.6rem, 5vw, 2.1rem); font-weight:800; color:var(--text-main); margin:4px 0; }
-    .portfolio-substats { font-size:0.82rem; color:var(--text-muted); display:flex; flex-wrap:wrap; align-items:center; }
-    .pnl-hero-badge { display:flex; flex-direction:column; align-items:flex-end; padding:6px 12px; border-radius:10px; font-weight:700; font-size:1.05rem; }
-    .pnl-hero-badge.up { background:rgba(52, 211, 153, 0.15); color:#10b981; }
-    .pnl-hero-badge.down { background:rgba(244, 63, 94, 0.15); color:#f43f5e; }
-    .portfolio-hero-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+
+    .portfolio-header-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .portfolio-header-title { font-size:1.35rem; font-weight:800; color:var(--text-main); margin:0; }
+    .portfolio-header-actions { display:flex; align-items:center; gap:8px; }
+    .btn-rebalance-pill { background:#7c3aed; color:#fff; border-radius:20px; font-weight:600; font-size:0.82rem; padding:6px 14px; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 6px rgba(124,58,237,0.3); }
+    .btn-rebalance-pill:hover { background:#6d28d9; }
+    .btn-add-pill { background:#7c3aed; color:#fff; border-radius:12px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; font-weight:700; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 6px rgba(124,58,237,0.3); }
+    .btn-add-pill:hover { background:#6d28d9; transform:scale(1.05); }
+
+    .portfolio-hero-card { padding:18px; border-radius:18px; margin-bottom:12px; background:var(--bg-surface); border:1px solid var(--border-color); box-shadow:0 4px 16px rgba(0,0,0,0.04); }
+    .hero-time { font-size:0.75rem; color:var(--text-muted); font-weight:500; }
+    .hero-net-worth { font-size:clamp(1.9rem, 6vw, 2.4rem); font-weight:800; color:var(--text-main); margin:4px 0 6px 0; letter-spacing:-0.5px; }
+    .hero-return-row { display:flex; align-items:center; gap:10px; font-size:0.92rem; font-weight:700; margin-bottom:8px; flex-wrap:wrap; }
+    .hero-pnl-val.up, .hero-pnl-pct.up { color:#10b981; }
+    .hero-pnl-val.down, .hero-pnl-pct.down { color:#ef4444; }
+    .hero-today-tag { font-size:0.8rem; color:var(--text-muted); font-weight:500; }
+    .badge-realized-sold { background:rgba(255,255,255,0.08); border:1px solid var(--border-color); padding:2px 6px; border-radius:6px; font-size:0.7rem; color:var(--text-muted); font-weight:600; margin:0 4px; }
+
+    .portfolio-tabs-row { display:flex; gap:20px; border-bottom:1px solid var(--border-color); margin:14px 0 12px 0; padding-bottom:2px; }
+    .portfolio-tab-btn { background:none; border:none; padding:8px 2px; font-size:0.95rem; font-weight:600; color:var(--text-muted); cursor:pointer; position:relative; transition:color 0.2s; }
+    .portfolio-tab-btn.active { color:var(--text-main); }
+    .portfolio-tab-btn.active::after { content:''; position:absolute; bottom:-3px; left:0; width:100%; height:3px; background:#7c3aed; border-radius:3px; }
+
+    .holdings-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+    .holdings-count-title { font-weight:800; font-size:1.05rem; color:var(--text-main); }
+    .sort-pills-group { display:flex; align-items:center; gap:6px; }
+    .sort-chip { padding:4px 10px; border-radius:20px; font-size:0.76rem; font-weight:700; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-muted); cursor:pointer; transition:all 0.15s; }
+    .sort-chip.active { background:#7c3aed; color:#fff; border-color:transparent; }
+
+    .stock-search-input { width:100%; padding:9px 14px; border-radius:12px; font-size:0.86rem; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-main); margin-bottom:10px; box-sizing:border-box; outline:none; transition:border 0.2s; }
+    .stock-search-input:focus { border-color:#7c3aed; box-shadow:0 0 0 2px rgba(124,58,237,0.15); }
+
+    .stock-compact-list { display:flex; flex-direction:column; gap:8px; }
+    .stock-compact-card { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-radius:14px; background:var(--bg-surface); border:1px solid var(--border-color); cursor:pointer; transition:transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease; user-select:none; -webkit-tap-highlight-color:transparent; }
+    .stock-compact-card:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,0.06); background:var(--bg-subtle); border-color:rgba(124,58,237,0.3); }
+    .stock-compact-card:active { transform:scale(0.985); }
+
+    .stock-card-left { display:flex; align-items:center; gap:12px; min-width:0; }
+    .stock-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.82rem; color:#fff; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+    .stock-info-col { display:flex; flex-direction:column; min-width:0; }
+    .stock-ticker-row { display:flex; align-items:center; gap:6px; }
+    .stock-ticker-symbol { font-weight:800; font-size:1.02rem; color:var(--text-main); letter-spacing:0.2px; }
+    .stock-pie-badge { font-size:0.78rem; font-weight:700; color:#8b5cf6; display:flex; align-items:center; gap:2px; }
+    .stock-shares-avg { font-size:0.78rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .stock-card-right { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; margin-left:8px; }
+    .stock-val-text { font-weight:800; font-size:1.02rem; color:var(--text-main); }
+    .stock-pnl-text { font-weight:700; font-size:0.84rem; }
+    .stock-pnl-text.up { color:#10b981; }
+    .stock-pnl-text.down { color:#ef4444; }
+
+    .stock-donut-card { padding:14px; border-radius:16px; margin-bottom:12px; }
     .stock-donut-container { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; }
-    .stock-donut-svg { max-width:320px; width:100%; height:auto; }
+    .stock-donut-svg { max-width:300px; width:100%; height:auto; }
     .stock-donut-legend { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; width:100%; margin-top:8px; }
     .donut-legend-item { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); font-size:0.8rem; }
     .donut-legend-chip { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
-    .stock-holding-item { padding:12px; border-radius:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); margin-bottom:10px; }
-    .stock-holding-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
-    .stock-holding-title { display:flex; align-items:center; gap:8px; font-weight:700; font-size:1rem; }
-    .stock-pnl-chip { font-size:0.82rem; font-weight:700; padding:3px 8px; border-radius:6px; }
-    .stock-pnl-chip.up { background:rgba(52, 211, 153, 0.15); color:#10b981; }
-    .stock-pnl-chip.down { background:rgba(244, 63, 94, 0.15); color:#f43f5e; }
-    .stock-holding-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:6px 12px; font-size:0.8rem; color:var(--text-muted); margin:6px 0; }
-    .stock-holding-grid b { color:var(--text-main); }
-    .ch-bar { height:9px; border-radius:999px; background:var(--border-color, rgba(255,255,255,0.1)); overflow:hidden; margin:8px 0 5px; position:relative; }
-    .ch-bar i { display:block; height:100%; background:linear-gradient(90deg, #8b5cf6, #2dd4bf); border-radius:999px; }
-    .ch-bar .tgt { position:absolute; top:-3px; bottom:-3px; width:2px; background:#fbbf24; z-index:2; box-shadow:0 0 4px #fbbf24; }
-    .ch-warn { margin-top:6px; font-size:0.78rem; line-height:1.45; border-radius:8px; padding:6px 9px; background:rgba(251,191,36,0.12); color:#fbbf24; font-weight:500; }
-    .ch-warn.ok { background:rgba(52,211,153,0.12); color:#10b981; }
-    .ch-warn.bad { background:rgba(244,63,94,0.12); color:#f43f5e; }
+
+    .ch-bar { height:6px; border-radius:3px; background:rgba(255,255,255,0.08); position:relative; overflow:visible; margin:6px 0; }
+    .ch-bar > i { display:block; height:100%; border-radius:3px; background:#10b981; }
+    .ch-bar > .tgt { position:absolute; top:-3px; width:2px; height:12px; background:#fbbf24; border-radius:1px; z-index:2; box-shadow:0 0 4px #fbbf24; }
+    .ch-warn { font-size:0.75rem; padding:3px 8px; border-radius:6px; margin-top:4px; font-weight:600; }
+    .ch-warn.bad { background:rgba(244, 63, 94, 0.12); color:#f43f5e; }
+    .ch-warn.ok { background:rgba(52, 211, 153, 0.12); color:#10b981; }
     .tv-modal-content { max-width:880px; width:95%; height:82vh; display:flex; flex-direction:column; padding:14px; }
     .tv-widget-container { flex:1; width:100%; min-height:360px; border-radius:12px; overflow:hidden; background:#131722; position:relative; }
     .stock-action-btns { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
-
+  
   </style>
 </head>
 <body>
@@ -1347,52 +1383,91 @@
 
       <!-- View 1: Stock Portfolio & Allocation (RocketTool Logic) -->
       <div id="subviewPortfolio" class="analytics-subview">
-        <!-- Portfolio Hero Summary Card -->
+        <!-- Top Action Header -->
+        <div class="portfolio-header-bar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h2 class="portfolio-header-title">พอร์ตของฉัน</h2>
+          </div>
+          <div class="portfolio-header-actions">
+            <button type="button" id="btnPortfolioRebalance" class="btn-rebalance-pill">⚖️ Rebalance</button>
+            <button type="button" id="btnOpenStockTradeHeader" class="btn-add-pill" title="เพิ่มหุ้น หรือบันทึกซื้อ/ขาย">➕</button>
+            <button type="button" id="btnQuickPriceUpdate" class="btn btn-secondary btn-sm" title="อัปเดตราคาตลาด">⚡ ราคา</button>
+          </div>
+        </div>
+
+        <!-- Portfolio Hero Summary Card (RocketTool Mobile Style) -->
         <div class="card portfolio-hero-card">
-          <div class="portfolio-hero-top">
-            <div>
-              <span class="portfolio-hero-label">มูลค่าพอร์ตการลงทุนรวม</span>
-              <div id="portfolioGrandTotal" class="portfolio-grand-total">฿0.00</div>
-              <div class="portfolio-substats">
-                <span>ต้นทุนรวม: <b id="portfolioTotalCost">฿0.00</b></span>
-                <span style="margin:0 6px;">•</span>
-                <span>เงินสดในกระปุกหุ้น: <b id="portfolioCashBalance" style="color:var(--brand-primary,#10b981);">฿0.00</b></span>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="portfolio-hero-label" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">มูลค่าปัจจุบัน</span>
+            <span id="portfolioLastUpdated" class="hero-time">อัปเดตล่าสุด 21:01 น.</span>
+          </div>
+          <div id="portfolioGrandTotal" class="hero-net-worth">฿0.00</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+            <div id="portfolioTotalPnlBadge" class="hero-return-row">
+              <span id="portfolioTotalPnlAmount" class="hero-pnl-val up">📈 +฿0.00</span>
+              <span id="portfolioTotalPnlPct" class="hero-pnl-pct up">(+0.0%)</span>
+              <span id="portfolioTodayReturnText" class="hero-today-tag">วันนี้ +฿0.00</span>
+            </div>
+            <div class="portfolio-substats" style="font-size:0.82rem;color:var(--text-muted);">
+              <span>เงินสดในกระปุก: <b id="portfolioCashBalance" style="color:var(--brand-primary,#10b981);">฿0.00</b></span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border-color);font-size:0.82rem;">
+            <span>กำไรสะสม <span class="badge-realized-sold">ขายแล้ว</span></span>
+            <span id="portfolioRealizedProfit" style="font-weight:700;color:#10b981;">+฿0.00</span>
+          </div>
+        </div>
+
+        <!-- Subnav Tabs: Holdings vs ประวัติธุรกรรม vs สัดส่วน Donut -->
+        <div class="portfolio-tabs-row" role="tablist">
+          <button type="button" id="tabHoldingsView" class="portfolio-tab-btn active" role="tab" aria-selected="true">Holdings</button>
+          <button type="button" id="tabTxHistoryView" class="portfolio-tab-btn" role="tab" aria-selected="false">ประวัติธุรกรรม</button>
+          <button type="button" id="tabDonutView" class="portfolio-tab-btn" role="tab" aria-selected="false">🍩 สัดส่วน Donut</button>
+        </div>
+
+        <!-- View Tab 1: Holdings List -->
+        <div id="subtabContentHoldings">
+          <!-- Search & Filter Bar -->
+          <input type="search" id="stockSearchInput" class="stock-search-input" placeholder="🔍 ค้นหาหุ้น เช่น NVDA, AMZN, SNOW, PTT..." autocomplete="off">
+          
+          <!-- Holdings Toolbar: Count & Sort Pills -->
+          <div class="holdings-toolbar">
+            <div id="holdingsCount" class="holdings-count-title">Holdings (0)</div>
+            <div class="sort-pills-group">
+              <span style="font-size:0.76rem;color:var(--text-muted);">เรียงตาม</span>
+              <button type="button" id="btnSortPnl" class="sort-chip active" data-sort="pnl_desc">P&L ⇅</button>
+              <button type="button" id="btnSortWeight" class="sort-chip" data-sort="weight_desc">สัดส่วน ⇅</button>
+            </div>
+          </div>
+
+          <!-- Compact Stock Holdings List (Click opens TradingView directly) -->
+          <div id="stockHoldingsList" class="stock-compact-list" role="list">
+            <!-- Rendered list of compact stock cards -->
+          </div>
+        </div>
+
+        <!-- View Tab 2: Transaction History -->
+        <div id="subtabContentTx" hidden>
+          <div class="card" style="padding:14px;border-radius:14px;">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:10px;">📜 ประวัติการซื้อ/ขายหุ้น</h3>
+            <div id="stockTransactionsList" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Rendered transaction logs -->
+            </div>
+          </div>
+        </div>
+
+        <!-- View Tab 3: Donut Allocation -->
+        <div id="subtabContentDonut" hidden>
+          <div class="card stock-donut-card">
+            <div class="card-header" style="margin-bottom:0.75rem;">
+              <div>
+                <h3 class="card-title" style="font-size:1.05rem;">🍩 สัดส่วนสินทรัพย์ &amp; หุ้นในพอร์ต</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">สัดส่วนคำนวณตามมูลค่าตลาดสดเทียบกับมูลค่ารวมทั้งพอร์ต (รวมเงินสด)</p>
               </div>
             </div>
-            <div id="portfolioTotalPnlBadge" class="pnl-hero-badge up">
-              <span id="portfolioTotalPnlAmount">+฿0.00</span>
-              <small id="portfolioTotalPnlPct">(+0.0%)</small>
+            <div id="stockDonutContainer" class="stock-donut-container">
+              <!-- Dynamic SVG Donut and Legend -->
             </div>
-          </div>
-          <div class="portfolio-hero-actions">
-            <button type="button" id="btnOpenStockTradeModal" class="btn btn-primary btn-sm">➕ บันทึกซื้อ/ขายหุ้น</button>
-            <button type="button" id="btnQuickPriceUpdate" class="btn btn-secondary btn-sm">⚡ อัปเดตราคาตลาด</button>
-          </div>
-        </div>
-
-        <!-- Asset Allocation & Donut Chart (RocketTool SVG Arc Engine) -->
-        <div class="card stock-donut-card">
-          <div class="card-header" style="margin-bottom:0.75rem;">
-            <div>
-              <h3 class="card-title" style="font-size:1.05rem;">🍩 สัดส่วนสินทรัพย์ &amp; หุ้นในพอร์ต</h3>
-              <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">สัดส่วนคำนวณตามมูลค่าตลาดสดเทียบกับมูลค่ารวมทั้งพอร์ต (รวมเงินสด)</p>
-            </div>
-          </div>
-          <div id="stockDonutContainer" class="stock-donut-container">
-            <!-- Dynamic SVG Donut and Legend -->
-          </div>
-        </div>
-
-        <!-- Holdings List with Target Allocation Bars (.ch-bar & .tgt) -->
-        <div class="card stock-holdings-card">
-          <div class="card-header" style="margin-bottom:0.75rem;">
-            <div>
-              <h3 class="card-title" style="font-size:1.05rem;">📋 หุ้นที่ถือครอง (Holdings)</h3>
-              <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">แตะดูกราฟ TradingView หรือคำนวณการซื้อ/ขายเพิ่ม</p>
-            </div>
-          </div>
-          <div id="stockHoldingsList" class="stock-holdings-list">
-            <!-- Rendered list of stock cards -->
           </div>
         </div>
       </div>
