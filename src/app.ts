@@ -215,46 +215,127 @@ interface DashboardMetrics {
       const CATEGORY_PICKER_INCOME_ITEMS = [
         'salary_income', 'business_income', 'refund_other_income', 'transfer_other'
       ];
+      function updateMerchantFieldPresentation(type: string = 'expense') {
+        const isIncome = type === 'income';
+        const lbl = document.getElementById('lblTxMerchantText');
+        const input = document.getElementById('txFormMerchant') as HTMLInputElement | null;
+        const chips = document.getElementById('incomeQuickChips');
+        if (lbl) {
+          lbl.textContent = isIncome ? 'ที่มาของรายรับ / รายการ *' : 'ร้านค้า / รายการ *';
+        }
+        if (input) {
+          input.placeholder = isIncome ? 'เช่น เงินเดือนบริษัท, เงินปันผล, ลูกค้าโอนค่าของ, คืนเงิน' : 'เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน';
+        }
+        if (chips) {
+          chips.style.display = isIncome ? 'flex' : 'none';
+        }
+      }
+
       function renderCategoryPicker(type = 'expense') {
+        updateMerchantFieldPresentation(type);
         const container = document.getElementById('txCategoryPicker');
-        if (!container) return;
-        container.replaceChildren();
         const items = type === 'income' ? CATEGORY_PICKER_INCOME_ITEMS : CATEGORY_PICKER_ITEMS;
-        for (const catKey of items) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'cat-picker-btn';
-          btn.setAttribute('data-category', catKey);
-          btn.setAttribute('role', 'radio');
-          btn.setAttribute('aria-checked', 'false');
-          btn.setAttribute('aria-label', CATEGORY_LABELS[catKey] || catKey);
-          btn.appendChild(render3dIcon(catKey, 30));
-          const lbl = document.createElement('span');
-          lbl.textContent = CATEGORY_SHORT_LABELS[catKey] || catKey;
-          btn.appendChild(lbl);
-          btn.onclick = () => {
-            const select = document.getElementById('txFormCategory') as HTMLSelectElement | null;
-            if (select) {
-              select.value = catKey;
-              select.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            updateCategoryPickerSelection(catKey);
-          };
-          container.appendChild(btn);
+
+        if (container) {
+          container.replaceChildren();
+          for (const catKey of items) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cat-picker-btn';
+            btn.setAttribute('data-category', catKey);
+            btn.setAttribute('role', 'radio');
+            btn.setAttribute('aria-checked', 'false');
+            btn.setAttribute('aria-label', CATEGORY_LABELS[catKey] || catKey);
+            btn.appendChild(render3dIcon(catKey, 30));
+            const lbl = document.createElement('span');
+            lbl.textContent = CATEGORY_SHORT_LABELS[catKey] || catKey;
+            btn.appendChild(lbl);
+            btn.onclick = () => {
+              const select = document.getElementById('txFormCategory') as HTMLSelectElement | null;
+              if (select) {
+                select.value = catKey;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              updateCategoryPickerSelection(catKey);
+            };
+            container.appendChild(btn);
+          }
+        }
+
+        // Populate Custom Cute 3D Dropdown Menu
+        const menu = document.getElementById('custom3dCategoryMenu');
+        if (menu) {
+          menu.replaceChildren();
+          for (const catKey of items) {
+            const opt = document.createElement('div');
+            opt.className = 'custom-3d-option';
+            opt.setAttribute('role', 'option');
+            opt.setAttribute('data-category', catKey);
+
+            const iconBox = document.createElement('div');
+            iconBox.className = 'option-3d-icon';
+            iconBox.appendChild(render3dIcon(catKey, 30));
+            opt.appendChild(iconBox);
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'option-label';
+            labelSpan.textContent = CATEGORY_LABELS[catKey] || catKey;
+            opt.appendChild(labelSpan);
+
+            opt.onclick = (e) => {
+              e.stopPropagation();
+              const select = document.getElementById('txFormCategory') as HTMLSelectElement | null;
+              if (select) {
+                select.value = catKey;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              updateCategoryPickerSelection(catKey);
+              menu.hidden = true;
+              document.getElementById('custom3dCategoryDropdown')?.setAttribute('aria-expanded', 'false');
+            };
+            menu.appendChild(opt);
+          }
         }
       }
 
       function updateCategoryPickerSelection(selectedCat: string) {
         const container = document.getElementById('txCategoryPicker');
-        if (!container) return;
-        const buttons = container.querySelectorAll && container.querySelectorAll('.cat-picker-btn').length > 0
-          ? container.querySelectorAll('.cat-picker-btn')
-          : (container.children || []);
-        for (const btn of Array.from(buttons) as any[]) {
-          const match = btn.getAttribute('data-category') === selectedCat;
-          btn.setAttribute('aria-checked', match ? 'true' : 'false');
-          if (match && typeof btn.scrollIntoView === 'function') {
-            try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch {}
+        if (container) {
+          const buttons = container.querySelectorAll && container.querySelectorAll('.cat-picker-btn').length > 0
+            ? container.querySelectorAll('.cat-picker-btn')
+            : (container.children || []);
+          for (const btn of Array.from(buttons) as any[]) {
+            const match = btn.getAttribute('data-category') === selectedCat;
+            btn.setAttribute('aria-checked', match ? 'true' : 'false');
+            if (match && typeof btn.scrollIntoView === 'function') {
+              try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch {}
+            }
+          }
+        }
+
+        // Update Custom 3D Dropdown Selected Item
+        const iconBox = document.getElementById('custom3dCategoryIconBox');
+        const labelText = document.getElementById('custom3dCategoryLabelText');
+        const menu = document.getElementById('custom3dCategoryMenu');
+
+        if (iconBox && labelText) {
+          if (CATEGORY_LABELS[selectedCat]) {
+            iconBox.replaceChildren(render3dIcon(selectedCat, 34));
+            labelText.textContent = CATEGORY_LABELS[selectedCat];
+          } else {
+            iconBox.replaceChildren(render3dIcon('unknown', 34));
+            labelText.textContent = '-- กรุณาเลือกหมวดหมู่ --';
+          }
+        }
+
+        if (menu) {
+          const options = menu.querySelectorAll && menu.querySelectorAll('.custom-3d-option').length > 0
+            ? menu.querySelectorAll('.custom-3d-option')
+            : (menu.children || []);
+          for (const opt of Array.from(options) as any[]) {
+            const match = opt.getAttribute('data-category') === selectedCat;
+            if (match) opt.classList.add('selected');
+            else opt.classList.remove('selected');
           }
         }
       }
@@ -4136,6 +4217,38 @@ interface DashboardMetrics {
         });
         document.getElementById('txFormCategory')?.addEventListener('change', (e: any) => {
           updateCategoryPickerSelection(e.target.value);
+        });
+
+        // Custom Cute 3D Dropdown Toggle
+        const ddTrigger = document.getElementById('custom3dCategorySelected');
+        const ddMenu = document.getElementById('custom3dCategoryMenu');
+        const ddContainer = document.getElementById('custom3dCategoryDropdown');
+
+        ddTrigger?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isExpanded = ddContainer?.getAttribute('aria-expanded') === 'true';
+          if (ddContainer) ddContainer.setAttribute('aria-expanded', String(!isExpanded));
+          if (ddMenu) ddMenu.hidden = isExpanded;
+        });
+
+        document.addEventListener('click', (e) => {
+          if (ddContainer && !ddContainer.contains(e.target as Node)) {
+            ddContainer.setAttribute('aria-expanded', 'false');
+            if (ddMenu) ddMenu.hidden = true;
+          }
+        });
+
+        // Income Quick Chips handling
+        document.querySelectorAll('.quick-chip-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const text = (btn as HTMLElement).dataset.text;
+            const input = document.getElementById('txFormMerchant') as HTMLInputElement | null;
+            if (input && text) {
+              input.value = text;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          });
         });
         bindAppNavigation();
         bindAutomationEvents();

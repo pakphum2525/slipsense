@@ -2,7 +2,24 @@
 
 **วันที่อัปเดตล่าสุด:** 5 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **42/42 รายการ (exit code 0)**
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-023 (Dynamic Merchant Label, Quick Income Chips & Cute 3D Category Dropdown) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งอนุมัติของผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **42/42 รายการ (exit code 0)**
+
+## ผลงาน TASK-SLIPSENSE-V4-023 (Dynamic Merchant Label, Quick Income Chips & Cute 3D Category Dropdown)
+
+- **สิ่งที่ทำเสร็จแล้ว:**
+  1. **ฟิลด์ร้านค้าปรับเปลี่ยนตามประเภทธุรกรรมอัตโนมัติ (Dynamic Merchant/Source Presentation):**
+     - หากเลือกเป็น "รายจ่าย": แสดงหัวข้อ `ร้านค้า / รายการ *` พร้อมคำอธิบายตัวอย่างเช่น `เช่น 7-Eleven, GrabFood, Shopee, น.ส. รุ่งทิวา`
+     - หากเลือกเป็น "รายรับ": เปลี่ยนหัวข้อเป็น `ที่มาของรายรับ / รายการ *` พร้อมคำอธิบายตัวอย่างเช่น `เช่น เงินเดือน, ค่าจ้าง, บริษัท เอบีซี, ปันผลหุ้น`
+     - แสดงแถบปุ่มลัดคลิกเดียวติด (`Quick Chips`): `[💼 เงินเดือน]`, `[📈 เงินปันผล]`, `[🎁 โบนัส]`, `[✨ คืนเงิน]` กดแล้วกรอกชื่อลงในช่องให้ทันที
+  2. **รวมตัวเลือกหมวดหมู่เป็น Cute 3D Category Dropdown หนึ่งเดียว:**
+     - ยุบปุ่มกริดหมวดหมู่ 12 ปุ่มที่ซ้ำซ้อนออก (`display: none;`) เพื่อไม่ให้ลายตาและไม่กินพื้นที่
+     - สร้างดร็อปดาว 3 มิติสุดน่ารัก (`#custom3dCategoryDropdown`) ที่แสดงรูปภาพ 3D สดใสขนาด 34px สไตล์เดียวกับแถบกระปุก 3D
+     - มีเอฟเฟกต์แอนิเมชันเปิด-ปิดกล่องเมนูแบบ Pop-in, การ Hover เปล่งประกาย (Glow) และแถบระบุหมวดหมู่ที่เลือกไว้ชัดเจน
+     - ซิงก์ค่ากับ `<select id="txFormCategory">` อย่างสมบูรณ์ 100% ทำให้ระบบบันทึกและชุดทดสอบอัตโนมัติทำงานได้อย่างแม่นยำ
+  3. **การทดสอบอัตโนมัติ (Automated Tests & QA):**
+     - รัน `node scripts/build_prod.js` และ `node scripts/run_tests.js` ผ่านครบ 42/42 รายการ (100% PASS, 0 failure)
+- **บั๊กค้าง:** ไม่มี
+- **งานถัดไป:** พร้อมใช้งานและตรวจสอบได้ทันทีบน http://127.0.0.1:8080
 
 ## ผลงาน TASK-SLIPSENSE-V4-022 (Kawaii Donut Chart with In-Slice Percentages & Straddling Icon Badges)
 

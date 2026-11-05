@@ -1,18 +1,18 @@
 {
   "schema_version": "4.0.0",
-  "task_id": "TASK-SLIPSENSE-V4-022",
-  "created_at": "2026-11-05T13:55:00.000Z",
+  "task_id": "TASK-SLIPSENSE-V4-023",
+  "created_at": "2026-11-05T14:15:00.000Z",
   "producer": "Antigravity",
   "risk_level": "STANDARD",
-  "title": "Expense Analytics Donut Chart & Breakdown Matching Reference Design",
-  "objective": "Implement the exact donut chart design from user reference image: colorful ring with in-slice white percentages, round icon badges straddling outer slice edges, center total with 'ค่าใช้จ่าย', and clean category breakdown list with percentage and formatted amount.",
-  "user_story": "As a user viewing my expense analytics, I want the donut chart to match the reference app design with percentages inside each slice, circular icon badges on the outer ring, and a clean breakdown list below.",
+  "title": "Dynamic Merchant/Source Title Label with Quick Chips & Cute 3D Category Dropdown Selector",
+  "objective": "Improve the Transaction Verification modal UX: dynamically switch merchant label to 'ที่มาของรายรับ / รายการ *' with quick chips (เงินเดือน, ปันผล, etc.) when transaction is an Income, and replace the dual category pickers with a unified custom cute 3D Dropdown Selector displaying vibrant 3D category icons.",
+  "user_story": "As a user recording transactions, I want the merchant field to intelligently adapt when recording salary/income without confusing merchant terms, and I want a single cute 3D dropdown to select categories easily.",
   "acceptance_criteria": [
-    "Donut ring renders with percentages printed in white inside the colored slice arcs",
-    "Circular white icon badges with matching slice borders straddle the outer ring",
-    "Donut center displays 'ค่าใช้จ่าย' and formatted total expense amount",
-    "Category breakdown list below matches reference: Icon + Name on left, % and Amount on right",
-    "All 42 automated tests pass with exit code 0"
+    "Merchant field label and placeholder adapt dynamically based on transaction type (Expense: 'ร้านค้า / ผู้รับเงิน *' vs Income: 'ที่มาของรายรับ / รายการ *')",
+    "Income transactions display quick chips for instant autofill (เงินเดือน, ปันผล, โบนัส, คืนเงิน)",
+    "Category selection is unified into a single custom Cute 3D Dropdown with 3D icons, clean animations and smooth selection",
+    "Hidden native select remains bound for full backward compatibility with test suites and form validation",
+    "All 42 automated tests continue to pass with exit code 0"
   ],
   "write_allowlist": [
     "src/app.ts",

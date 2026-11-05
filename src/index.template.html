@@ -1300,6 +1300,138 @@
       text-align: right;
     }
 
+  
+    /* Cute 3D Category Dropdown Styling (TASK-SLIPSENSE-V4-023) */
+    .custom-3d-dropdown {
+      position: relative;
+      width: 100%;
+      user-select: none;
+    }
+    .custom-3d-dropdown-selected {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      min-height: 48px;
+      background: var(--bg-surface, #ffffff);
+      border: 1.5px solid var(--border-color, #e2e8f0);
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: all 0.2s ease;
+    }
+    .custom-3d-dropdown-selected:hover {
+      border-color: var(--brand-primary, #10b981);
+      box-shadow: 0 4px 12px rgba(16,185,129,0.12);
+    }
+    .custom-3d-dropdown:focus-visible .custom-3d-dropdown-selected {
+      outline: 3px solid var(--brand-primary, #10b981);
+      outline-offset: 2px;
+    }
+    .selected-icon-box {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .selected-label-text {
+      flex: 1;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-main, #1e293b);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dropdown-chevron-pill {
+      font-size: 0.85rem;
+      color: var(--text-muted, #64748b);
+      background: var(--bg-subtle, #f1f5f9);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      transition: transform 0.2s ease;
+    }
+    .custom-3d-dropdown[aria-expanded="true"] .dropdown-chevron-pill {
+      transform: rotate(180deg);
+    }
+    .custom-3d-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: var(--bg-surface, #ffffff);
+      border: 1.5px solid var(--border-color, #e2e8f0);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.18), 0 8px 10px -6px rgba(0,0,0,0.1);
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 100;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .custom-3d-dropdown-menu[hidden] {
+      display: none !important;
+    }
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .custom-3d-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .custom-3d-option:hover, .custom-3d-option:focus {
+      background: rgba(16,185,129,0.08);
+      transform: translateX(3px);
+    }
+    .custom-3d-option.selected {
+      background: rgba(16,185,129,0.14);
+      font-weight: 700;
+      outline: 1.5px solid var(--brand-primary, #10b981);
+    }
+    .option-3d-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .option-label {
+      font-size: 0.88rem;
+      color: var(--text-main, #1e293b);
+      font-weight: 600;
+    }
+    .quick-chip-btn {
+      border-radius: 20px;
+      font-size: 0.76rem;
+      padding: 3px 10px;
+      font-weight: 600;
+      border: 1px dashed var(--brand-primary, #10b981);
+      background: rgba(16,185,129,0.06);
+      color: var(--text-main);
+      cursor: pointer;
+    }
+    .quick-chip-btn:hover {
+      background: rgba(16,185,129,0.15);
+      border-style: solid;
+    }
+
   </style>
 </head>
 <body>
@@ -1721,11 +1853,19 @@
 
           <div class="form-group" id="groupTxMerchant" style="grid-column: 1 / -1;">
             <label for="txFormMerchant" class="form-label">
-              <span>ร้านค้า / รายการ *</span>
+              <span id="lblTxMerchantText">ร้านค้า / รายการ *</span>
               <span id="badgeUncertainMerchant" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
             </label>
             <input type="text" id="txFormMerchant" list="txMerchantHistory" aria-describedby="txMerchantHistoryHelp" class="form-control" maxlength="255" placeholder="เช่น 7-Eleven, การไฟฟ้านครหลวง, หรือชื่อผู้รับโอน" required>
             <datalist id="txMerchantHistory"></datalist>
+            <!-- Income Quick Chips -->
+            <div id="incomeQuickChips" style="display:none;gap:6px;flex-wrap:wrap;margin-top:6px;">
+              <span style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;">⚡ กรอกด่วน:</span>
+              <button type="button" class="btn btn-secondary btn-sm quick-chip-btn" data-text="เงินเดือน">💼 เงินเดือน</button>
+              <button type="button" class="btn btn-secondary btn-sm quick-chip-btn" data-text="เงินปันผล">📈 เงินปันผล</button>
+              <button type="button" class="btn btn-secondary btn-sm quick-chip-btn" data-text="โบนัส">🎁 โบนัส</button>
+              <button type="button" class="btn btn-secondary btn-sm quick-chip-btn" data-text="คืนเงิน">✨ คืนเงิน</button>
+            </div>
             <p id="txMerchantHistoryHelp" class="text-muted">เลือกหรือพิมพ์ชื่อเดิมเต็มชื่อเพื่อเติมหมวดหมู่และกระปุกเงินจากประวัติ หรือพิมพ์ชื่อใหม่ได้ ตรวจสอบและแก้ไขได้ก่อนบันทึก</p>
           </div>
 
@@ -1734,8 +1874,21 @@
               <span>หมวดหมู่ *</span>
               <span id="badgeUncertainCategory" class="uncertain-badge" hidden>ต้องตรวจสอบ</span>
             </label>
-            <div id="txCategoryPicker" class="category-3d-picker" role="radiogroup" aria-label="เลือกหมวดหมู่"></div>
-            <select id="txFormCategory" class="form-control" required>
+            <!-- Legacy button grid kept in DOM for safety -->
+            <div id="txCategoryPicker" class="category-3d-picker" role="radiogroup" aria-label="เลือกหมวดหมู่" style="display:none;"></div>
+            
+            <!-- Custom Cute 3D Dropdown Selector -->
+            <div id="custom3dCategoryDropdown" class="custom-3d-dropdown" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="เลือกหมวดหมู่">
+              <div class="custom-3d-dropdown-selected" id="custom3dCategorySelected">
+                <div class="selected-icon-box" id="custom3dCategoryIconBox"></div>
+                <span class="selected-label-text" id="custom3dCategoryLabelText">-- กรุณาเลือกหมวดหมู่ --</span>
+                <span class="dropdown-chevron-pill">▾</span>
+              </div>
+              <div class="custom-3d-dropdown-menu" id="custom3dCategoryMenu" role="listbox" hidden></div>
+            </div>
+
+            <!-- Native select kept in DOM (hidden) for test assertions and form validity -->
+            <select id="txFormCategory" class="form-control" required style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);">
               <option value="unknown">-- กรุณาเลือกหมวดหมู่ --</option>
               <option value="food_drink">🍜 อาหาร</option>
               <option value="groceries">🍎 ของใช้</option>
