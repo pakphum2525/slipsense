@@ -1176,7 +1176,7 @@
   
     /* Compact Mobile & Tablet Responsive Polish */
     .chart-table { display:none !important; }
-    .chart-legend { display:none !important; }
+    /* chart-legend visible and styled */
     #financialCharts {
       display: grid;
       grid-template-columns: 1fr;
@@ -1218,6 +1218,86 @@
     .kpi-box {
       padding: 8px 10px;
       border-radius: 12px;
+    }
+
+  
+    /* Reference Design: Category Breakdown List & Donut Overlap Polish */
+    .donut-chart-svg {
+      max-width: 290px;
+      width: 100%;
+      height: auto;
+      margin: 0 auto 10px;
+      display: block;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.06));
+    }
+    .donut-badge-marker circle {
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.18));
+    }
+    .chart-legend {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+    .chart-legend-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--bg-surface, #ffffff);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 14px;
+      transition: background 0.15s ease;
+    }
+    .legend-col-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .legend-icon-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-app, #f8fafc);
+      border: 2px solid #8b5cf6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .legend-name-text {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text-main, #1e293b);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .legend-col-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .legend-pct-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted, #64748b);
+      min-width: 42px;
+      text-align: right;
+    }
+    .legend-amt-text {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-main, #0f172a);
+      min-width: 72px;
+      text-align: right;
     }
 
   </style>

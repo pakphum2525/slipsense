@@ -1,17 +1,17 @@
 {
   "schema_version": "4.0.0",
-  "task_id": "TASK-SLIPSENSE-V4-021",
-  "created_at": "2026-11-05T13:46:00.000Z",
+  "task_id": "TASK-SLIPSENSE-V4-022",
+  "created_at": "2026-11-05T13:55:00.000Z",
   "producer": "Antigravity",
   "risk_level": "STANDARD",
-  "title": "Expense Donut Chart Surrounding Icons & Compact Mobile-Tablet Layout",
-  "objective": "Transform the Expense Analytics Donut Chart into a clean radial chart with category icons orbiting the circumference slices and minimal text (percentage and total expense only, hiding the bottom legend list), while compacting the overall app UI spacing for mobile and tablet devices.",
-  "user_story": "As a user checking my expense analytics on mobile/tablet, I want the donut chart to display icons around the ring without the bulky legend below, and I want the entire app layout to be tight and ergonomic.",
+  "title": "Expense Analytics Donut Chart & Breakdown Matching Reference Design",
+  "objective": "Implement the exact donut chart design from user reference image: colorful ring with in-slice white percentages, round icon badges straddling outer slice edges, center total with 'ค่าใช้จ่าย', and clean category breakdown list with percentage and formatted amount.",
+  "user_story": "As a user viewing my expense analytics, I want the donut chart to match the reference app design with percentages inside each slice, circular icon badges on the outer ring, and a clean breakdown list below.",
   "acceptance_criteria": [
-    "Donut chart renders category icons along the orbit of each slice with minimal text (% and center total)",
-    "Chart legend list below the donut is hidden from view (display: none)",
-    "Tabular chart data is hidden from view while preserved for accessibility and test suites",
-    "App panels, cards, and KPI grids are tightened for compact mobile and tablet viewports",
+    "Donut ring renders with percentages printed in white inside the colored slice arcs",
+    "Circular white icon badges with matching slice borders straddle the outer ring",
+    "Donut center displays 'ค่าใช้จ่าย' and formatted total expense amount",
+    "Category breakdown list below matches reference: Icon + Name on left, % and Amount on right",
     "All 42 automated tests pass with exit code 0"
   ],
   "write_allowlist": [

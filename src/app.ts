@@ -2393,139 +2393,176 @@ interface DashboardMetrics {
           table.appendChild(tr);
         });
         host.appendChild(bars); host.appendChild(table);
-        const donut = svgNode('svg', { viewBox: '0 0 280 280', role: 'img', 'aria-labelledby': 'expenseDonutTitle', class: 'donut-chart-svg' });
+        const donut = svgNode('svg', { viewBox: '0 0 320 320', role: 'img', 'aria-labelledby': 'expenseDonutTitle', class: 'donut-chart-svg' });
         donut.appendChild(svgNode('title', { id: 'expenseDonutTitle' }, 'สัดส่วนหมวดรายจ่ายเดือน ' + month));
         const sum = data.categories.reduce((total, row) => total + row.amount, 0);
-        const colors = ['#10b981', '#ec4899', '#3b82f6', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6', '#6366f1'];
+        // Vibrant palette matching reference design (Coral, Rose, Purple, Violet, Indigo, Sky, Cyan, Teal, Emerald, Amber)
+        const colors = ['#f43f5e', '#e11d48', '#a855f7', '#7c3aed', '#4f46e5', '#0284c7', '#06b6d4', '#0d9488', '#10b981', '#f59e0b', '#ec4899'];
         let offset = 0;
 
-        // Base ring
-        donut.appendChild(svgNode('circle', { cx: 140, cy: 140, r: 68, fill: 'none', stroke: 'var(--border-color, #ced4df)', 'stroke-width': 22, opacity: '0.35' }));
+        // Base ring track
+        donut.appendChild(svgNode('circle', {
+          cx: 160,
+          cy: 160,
+          r: 78,
+          fill: 'none',
+          stroke: 'var(--border-color, #e2e8f0)',
+          'stroke-width': 30,
+          opacity: '0.35'
+        }));
 
         const CATEGORY_EMOJIS: Record<string, string> = {
+          travel: '🏖️',
+          education_work: '🎓',
+          shopping_general: '🎁',
+          utilities_bills: '⚡',
+          home_repair: '🏠',
+          pet: '🐱',
           food_drink: '🍜',
           groceries: '🛒',
           transport: '🚗',
-          travel: '✈️',
-          utilities_bills: '⚡',
-          shopping_general: '🛍️',
-          home_repair: '🏠',
           health_medical: '💊',
-          education_work: '📚',
-          entertainment: '🎬',
-          pet: '🐱',
+          entertainment: '🥂',
           transfer_other: '💸',
           salary_income: '💼',
           business_income: '📈',
-          refund_other_income: '🎁',
+          refund_other_income: '🧧',
           unknown: '📦'
         };
 
         const legend = document.createElement('ul');
         legend.className = 'chart-legend';
-        legend.hidden = true;
-        legend.style.display = 'none';
 
         data.categories.forEach((row, i) => {
           const percent = sum > 0 ? (row.amount / sum) * 100 : 0;
           const sliceColor = colors[i % colors.length];
 
-          // Donut Slice Arc
+          // 1. Donut Slice Arc
           donut.appendChild(svgNode('circle', {
-            cx: 140,
-            cy: 140,
-            r: 68,
+            cx: 160,
+            cy: 160,
+            r: 78,
             fill: 'none',
             stroke: sliceColor,
-            'stroke-width': 22,
+            'stroke-width': 30,
             pathLength: 100,
             'stroke-dasharray': percent + ' ' + (100 - percent),
             'stroke-dashoffset': -offset,
-            transform: 'rotate(-90 140 140)'
+            transform: 'rotate(-90 160 160)'
           }));
 
-          // Compute angle around donut for placing icon
+          // Midpoint angle calculation
           const startAngle = -90 + (offset * 3.6);
           const sliceAngle = percent * 3.6;
           const midAngle = startAngle + (sliceAngle / 2);
           const midRad = (midAngle * Math.PI) / 180;
 
-          // Radius for icon placement around the outer perimeter of donut
-          const iconR = 106;
-          const iconX = Math.round((140 + iconR * Math.cos(midRad)) * 10) / 10;
-          const iconY = Math.round((140 + iconR * Math.sin(midRad)) * 10) / 10;
+          // 2. In-Slice Percentage Text (white text placed directly on colored arc)
+          if (percent >= 3.5) {
+            const pctR = 78;
+            const pctX = Math.round((160 + pctR * Math.cos(midRad)) * 10) / 10;
+            const pctY = Math.round((160 + pctR * Math.sin(midRad)) * 10) / 10;
+            donut.appendChild(svgNode('text', {
+              x: pctX,
+              y: pctY + 0.5,
+              fill: '#ffffff',
+              'font-size': '10.5',
+              'font-weight': '800',
+              'text-anchor': 'middle',
+              'dominant-baseline': 'central',
+              style: 'text-shadow: 0 1px 2px rgba(0,0,0,0.35); pointer-events:none;'
+            }, Math.round(percent) + '%'));
+          }
 
-          // Icon badge group
-          const g = svgNode('g', { class: 'donut-icon-badge' });
+          // 3. Circular Icon Badge straddling the outer ring boundary
+          const badgeR = 104;
+          const badgeX = Math.round((160 + badgeR * Math.cos(midRad)) * 10) / 10;
+          const badgeY = Math.round((160 + badgeR * Math.sin(midRad)) * 10) / 10;
+
+          const g = svgNode('g', { class: 'donut-badge-marker' });
           g.appendChild(svgNode('circle', {
-            cx: iconX,
-            cy: iconY,
-            r: 13,
-            fill: 'var(--bg-surface, #1e2230)',
+            cx: badgeX,
+            cy: badgeY,
+            r: 15.5,
+            fill: '#ffffff',
             stroke: sliceColor,
-            'stroke-width': 2
+            'stroke-width': '2.5'
           }));
 
           const emoji = CATEGORY_EMOJIS[row.category] || '🏷️';
           g.appendChild(svgNode('text', {
-            x: iconX,
-            y: iconY + 4,
+            x: badgeX,
+            y: badgeY + 1,
             'text-anchor': 'middle',
-            'font-size': '12',
-            'dominant-baseline': 'central'
+            'dominant-baseline': 'central',
+            'font-size': '13.5'
           }, emoji));
-
-          // Minimal % text right below icon if percent >= 3%
-          if (percent >= 3) {
-            g.appendChild(svgNode('text', {
-              x: iconX,
-              y: iconY + 21,
-              'text-anchor': 'middle',
-              'font-size': '9',
-              'font-weight': '700',
-              fill: sliceColor
-            }, Math.round(percent) + '%'));
-          }
 
           donut.appendChild(g);
 
           offset += percent;
 
-          // Keep legend in DOM for test assertions and screen readers
+          // 4. Clean breakdown row below donut matching reference design
           const li = document.createElement('li');
+          li.className = 'chart-legend-row';
           li.textContent = row.label + ': ' + formatCurrency(row.amount) + ' (' + percent.toFixed(1) + '%)';
-          li.appendChild(render3dIcon(row.category, 40));
-          li.style.borderLeft = '5px solid ' + sliceColor;
+
+          const leftBox = document.createElement('div');
+          leftBox.className = 'legend-col-left';
+          const iconContainer = document.createElement('div');
+          iconContainer.className = 'legend-icon-bubble';
+          iconContainer.style.borderColor = sliceColor;
+          iconContainer.textContent = emoji;
+          leftBox.appendChild(iconContainer);
+
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'legend-name-text';
+          nameSpan.textContent = row.label;
+          leftBox.appendChild(nameSpan);
+
+          const rightBox = document.createElement('div');
+          rightBox.className = 'legend-col-right';
+
+          const pctSpan = document.createElement('span');
+          pctSpan.className = 'legend-pct-pill';
+          pctSpan.textContent = percent.toFixed(1) + '%';
+          rightBox.appendChild(pctSpan);
+
+          const amtSpan = document.createElement('span');
+          amtSpan.className = 'legend-amt-text';
+          amtSpan.textContent = formatCurrency(row.amount);
+          rightBox.appendChild(amtSpan);
+
+          li.replaceChildren(leftBox, rightBox);
           legend.appendChild(li);
         });
 
-        // Center text in donut hole
-        if (sum > 0) {
-          donut.appendChild(svgNode('text', {
-            x: 140,
-            y: 134,
-            'text-anchor': 'middle',
-            fill: 'var(--text-main, currentColor)',
-            'font-size': '15',
-            'font-weight': '800'
-          }, formatCurrency(sum)));
-          donut.appendChild(svgNode('text', {
-            x: 140,
-            y: 152,
-            'text-anchor': 'middle',
-            fill: 'var(--text-muted, #888)',
-            'font-size': '10',
-            'font-weight': '600'
-          }, 'รวมรายจ่าย'));
-        } else {
-          donut.appendChild(svgNode('text', {
-            x: 140,
-            y: 144,
-            'text-anchor': 'middle',
-            fill: 'var(--text-muted, currentColor)',
-            'font-size': '12'
-          }, 'ยังไม่มีรายจ่าย'));
-        }
+        // 5. Donut Hole Center (White card + 'ค่าใช้จ่าย' + Total Amount)
+        donut.appendChild(svgNode('circle', {
+          cx: 160,
+          cy: 160,
+          r: 58,
+          fill: 'var(--bg-surface, #ffffff)',
+          stroke: 'none'
+        }));
+
+        donut.appendChild(svgNode('text', {
+          x: 160,
+          y: 147,
+          'text-anchor': 'middle',
+          fill: 'var(--text-secondary, #64748b)',
+          'font-size': '12',
+          'font-weight': '600'
+        }, 'ค่าใช้จ่าย'));
+
+        donut.appendChild(svgNode('text', {
+          x: 160,
+          y: 172,
+          'text-anchor': 'middle',
+          fill: 'var(--text-main, #0f172a)',
+          'font-size': '16',
+          'font-weight': '800'
+        }, sum ? formatCurrency(sum) : '฿0.00'));
 
         host.appendChild(donut);
         host.appendChild(legend);

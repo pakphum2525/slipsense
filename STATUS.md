@@ -4,6 +4,24 @@
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
 **สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **42/42 รายการ (exit code 0)**
 
+## ผลงาน TASK-SLIPSENSE-V4-022 (Kawaii Donut Chart with In-Slice Percentages & Straddling Icon Badges)
+
+- **สิ่งที่ทำเสร็จแล้ว:**
+  1. **กราฟโดนัทถอดแบบตามภาพอ้างอิงเป๊ะ 100%:**
+     - วงโดนัทสีสันสดใส (Rose, Coral, Purple, Violet, Indigo, Sky Blue, Cyan, Emerald, Amber)
+     - **ตัวเลขเปอร์เซ็นต์สีขาวพิมพ์อยู่บนเนื้อวงโดนัท (In-Slice Percentages)**: วางกึ่งกลางองศาของแต่ละ Slice ตัวเลขหนาชัดเจน สวยงาม
+     - **ไอคอนหมวดหมู่อยู่ในป้ายวงกลมสีขาวขอบสีประจำหมวด ลอยทับขอบนอกของวงโดนัท (Straddling Icon Badges)**: วางตำแหน่งที่ขอบนอกของแต่ละ Slice พอดิบพอดี (เช่น 🏖️ ท่องเที่ยว, 🎓 การศึกษา, 🎁 ของขวัญ, ⚡ ค่าน้ำไฟ, 🏠 บ้าน, 🐱 สัตว์เลี้ยง, 🍜 อาหาร, 🚗 เดินทาง)
+     - **กลางรูกราฟโดนัท**: แสดงป้ายข้อความ 'ค่าใช้จ่าย' และยอดเงินรวมตัวหนาเด่น เช่น ฿2,620 หรือ ฿12,450
+  2. **รายการสรุปแยกหมวดหมู่ด้านล่าง (Category Breakdown List):**
+     - ถอดแบบแถวรายการตามภาพอ้างอิง:
+       - ฝั่งซ้าย: วงกลมไอคอน 32px ขอบสี + ชื่อหมวดหมู่
+       - ฝั่งขวา: เปอร์เซ็นต์สัดส่วน (เช่น 19%, 15%) + ยอดเงินสุทธิ (เช่น ฿500, ฿400)
+       - ดีไซน์การ์ดโค้งมน สวยงาม เรียบร้อย สะอาดตา
+  3. **การทดสอบอัตโนมัติ (Automated Tests & QA):**
+     - รัน node scripts/build_prod.js และ node scripts/run_tests.js ผ่านครบ 42/42 รายการ (100% PASS, 0 failure)
+- **บั๊กค้าง:** ไม่มี
+- **งานถัดไป:** พร้อมใช้งานทันทีบน http://127.0.0.1:8080
+
 ## ผลงาน TASK-SLIPSENSE-V4-021 (Expense Donut Chart Surrounding Icons & Compact Mobile-Tablet Layout)
 
 - **สิ่งที่ทำเสร็จแล้ว:**
