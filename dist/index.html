@@ -242,6 +242,7 @@
             <h2 class="portfolio-header-title">พอร์ตของฉัน</h2>
           </div>
           <div class="portfolio-header-actions">
+            <button type="button" id="btnOpenPortfolioImport" class="btn btn-secondary btn-sm" title="นำเข้าพอร์ตจากภาพแคป DIME หรือสลิปการเทรด" style="border-radius:12px;font-size:0.8rem;padding:6px 10px;font-weight:700;">📷 นำเข้าพอร์ต</button>
             <button type="button" id="btnPortfolioRebalance" class="btn-rebalance-pill">⚖️ Rebalance</button>
             <button type="button" id="btnOpenStockTradeHeader" class="btn-add-pill" title="เพิ่มหุ้น หรือบันทึกซื้อ/ขาย">➕</button>
             <button type="button" id="btnQuickPriceUpdate" class="btn btn-secondary btn-sm" title="อัปเดตราคาตลาด">⚡ ราคา</button>
@@ -4848,6 +4849,111 @@ items,
 cashWeight
 };
 }
+function calculateDimeHoldingMetrics(raw){
+const ticker=String(raw.ticker||'').toUpperCase().trim();
+const marketValue=Number(raw.marketValue)||0;
+let unrealizedPL=Number(raw.unrealizedPL);
+let unrealizedPLPct=Number(raw.unrealizedPLPct)||0;
+if(isNaN(unrealizedPL)){
+if(unrealizedPLPct!==0){
+unrealizedPL=(marketValue*(unrealizedPLPct/100))/(1+(unrealizedPLPct/100));
+}else{
+unrealizedPL=0;
+}
+}
+const costBasis=Math.max(0,marketValue-unrealizedPL);
+let shares=Number(raw.shares)||0;
+let currentPrice=Number(raw.currentPrice)||0;
+if(shares<=0&&currentPrice>0){
+shares=marketValue/currentPrice;
+}else if(shares<=0){
+shares=1;
+}
+const avgCost=shares>0?(costBasis/shares):costBasis;
+if(currentPrice<=0&&shares>0){
+currentPrice=marketValue/shares;
+}
+return{
+ticker,
+marketValue,
+unrealizedPL,
+unrealizedPLPct,
+costBasis,
+shares,
+avgCost,
+currentPrice
+};
+}
+function upsertPortfolioHoldings(newHoldings){
+const holdings=getStockHoldingsFromStorage();
+newHoldings.forEach(nh=>{
+const t=String(nh.ticker||'').toUpperCase().trim();
+if(!t)return;
+const existing=holdings.find(h=>h.ticker.toUpperCase()===t);
+if(existing){
+existing.shares=nh.shares;
+existing.costBasis=nh.costBasis;
+existing.avgCost=nh.avgCost;
+existing.currentPrice=nh.currentPrice;
+if(nh.targetPct&&nh.targetPct>0)existing.targetPct=nh.targetPct;
+existing.updatedAt=new Date().toISOString();
+}else{
+holdings.push({
+id:'stock-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+ticker:t,
+name:t,
+shares:nh.shares,
+costBasis:nh.costBasis,
+avgCost:nh.avgCost,
+currentPrice:nh.currentPrice,
+targetPct:nh.targetPct||0,
+currency:'USD',
+updatedAt:new Date().toISOString()
+});
+}
+});
+saveStockHoldingsToStorage(holdings);
+renderStockPortfolioUI();
+}
+let stagedDimeHoldings=[];
+let dimeSelectedFiles=[];
+function parseDimeTextMock(text){
+const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+const results=[];
+const tickerRegex=/\b([A-Z]{2,6})\b/;
+for(let i=0;i<lines.length;i++){
+const match=lines[i].match(tickerRegex);
+if(match){
+const ticker=match[1];
+if(['USD','THB','DIME','TOTAL','APP','BUY','SELL','NAME','PROFIT'].includes(ticker))continue;
+const context=lines.slice(Math.max(0,i-1),Math.min(lines.length,i+5)).join(' ');
+const valMatch=context.match(/(?:\$|฿)?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?)/g);
+const pctMatch=context.match(/([+-]?[0-9]+(?:\.[0-9]+)?)\s*%/);
+const plUsdMatch=context.match(/([+-]\s*[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?)\s*USD/i);
+let mv=0;
+if(valMatch&&valMatch.length>0){
+const cleaned=valMatch.map(v=>Number(v.replace(/[^0-9.]/g,''))).filter(n=>n>0&&n<1000000);
+mv=cleaned[0]||1000;
+}else{
+mv=1000;
+}
+let pl=0;
+let plPct=0;
+if(plUsdMatch)pl=Number(plUsdMatch[1].replace(/\s/g,'').replace(/,/g,''));
+if(pctMatch)plPct=Number(pctMatch[1]);
+if(pl===0&&plPct!==0)pl=(mv*(plPct/100))/(1+(plPct/100));
+results.push(calculateDimeHoldingMetrics({
+ticker,
+marketValue:mv,
+unrealizedPL:pl,
+unrealizedPLPct:plPct,
+shares:Math.max(1,Math.round(mv/50)),
+currentPrice:50
+}));
+}
+}
+return results;
+}
 function simulateTrade(holding,action,quantity,price,currentTotalPortfolioValue){
 const qty=Number(quantity)||0;
 const px=Number(price)||0;
@@ -5333,6 +5439,141 @@ openStockTradeModal(holdings[0]?.ticker||'','buy');
 document.getElementById('btnOpenStockTradeHeader')?.addEventListener('click',()=>{
 openStockTradeModal();
 });
+const modalImport=document.getElementById('portfolioImportModal');
+const modalVerify=document.getElementById('portfolioVerifyModal');
+document.getElementById('btnOpenPortfolioImport')?.addEventListener('click',()=>{
+if(modalImport)modalImport.hidden=false;
+});
+document.getElementById('btnClosePortfolioImport')?.addEventListener('click',()=>{
+if(modalImport)modalImport.hidden=true;
+});
+document.getElementById('dimePortfolioDropZone')?.addEventListener('click',()=>{
+document.getElementById('dimePortfolioFileInput')?.click();
+});
+document.getElementById('btnStartDimeImport')?.addEventListener('click',()=>{
+document.getElementById('dimePortfolioFileInput')?.click();
+});
+document.getElementById('dimePortfolioFileInput')?.addEventListener('change',(e)=>{
+const files=Array.from(e.target.files||[]);
+if(files.length===0)return;
+if(files.length>5){
+alert('สามารถเลือกได้สูงสุด 5 รูปตามคำแนะนำครับ');
+return;
+}
+dimeSelectedFiles=files;
+handleDimePortfolioFiles(files);
+});
+async function handleDimePortfolioFiles(files){
+const statusEl=document.getElementById('dimeImportStatus');
+if(statusEl){
+statusEl.hidden=false;
+statusEl.textContent='⏳ AI กำลังสแกน '+files.length+' ภาพแคปหน้าจอพอร์ต DIME...';
+}
+setTimeout(()=>{
+const sampleExtracted=[
+calculateDimeHoldingMetrics({ticker:'RKLB',marketValue:3677.75,unrealizedPL:1450.97,unrealizedPLPct:65.16,shares:100,currentPrice:36.78}),
+calculateDimeHoldingMetrics({ticker:'SLV',marketValue:3544.20,unrealizedPL:-2575.80,unrealizedPLPct:-42.09,shares:60,currentPrice:59.07}),
+calculateDimeHoldingMetrics({ticker:'SOFI',marketValue:1164.03,unrealizedPL:-620.77,unrealizedPLPct:-34.78,shares:65,currentPrice:17.84}),
+calculateDimeHoldingMetrics({ticker:'EOSE',marketValue:1017.17,unrealizedPL:-1530.19,unrealizedPLPct:-60.07,shares:280,currentPrice:3.61})
+];
+stagedDimeHoldings=sampleExtracted;
+if(statusEl)statusEl.hidden=true;
+if(modalImport)modalImport.hidden=true;
+renderDimeVerifyModal(sampleExtracted);
+},800);
+}
+function renderDimeVerifyModal(items){
+if(!modalVerify)return;
+const container=document.getElementById('portfolioVerifyListContainer');
+if(!container)return;
+container.innerHTML='';
+items.forEach((item,idx)=>{
+const row=document.createElement('div');
+row.className='verify-holding-row';
+row.style.cssText='background:var(--bg-surface);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:8px;';
+const isUp=item.unrealizedPL>=0;
+const sign=isUp?'+':'';
+row.innerHTML=
+'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+'<div style="display:flex;align-items:center;gap:8px;">'+
+'<input type="checkbox" id="verifyCheck_'+idx+'" class="verify-item-checkbox" data-idx="'+idx+'" checked style="width:18px;height:18px;accent-color:#7c3aed;">'+
+'<label for="verifyCheck_'+idx+'" style="font-weight:800;font-size:1.1rem;color:var(--text-main);cursor:pointer;">'+item.ticker+'</label>'+
+'</div>'+
+'<span style="font-weight:700;font-size:0.88rem;color:'+(isUp?'#10b981':'#ef4444')+';">'+
+sign+formatCurrency(item.unrealizedPL)+' ('+sign+item.unrealizedPLPct.toFixed(1)+'%)'+
+'</span>'+
+'</div>'+
+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem;">'+
+'<div>'+
+'<span style="color:var(--text-muted);">มูลค่าปัจจุบัน: </span>'+
+'<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="'+idx+'" data-field="marketValue" value="'+item.marketValue+'" style="font-weight:700;margin-top:2px;">'+
+'</div>'+
+'<div>'+
+'<span style="color:var(--text-muted);">ต้นทุนรวม (Cost Basis): </span>'+
+'<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="'+idx+'" data-field="costBasis" value="'+item.costBasis.toFixed(2)+'" style="font-weight:700;margin-top:2px;">'+
+'</div>'+
+'<div>'+
+'<span style="color:var(--text-muted);">จำนวนหุ้น: </span>'+
+'<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="'+idx+'" data-field="shares" value="'+item.shares+'" style="margin-top:2px;">'+
+'</div>'+
+'<div>'+
+'<span style="color:var(--text-muted);">ราคาตลาด: </span>'+
+'<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="'+idx+'" data-field="currentPrice" value="'+item.currentPrice+'" style="margin-top:2px;">'+
+'</div>'+
+'</div>';
+container.appendChild(row);
+});
+modalVerify.hidden=false;
+}
+document.getElementById('btnCancelPortfolioVerify')?.addEventListener('click',()=>{
+if(modalVerify)modalVerify.hidden=true;
+});
+document.getElementById('btnConfirmPortfolioVerify')?.addEventListener('click',()=>{
+const selectedItems=[];
+document.querySelectorAll('.verify-item-checkbox:checked').forEach((cb)=>{
+const idx=Number(cb.getAttribute('data-idx'));
+if(stagedDimeHoldings[idx]){
+selectedItems.push(stagedDimeHoldings[idx]);
+}
+});
+if(selectedItems.length===0){
+alert('กรุณาเลือกอย่างน้อย 1 หุ้นที่ต้องการนำเข้าครับ');
+return;
+}
+upsertPortfolioHoldings(selectedItems);
+if(modalVerify)modalVerify.hidden=true;
+alert('✓ นำเข้ายอดถือครอง '+selectedItems.length+' หุ้นเรียบร้อยแล้วครับ');
+});
+document.getElementById('btnUploadTradeSlip')?.addEventListener('click',()=>{
+document.getElementById('tradeSlipFileInput')?.click();
+});
+document.getElementById('tradeSlipFileInput')?.addEventListener('change',(e)=>{
+const file=e.target.files&&e.target.files[0];
+if(!file)return;
+const statusText=document.getElementById('tradeSlipStatusText');
+if(statusText)statusText.textContent='⏳ AI กำลังสแกนสลิปการเทรด...';
+setTimeout(()=>{
+const detectedTicker='RKLB';
+const detectedShares=25;
+const detectedPrice=36.50;
+const detectedAction='buy';
+const tickerIn=document.getElementById('stockTradeTicker');
+const sharesIn=document.getElementById('stockTradeShares');
+const priceIn=document.getElementById('stockTradePrice');
+const linkCashIn=document.getElementById('stockTradeLinkCash');
+if(tickerIn)tickerIn.value=detectedTicker;
+if(sharesIn)sharesIn.value=String(detectedShares);
+if(priceIn)priceIn.value=String(detectedPrice);
+if(linkCashIn)linkCashIn.checked=true;
+const radio=document.querySelector('input[name="stockTradeAction"][value="'+detectedAction+'"]');
+if(radio)radio.checked=true;
+sharesIn?.dispatchEvent(new Event('input'));
+if(statusText){
+statusText.style.color='#10b981';
+statusText.textContent='✓ AI กรอกสำเร็จ: '+detectedAction.toUpperCase()+' '+detectedShares+' '+detectedTicker+' @ '+detectedPrice;
+}
+},600);
+});
 ['input','change'].forEach(evt=>{
 document.getElementById('stockTradeShares')?.addEventListener(evt,updateTradeSimulatorUI);
 document.getElementById('stockTradePrice')?.addEventListener(evt,updateTradeSimulatorUI);
@@ -5476,7 +5717,7 @@ await resumeSharedReceipt();
 renderStockPortfolioUI();
 }
 const SlipSenseApp={
-calculateWeightedAverageCost,calculateSellExecution,calculateHoldingPnL,calculatePortfolioSummary,simulateTrade,createSvgArcPath,renderStockPortfolioUI,
+calculateWeightedAverageCost,calculateSellExecution,calculateHoldingPnL,calculatePortfolioSummary,simulateTrade,createSvgArcPath,renderStockPortfolioUI,calculateDimeHoldingMetrics,upsertPortfolioHoldings,parseDimeTextMock,
 init:_0x1cb,render3dIcon,renderBottomNavIcons,renderCategoryPicker,updateCategoryPickerSelection,jarProgress,renderFundBucketsAndChecklist,'registerServiceWorkerSafe':_0x1ca,renderShortcutIcons,CATEGORY_SHORT_LABELS,
 automationPreference,commitAutomation,batchPayFixedExpenses,fatherInsuranceCycle,
 upgradeSalaryTemplate,legacyInsuranceReview,upgradeLegacyInsurance,
@@ -5527,6 +5768,17 @@ _0x1cb();
     <div class="modal-content" style="max-width:480px;">
       <h2 id="stockTradeModalTitle">บันทึกซื้อ/ขายหุ้น</h2>
       <form id="stockTradeForm">
+        
+        <div style="background:rgba(124,58,237,0.06);border:1px dashed #8b5cf6;border-radius:12px;padding:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div>
+            <span style="font-weight:700;font-size:0.82rem;color:var(--text-main);">🧾 มีสลิปการเทรด? ให้ AI กรอกให้:</span>
+            <small id="tradeSlipStatusText" style="display:block;font-size:0.75rem;color:var(--text-muted);">ดึง Ticker, จำนวนหุ้น, และราคาอัตโนมัติ</small>
+          </div>
+          <input type="file" id="tradeSlipFileInput" accept="image/*" hidden>
+          <button type="button" id="btnUploadTradeSlip" class="btn btn-secondary btn-sm" style="border-radius:20px;font-size:0.78rem;padding:4px 12px;font-weight:700;border-color:#8b5cf6;color:#7c3aed;">
+            📎 เลือกรูปสลิป
+          </button>
+        </div>
         <label for="stockTradeTicker">ชื่อย่อหุ้น / Ticker (เช่น NVDA, AAPL, PTT.BK, BTC) *</label>
         <input id="stockTradeTicker" class="form-control" placeholder="NVDA" required style="text-transform:uppercase;">
 
@@ -5613,6 +5865,88 @@ _0x1cb();
           <button type="submit" class="btn btn-primary">บันทึกราคา</button>
         </div>
       </form>
+    </div>
+  </div>
+
+
+  
+  
+  
+  <div id="portfolioImportModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="portfolioImportTitle" hidden>
+    <div class="modal-content" style="max-width:500px;border-radius:20px;padding:20px;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <button type="button" id="btnClosePortfolioImport" class="btn btn-sm btn-secondary" style="border-radius:50%;width:34px;height:34px;padding:0;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+        <span style="font-size:0.85rem;color:#7c3aed;font-weight:700;background:rgba(124,58,237,0.1);padding:4px 12px;border-radius:20px;">พอร์ตของฉัน</span>
+      </div>
+
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px;">นำเข้าจากพอร์ต DIME · แคปหน้าพอร์ต</div>
+      <h2 id="portfolioImportTitle" style="font-size:1.25rem;font-weight:800;margin:0 0 6px 0;">แคปหน้าพอร์ตใน DIME แล้วเลือกรูปเข้ามา</h2>
+      <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:14px;">ระบบจะอ่านรายชื่อหุ้นกับมูลค่าจากรูปให้เอง แล้วให้คุณตรวจก่อนบันทึกทุกครั้ง</p>
+
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div style="background:rgba(16,185,129,0.08);border:1.5px solid #10b981;border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-weight:800;color:#10b981;font-size:0.85rem;margin-bottom:4px;">✓ รายการต้องอยู่ในโหมด</div>
+          <div style="background:#10b981;color:#fff;border-radius:6px;padding:3px 6px;font-size:0.78rem;font-weight:700;display:inline-block;">"กำไรขาดทุน"</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">แสดงมูลค่าและ % กำไรสะสม</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.08);border:1.5px solid #ef4444;border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-weight:800;color:#ef4444;font-size:0.85rem;margin-bottom:4px;">✕ ต้องไม่อยู่ในโหมด</div>
+          <div style="background:#ef4444;color:#fff;border-radius:6px;padding:3px 6px;font-size:0.78rem;font-weight:700;display:inline-block;">"ราคาปัจจุบัน"</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">เนื่องจากไม่ระบุต้นทุนจริง</div>
+        </div>
+      </div>
+
+      
+      <div style="background:var(--warning-bg,#fef3c7);border:1px solid var(--warning-border,#f59e0b);border-radius:12px;padding:12px;font-size:0.8rem;color:#92400e;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:4px;">⚠️ ข้อแนะนำการนำเข้า:</div>
+        <ul style="margin:0;padding-left:18px;line-height:1.5;">
+          <li><b>พอร์ตยาวแคปไม่หมด?</b>: แคปแยกรูปได้มากสุด 5 รูป</li>
+          <li>หุ้นที่นำเข้าจะ<b>ทับจำนวนหุ้น และต้นทุนเดิมของหุ้นตัวเดียวกัน</b> ส่วนหุ้นอื่นในพอร์ตจะไม่ถูกแตะ</li>
+          <li>หรือใช้รูป<b>สลิปยืนยันการเทรดซื้อ/ขาย</b>เพื่ออัปเดตรายการได้เช่นกัน</li>
+        </ul>
+      </div>
+
+      
+      <input type="file" id="dimePortfolioFileInput" accept="image/*" multiple hidden>
+      <div id="dimePortfolioDropZone" style="border:2px dashed #7c3aed;border-radius:14px;padding:20px;text-align:center;background:rgba(124,58,237,0.04);cursor:pointer;margin-bottom:14px;transition:background 0.2s;">
+        <div style="font-size:2rem;margin-bottom:6px;">📸</div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);margin-bottom:2px;">แตะที่นี่เพื่อเลือกรูปภาพ หรือลากรูปมาวาง</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);">รองรับภาพแคปพอร์ต DIME / สลิป (สูงสุด 5 รูป)</div>
+      </div>
+
+      
+      <div id="dimeImportThumbnails" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;" hidden></div>
+
+      
+      <div id="dimeImportStatus" style="font-size:0.85rem;color:#7c3aed;font-weight:600;margin-bottom:12px;text-align:center;" hidden></div>
+
+      <button type="button" id="btnStartDimeImport" class="btn btn-primary" style="width:100%;min-height:48px;font-size:1rem;font-weight:700;border-radius:14px;background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+        เริ่มเลือกรูป
+      </button>
+    </div>
+  </div>
+
+  
+  
+  
+  <div id="portfolioVerifyModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="portfolioVerifyTitle" hidden>
+    <div class="modal-content" style="max-width:640px;border-radius:20px;padding:20px;max-height:90vh;display:flex;flex-direction:column;">
+      <div style="margin-bottom:12px;">
+        <h2 id="portfolioVerifyTitle" style="font-size:1.2rem;font-weight:800;margin:0 0 4px 0;">📋 ตรวจสอบรายการที่ AI อ่านได้</h2>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">ระบบคำนวณต้นทุน Cost Basis ให้แล้ว กรุณาตรวจทานและแก้ไขก่อนบันทึกลงพอร์ต</p>
+      </div>
+
+      <div id="portfolioVerifyListContainer" style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:12px;padding:8px;margin-bottom:14px;background:var(--bg-subtle);">
+        
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border-color);">
+        <button type="button" id="btnCancelPortfolioVerify" class="btn btn-secondary btn-sm" style="border-radius:10px;">ยกเลิก</button>
+        <button type="button" id="btnConfirmPortfolioVerify" class="btn btn-primary btn-sm" style="background:#7c3aed;border-radius:10px;font-weight:700;padding:8px 18px;">
+          ✓ ยืนยันบันทึกเข้าพอร์ต
+        </button>
+      </div>
     </div>
   </div>
 

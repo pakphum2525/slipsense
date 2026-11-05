@@ -1389,6 +1389,7 @@
             <h2 class="portfolio-header-title">พอร์ตของฉัน</h2>
           </div>
           <div class="portfolio-header-actions">
+            <button type="button" id="btnOpenPortfolioImport" class="btn btn-secondary btn-sm" title="นำเข้าพอร์ตจากภาพแคป DIME หรือสลิปการเทรด" style="border-radius:12px;font-size:0.8rem;padding:6px 10px;font-weight:700;">📷 นำเข้าพอร์ต</button>
             <button type="button" id="btnPortfolioRebalance" class="btn-rebalance-pill">⚖️ Rebalance</button>
             <button type="button" id="btnOpenStockTradeHeader" class="btn-add-pill" title="เพิ่มหุ้น หรือบันทึกซื้อ/ขาย">➕</button>
             <button type="button" id="btnQuickPriceUpdate" class="btn btn-secondary btn-sm" title="อัปเดตราคาตลาด">⚡ ราคา</button>
@@ -1959,6 +1960,17 @@
     <div class="modal-content" style="max-width:480px;">
       <h2 id="stockTradeModalTitle">บันทึกซื้อ/ขายหุ้น</h2>
       <form id="stockTradeForm">
+        <!-- AI Trade Slip Helper Banner -->
+        <div style="background:rgba(124,58,237,0.06);border:1px dashed #8b5cf6;border-radius:12px;padding:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div>
+            <span style="font-weight:700;font-size:0.82rem;color:var(--text-main);">🧾 มีสลิปการเทรด? ให้ AI กรอกให้:</span>
+            <small id="tradeSlipStatusText" style="display:block;font-size:0.75rem;color:var(--text-muted);">ดึง Ticker, จำนวนหุ้น, และราคาอัตโนมัติ</small>
+          </div>
+          <input type="file" id="tradeSlipFileInput" accept="image/*" hidden>
+          <button type="button" id="btnUploadTradeSlip" class="btn btn-secondary btn-sm" style="border-radius:20px;font-size:0.78rem;padding:4px 12px;font-weight:700;border-color:#8b5cf6;color:#7c3aed;">
+            📎 เลือกรูปสลิป
+          </button>
+        </div>
         <label for="stockTradeTicker">ชื่อย่อหุ้น / Ticker (เช่น NVDA, AAPL, PTT.BK, BTC) *</label>
         <input id="stockTradeTicker" class="form-control" placeholder="NVDA" required style="text-transform:uppercase;">
 
@@ -2045,6 +2057,88 @@
           <button type="submit" class="btn btn-primary">บันทึกราคา</button>
         </div>
       </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: DIME Portfolio & Trade Slip AI Importer (RocketTool / DIME UI)   -->
+  <!-- ======================================================================= -->
+  <div id="portfolioImportModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="portfolioImportTitle" hidden>
+    <div class="modal-content" style="max-width:500px;border-radius:20px;padding:20px;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <button type="button" id="btnClosePortfolioImport" class="btn btn-sm btn-secondary" style="border-radius:50%;width:34px;height:34px;padding:0;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+        <span style="font-size:0.85rem;color:#7c3aed;font-weight:700;background:rgba(124,58,237,0.1);padding:4px 12px;border-radius:20px;">พอร์ตของฉัน</span>
+      </div>
+
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px;">นำเข้าจากพอร์ต DIME · แคปหน้าพอร์ต</div>
+      <h2 id="portfolioImportTitle" style="font-size:1.25rem;font-weight:800;margin:0 0 6px 0;">แคปหน้าพอร์ตใน DIME แล้วเลือกรูปเข้ามา</h2>
+      <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:14px;">ระบบจะอ่านรายชื่อหุ้นกับมูลค่าจากรูปให้เอง แล้วให้คุณตรวจก่อนบันทึกทุกครั้ง</p>
+
+      <!-- Visual Rule Box: Profit/Loss Mode vs Price Mode -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div style="background:rgba(16,185,129,0.08);border:1.5px solid #10b981;border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-weight:800;color:#10b981;font-size:0.85rem;margin-bottom:4px;">✓ รายการต้องอยู่ในโหมด</div>
+          <div style="background:#10b981;color:#fff;border-radius:6px;padding:3px 6px;font-size:0.78rem;font-weight:700;display:inline-block;">"กำไรขาดทุน"</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">แสดงมูลค่าและ % กำไรสะสม</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.08);border:1.5px solid #ef4444;border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-weight:800;color:#ef4444;font-size:0.85rem;margin-bottom:4px;">✕ ต้องไม่อยู่ในโหมด</div>
+          <div style="background:#ef4444;color:#fff;border-radius:6px;padding:3px 6px;font-size:0.78rem;font-weight:700;display:inline-block;">"ราคาปัจจุบัน"</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">เนื่องจากไม่ระบุต้นทุนจริง</div>
+        </div>
+      </div>
+
+      <!-- Warning Instruction Box -->
+      <div style="background:var(--warning-bg,#fef3c7);border:1px solid var(--warning-border,#f59e0b);border-radius:12px;padding:12px;font-size:0.8rem;color:#92400e;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:4px;">⚠️ ข้อแนะนำการนำเข้า:</div>
+        <ul style="margin:0;padding-left:18px;line-height:1.5;">
+          <li><b>พอร์ตยาวแคปไม่หมด?</b>: แคปแยกรูปได้มากสุด 5 รูป</li>
+          <li>หุ้นที่นำเข้าจะ<b>ทับจำนวนหุ้น และต้นทุนเดิมของหุ้นตัวเดียวกัน</b> ส่วนหุ้นอื่นในพอร์ตจะไม่ถูกแตะ</li>
+          <li>หรือใช้รูป<b>สลิปยืนยันการเทรดซื้อ/ขาย</b>เพื่ออัปเดตรายการได้เช่นกัน</li>
+        </ul>
+      </div>
+
+      <!-- File Drop & Select Zone -->
+      <input type="file" id="dimePortfolioFileInput" accept="image/*" multiple hidden>
+      <div id="dimePortfolioDropZone" style="border:2px dashed #7c3aed;border-radius:14px;padding:20px;text-align:center;background:rgba(124,58,237,0.04);cursor:pointer;margin-bottom:14px;transition:background 0.2s;">
+        <div style="font-size:2rem;margin-bottom:6px;">📸</div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);margin-bottom:2px;">แตะที่นี่เพื่อเลือกรูปภาพ หรือลากรูปมาวาง</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);">รองรับภาพแคปพอร์ต DIME / สลิป (สูงสุด 5 รูป)</div>
+      </div>
+
+      <!-- Image Preview Thumbnails -->
+      <div id="dimeImportThumbnails" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;" hidden></div>
+
+      <!-- Status indicator -->
+      <div id="dimeImportStatus" style="font-size:0.85rem;color:#7c3aed;font-weight:600;margin-bottom:12px;text-align:center;" hidden></div>
+
+      <button type="button" id="btnStartDimeImport" class="btn btn-primary" style="width:100%;min-height:48px;font-size:1rem;font-weight:700;border-radius:14px;background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+        เริ่มเลือกรูป
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: Verification Form for Imported Portfolio (Review before Commit)  -->
+  <!-- ======================================================================= -->
+  <div id="portfolioVerifyModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="portfolioVerifyTitle" hidden>
+    <div class="modal-content" style="max-width:640px;border-radius:20px;padding:20px;max-height:90vh;display:flex;flex-direction:column;">
+      <div style="margin-bottom:12px;">
+        <h2 id="portfolioVerifyTitle" style="font-size:1.2rem;font-weight:800;margin:0 0 4px 0;">📋 ตรวจสอบรายการที่ AI อ่านได้</h2>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">ระบบคำนวณต้นทุน Cost Basis ให้แล้ว กรุณาตรวจทานและแก้ไขก่อนบันทึกลงพอร์ต</p>
+      </div>
+
+      <div id="portfolioVerifyListContainer" style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:12px;padding:8px;margin-bottom:14px;background:var(--bg-subtle);">
+        <!-- Dynamically rendered verification items -->
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border-color);">
+        <button type="button" id="btnCancelPortfolioVerify" class="btn btn-secondary btn-sm" style="border-radius:10px;">ยกเลิก</button>
+        <button type="button" id="btnConfirmPortfolioVerify" class="btn btn-primary btn-sm" style="background:#7c3aed;border-radius:10px;font-weight:700;padding:8px 18px;">
+          ✓ ยืนยันบันทึกเข้าพอร์ต
+        </button>
+      </div>
     </div>
   </div>
 

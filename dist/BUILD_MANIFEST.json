@@ -1,14 +1,14 @@
 {
-  "source_sha256": "2dbebd64321b8af2705a2dbab942d14741452d3efbcf74d69caf6fbedde64052",
+  "source_sha256": "c99e1f76a68d07b49ca8ef34e8e9834caa2cf7639b984bfa68d794ecd5e745d7",
   "node_version": "v24.16.0",
   "source_stats": {
-    "app_ts_bytes": 314357,
+    "app_ts_bytes": 328225,
     "sw_ts_bytes": 9086
   },
   "production_stats": {
-    "compiled_app_js_bytes": 225994,
+    "compiled_app_js_bytes": 235901,
     "compiled_sw_js_bytes": 6206,
-    "dist_index_html_bytes": 327210,
+    "dist_index_html_bytes": 345508,
     "mangled_internal_identifiers": 44,
     "source_maps_generated": false
   },
@@ -45,8 +45,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 327210,
-      "sha256": "5986435ea988cee32e0d0abd9dad8428401a7a78d2e1b04614e29499728f0fd6"
+      "bytes": 345508,
+      "sha256": "a1ea24f4057b73cb08cc03bc82da8af20b242272ea999fb035484165a321e52f"
     },
     {
       "path": "manifest.json",

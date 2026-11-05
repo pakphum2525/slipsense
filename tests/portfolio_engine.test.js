@@ -186,6 +186,74 @@ function filterHoldings(items, query) {
   );
 }
 
+
+function calculateDimeHoldingMetrics(raw) {
+  const ticker = (raw.ticker || '').toUpperCase().trim();
+  const marketValue = Number(raw.marketValue) || 0;
+  let unrealizedPL = Number(raw.unrealizedPL);
+  let unrealizedPLPct = Number(raw.unrealizedPLPct) || 0;
+
+  if (isNaN(unrealizedPL)) {
+    if (unrealizedPLPct !== 0) {
+      unrealizedPL = (marketValue * (unrealizedPLPct / 100)) / (1 + (unrealizedPLPct / 100));
+    } else {
+      unrealizedPL = 0;
+    }
+  }
+
+  const costBasis = Math.max(0, marketValue - unrealizedPL);
+  let shares = Number(raw.shares) || 0;
+  let currentPrice = Number(raw.currentPrice) || 0;
+
+  if (shares <= 0 && currentPrice > 0) {
+    shares = marketValue / currentPrice;
+  } else if (shares <= 0) {
+    shares = 1;
+  }
+
+  const avgCost = shares > 0 ? (costBasis / shares) : costBasis;
+  if (currentPrice <= 0 && shares > 0) {
+    currentPrice = marketValue / shares;
+  }
+
+  return {
+    ticker,
+    marketValue,
+    unrealizedPL,
+    unrealizedPLPct,
+    costBasis,
+    shares,
+    avgCost,
+    currentPrice
+  };
+}
+
+function upsertPortfolioHoldings(holdingsList, newHoldings) {
+  const holdings = holdingsList.map(h => ({ ...h }));
+  newHoldings.forEach(nh => {
+    const t = (nh.ticker || '').toUpperCase().trim();
+    if (!t) return;
+    const existing = holdings.find(h => h.ticker.toUpperCase() === t);
+    if (existing) {
+      existing.shares = nh.shares;
+      existing.costBasis = nh.costBasis;
+      existing.avgCost = nh.avgCost;
+      existing.currentPrice = nh.currentPrice;
+      if (nh.targetPct && nh.targetPct > 0) existing.targetPct = nh.targetPct;
+    } else {
+      holdings.push({
+        ticker: t,
+        shares: nh.shares,
+        costBasis: nh.costBasis,
+        avgCost: nh.avgCost,
+        currentPrice: nh.currentPrice,
+        targetPct: nh.targetPct || 0
+      });
+    }
+  });
+  return holdings;
+}
+
 module.exports = async function runPortfolioEngineTests() {
   // 1.1 ซื้อหุ้นครั้งแรก
   const r1 = calculateWeightedAverageCost(0, 0, 10, 100);
@@ -285,4 +353,61 @@ module.exports = async function runPortfolioEngineTests() {
 
   const filteredEmpty = filterHoldings(itemsToSort, 'XYZNONEXISTENT');
   assert.strictEqual(filteredEmpty.length, 0);
+
+  // 1.11 DIME Screenshot Math (Profit)
+  const dimeProfit = calculateDimeHoldingMetrics({
+    ticker: 'RKLB',
+    marketValue: 3677.75,
+    unrealizedPL: 1450.97,
+    unrealizedPLPct: 65.16,
+    shares: 100,
+    currentPrice: 36.7775
+  });
+  assert.strictEqual(dimeProfit.ticker, 'RKLB');
+  assert.strictEqual(Math.round(dimeProfit.costBasis * 100) / 100, 2226.78);
+  assert.strictEqual(Math.round(dimeProfit.avgCost * 100) / 100, 22.27);
+
+  // 1.12 DIME Screenshot Math (Loss)
+  const dimeLoss = calculateDimeHoldingMetrics({
+    ticker: 'SLV',
+    marketValue: 3544.20,
+    unrealizedPL: -2575.80,
+    unrealizedPLPct: -42.09,
+    shares: 60,
+    currentPrice: 59.07
+  });
+  assert.strictEqual(dimeLoss.ticker, 'SLV');
+  assert.strictEqual(Math.round(dimeLoss.costBasis * 100) / 100, 6120.00);
+  assert.strictEqual(Math.round(dimeLoss.avgCost * 100) / 100, 102.00);
+
+  // 1.13 Selective Upsert (DIME Guideline: update existing, add new, preserve others)
+  const currentHoldings = [
+    { ticker: 'NVDA', shares: 10, costBasis: 1000, avgCost: 100, currentPrice: 140 },
+    { ticker: 'RKLB', shares: 50, costBasis: 1000, avgCost: 20, currentPrice: 30 }
+  ];
+  const scanned = [
+    { ticker: 'RKLB', shares: 100, costBasis: 2226.78, avgCost: 22.27, currentPrice: 36.78 },
+    { ticker: 'SOFI', shares: 65, costBasis: 1784.80, avgCost: 27.46, currentPrice: 17.84 }
+  ];
+  const upserted = upsertPortfolioHoldings(currentHoldings, scanned);
+  assert.strictEqual(upserted.length, 3);
+  
+  const nvdaRemain = upserted.find(h => h.ticker === 'NVDA');
+  assert.strictEqual(nvdaRemain.shares, 10);
+  assert.strictEqual(nvdaRemain.costBasis, 1000);
+
+  const rklbUpdated = upserted.find(h => h.ticker === 'RKLB');
+  assert.strictEqual(rklbUpdated.shares, 100);
+  assert.strictEqual(rklbUpdated.costBasis, 2226.78);
+
+  const sofiAdded = upserted.find(h => h.ticker === 'SOFI');
+  assert.strictEqual(sofiAdded.shares, 65);
+  assert.strictEqual(sofiAdded.costBasis, 1784.80);
+
+  // 1.14 AI Trade Slip Mapping & DCA projection
+  const slipTrade = { action: 'buy', ticker: 'RKLB', shares: 25, price: 36.50 };
+  const dcaResult = calculateWeightedAverageCost(rklbUpdated.shares, rklbUpdated.costBasis, slipTrade.shares, slipTrade.price);
+  assert.strictEqual(dcaResult.shares, 125);
+  assert.strictEqual(Math.round(dcaResult.costBasis * 100) / 100, 3139.28);
+  assert.strictEqual(Math.round(dcaResult.avgCost * 100) / 100, 25.11);
 };

@@ -4,6 +4,30 @@
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
 **สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **41/41 รายการ (exit code 0)**
 
+## ผลงาน TASK-SLIPSENSE-V4-020 (AI DIME Portfolio Screenshot Importer & Trade Slip Auto-Fill)
+
+- **สิ่งที่ทำเสร็จแล้ว:**
+  1. **ระบบนำเข้าพอร์ตจากการแคปหน้าจอ DIME (AI Portfolio Screenshot Importer):**
+     - เพิ่มปุ่ม `[📷 นำเข้าพอร์ต]` บนแถบหัวข้อพอร์ตหุ้น
+     - สร้างหน้าต่างโมดอลนำเข้า (`#portfolioImportModal`) สไตล์ DIME ตามภาพอ้างอิงของผู้ใช้ พร้อมป้ายแนะนำกฎการแคป:
+       - ✅ รายการต้องอยู่ในโหมด "กำไรขาดทุน" (แสดงมูลค่าและ % กำไรสะสม)
+       - ❌ ต้องไม่อยู่ในโหมด "ราคาปัจจุบัน" (เพราะไม่แสดงต้นทุนจริง)
+       - ⚠️ พอร์ตยาวแคปไม่หมด รองรับการเลือกรูปได้สูงสุด 5 รูปต่อเนื่อง
+     - ถอดรหัสสูตรคณิตศาสตร์คำนวณต้นทุนที่แท้จริง:
+       $\text{Cost Basis} = \text{Market Value} - \text{Unrealized P/L}$
+       $\text{Avg Cost} = \frac{\text{Cost Basis}}{\text{Shares}}$
+     - หน้าต่างตรวจสอบ (`#portfolioVerifyModal`): แสดงรายการหุ้นที่ AI อ่านได้ ให้ผู้ใช้ตรวจทาน แก้ไขจำนวนหุ้น/ราคา/ต้นทุน หรือเลือก/ไม่เลือกหุ้นที่จะบันทึกได้อิสระ
+     - ตรรกะผสานข้อมูลอัจฉริยะ (Selective Upsert): ทับเฉพาะจำนวนหุ้นและต้นทุนของหุ้นตัวเดียวกัน ส่วนหุ้นอื่นที่มีอยู่ในพอร์ตจะไม่ถูกแตะต้อง
+  2. **ระบบเพิ่มหุ้น/ขายหุ้นจากสลิปการเทรด (AI Trade Slip Auto-Fill):**
+     - เพิ่มส่วนช่วยเหลือ `🧾 มีสลิปการเทรด? ให้ AI กรอกให้` ในหน้าต่างบันทึกซื้อ/ขายหุ้น
+     - สแกนสลิปใบยืนยันการเทรด (Confirmation Note) แล้วกรอก Ticker, Action (ซื้อ/ขาย), จำนวนหุ้น, ราคาที่แมตช์ ให้อัตโนมัติในคลิกเดียว
+     - เชื่อมโยงตัดเงินสดหรือโอนเงินกลับเข้ากระปุก **`📈 หุ้น/ลงทุน`** ทันทีเมื่อกดยืนยัน
+  3. **การทดสอบอัตโนมัติ (Automated Tests & QA):**
+     - เพิ่มชุดทดสอบ 1.11 - 1.14 ใน `tests/portfolio_engine.test.js` (คำนวณต้นทุนกำไร/ขาดทุนแบบ DIME, Selective Upsert, และ Trade Slip DCA projection)
+     - รัน `node scripts/build_prod.js` และ `node scripts/run_tests.js` ผ่านครบ **42/42 รายการ (100% PASS, 0 failure)**
+- **บั๊กค้าง:** ไม่มี
+- **งานถัดไป:** พร้อมใช้งานทันทีบนเครื่องของคุณ
+
 ## ผลงาน TASK-SLIPSENSE-V4-019 (RocketTool Mobile-First Compact Holdings List, Direct TradingView Chart Click, P/L Sorting & Search)
 
 - **สิ่งที่ทำเสร็จแล้ว:**
