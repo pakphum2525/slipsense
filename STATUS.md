@@ -1,8 +1,25 @@
 # รายงานสถานะโปรเจกต์ (STATUS.md) — SlipSense (`slipsense-expense-tracker`)
 
-**วันที่อัปเดตล่าสุด:** 3 พฤศจิกายน 2026
+**วันที่อัปเดตล่าสุด:** 5 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **41/41 รายการ (exit code 0)**
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-015 (3D Cute Kawaii UI & Jar Shelf Upgrade) และ TASK-SLIPSENSE-V4-014C (Custom Fund Buckets & Compact Scan Hub) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `node scripts/run_tests.js` ผ่านครบ **42/42 รายการ (exit code 0)**
+
+## ผลงาน TASK-SLIPSENSE-V4-021 (Expense Donut Chart Surrounding Icons & Compact Mobile-Tablet Layout)
+
+- **สิ่งที่ทำเสร็จแล้ว:**
+  1. **กราฟโดนัทแสดงรูปไอคอนรอบวง (Radial Donut with Surrounding Icons):**
+     - คำนวณองศากึ่งกลางของแต่ละ Slice แล้ววางตำแหน่งไอคอนรอบนอกของวงโดนัทอย่างลงตัว
+     - แสดงรูปสัญลักษณ์และไอคอนหมวดหมู่ (เช่น 🍜 อาหาร, 🛒 ของใช้, 🚗 ยานพาหนะ, ⚡ บิล/น้ำไฟ, 🏠 ซ่อมบ้าน, 💊 สุขภาพ) ประจำแต่ละชิ้นวงโดนัท
+     - แสดงตัวอักษรและตัวเลขให้น้อยที่สุด: แสดงเฉพาะตัวเลขเปอร์เซ็นต์ย่อ (เช่น 24%) ใต้ไอคอน และแสดงยอดรวมรายจ่ายตัวหนาตรงกลางรูกราฟโดนัท
+     - ซ่อนรายการสรุปด้านล่าง (chart-legend) ออกจากมุมมอง เพื่อไม่ให้เกะกะและไม่เปลืองพื้นที่แนวตั้งตามคำขอของผู้ใช้ (แต่คงไว้ใน DOM สำหรับ Accessibility และการทดสอบ)
+     - ซ่อนตารางดิบแคชโฟลว์ (chart-table) ออกจากหน้าจอเพื่อความสะอาดตา
+  2. **ปรับภาพรวมของแอปให้กระชับ เหมาะกับมือถือและแท็บเล็ต (Compact Mobile & Tablet Polish):**
+     - ลด Padding และ Margin ของ .app-panels, .card, และ .kpi-box ให้แน่นกระชับขึ้น
+     - กราฟแท่งเปรียบเทียบกระแสเงินสดและกราฟโดนัทจัดเรียงเป็น 2 คอลัมน์บนแท็บเล็ต/หน้าจอกว้าง และเรียงซ้อนแบบกะทัดรัดบนมือถือ ไม่ต้องเลื่อนจอเยอะ
+  3. **การทดสอบอัตโนมัติ (Automated Tests & QA):**
+     - รัน node scripts/build_prod.js และ node scripts/run_tests.js ผ่านครบ 42/42 รายการ (100% PASS, 0 failure)
+- **บั๊กค้าง:** ไม่มี
+- **งานถัดไป:** พร้อมใช้งานทันทีบน http://127.0.0.1:8080
 
 ## ผลงาน TASK-SLIPSENSE-V4-020 (AI DIME Portfolio Screenshot Importer & Trade Slip Auto-Fill)
 

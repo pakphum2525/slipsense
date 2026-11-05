@@ -1173,6 +1173,53 @@
     .tv-widget-container { flex:1; width:100%; min-height:360px; border-radius:12px; overflow:hidden; background:#131722; position:relative; }
     .stock-action-btns { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
   
+  
+    /* Compact Mobile & Tablet Responsive Polish */
+    .chart-table { display:none !important; }
+    .chart-legend { display:none !important; }
+    #financialCharts {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: center;
+      justify-items: center;
+    }
+    @media (min-width: 680px) {
+      #financialCharts {
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+    }
+    .donut-chart-svg {
+      max-width: 260px;
+      width: 100%;
+      height: auto;
+      margin: 0 auto;
+      display: block;
+    }
+    .app-panels {
+      padding: 6px 8px;
+      max-width: 680px;
+    }
+    @media (min-width: 768px) {
+      .app-panels {
+        max-width: 820px;
+        padding: 10px 14px;
+      }
+    }
+    .app-panels .card {
+      margin-bottom: 8px;
+      padding: 11px 12px;
+      border-radius: 16px;
+    }
+    .kpi-grid {
+      gap: 8px;
+    }
+    .kpi-box {
+      padding: 8px 10px;
+      border-radius: 12px;
+    }
+
   </style>
 </head>
 <body>

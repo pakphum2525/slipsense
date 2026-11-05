@@ -1,44 +1,31 @@
 {
   "schema_version": "4.0.0",
-  "task_id": "TASK-SLIPSENSE-V4-020",
-  "created_at": "2026-11-05T12:45:00.000Z",
+  "task_id": "TASK-SLIPSENSE-V4-021",
+  "created_at": "2026-11-05T13:46:00.000Z",
   "producer": "Antigravity",
   "risk_level": "STANDARD",
-  "title": "AI DIME Portfolio Screenshot Importer & AI Trade Slip Parser (Single-Agent Mode)",
-  "objective": "Implement AI-powered portfolio import from DIME screenshot captures (up to 5 images, extracting ticker, market value, unrealized P/L and computing cost basis with verification modal and selective upsert) and AI-powered trade slip parser (auto-detecting Buy/Sell, ticker, shares, price, and auto-filling trade modal with cash link to investment_stock).",
-  "user_story": "As an active investor, I want to import my stock holdings by uploading DIME screenshot captures and record buy/sell trades from slips via AI so that I do not need to enter numbers manually.",
+  "title": "Expense Donut Chart Surrounding Icons & Compact Mobile-Tablet Layout",
+  "objective": "Transform the Expense Analytics Donut Chart into a clean radial chart with category icons orbiting the circumference slices and minimal text (percentage and total expense only, hiding the bottom legend list), while compacting the overall app UI spacing for mobile and tablet devices.",
+  "user_story": "As a user checking my expense analytics on mobile/tablet, I want the donut chart to display icons around the ring without the bulky legend below, and I want the entire app layout to be tight and ergonomic.",
   "acceptance_criteria": [
-    "Add '📷 นำเข้าพอร์ตจากรูป/สลิป' button in Portfolio view",
-    "Portfolio Import Modal matches user DIME screenshot specification (guidance banners, profit/loss mode check, max 5 images, non-destructive upsert)",
-    "AI Parsing logic extracts Ticker, Market Value, Unrealized P/L, Unrealized P/L %, and derives Cost Basis and Average Cost",
-    "Verification modal allows users to review, edit, and select which extracted stock holdings to save before committing",
-    "Upsert logic updates matching stocks, adds new ones, and preserves untouched existing stocks",
-    "Trade slip parser extracts Buy/Sell action, ticker, quantity, price, and auto-fills trade modal with fund jar link",
-    "All unit and integration tests pass 100% with zero regressions"
+    "Donut chart renders category icons along the orbit of each slice with minimal text (% and center total)",
+    "Chart legend list below the donut is hidden from view (display: none)",
+    "Tabular chart data is hidden from view while preserved for accessibility and test suites",
+    "App panels, cards, and KPI grids are tightened for compact mobile and tablet viewports",
+    "All 42 automated tests pass with exit code 0"
   ],
   "write_allowlist": [
     "src/app.ts",
     "src/index.template.html",
-    "tests/portfolio_engine.test.js",
-    "STATUS.md",
-    "README.md"
+    "index.html",
+    "dist/index.html",
+    "dist/BUILD_MANIFEST.json",
+    "STATUS.md"
   ],
   "protected_denylist": [
-    "GEMINI.md",
-    "AGENTS.md",
-    "hooks.json",
-    "hooks/**",
-    "rules/**",
-    ".agent_loop/STATE.json",
-    ".agent_loop/PLAN_APPROVAL.json",
-    ".agent_loop/RELEASE_APPROVAL.json",
-    "Production/**",
-    ".env*"
+    "supabase.sql",
+    ".env*",
+    "Production/**"
   ],
-  "constraints": {
-    "max_planning_attempts": 3,
-    "max_repair_attempts": 3,
-    "timeout_seconds": 300,
-    "test_command": "node scripts/run_tests.js"
-  }
+  "environment": "DEVELOPMENT"
 }
