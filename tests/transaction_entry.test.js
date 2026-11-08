@@ -298,5 +298,40 @@ async function dynamicBuckets() {
     api.bindBucketEvents(); api.openBucketModal();
     await el('bucketModal').emit('keydown', { key: 'Escape', preventDefault() {} });
     assert.equal(el('bucketModal').hidden, true);
+    await api.updateFundBucket('general_expense', { name: 'ค่ากินอยู่สุดคิวท์' });
+    api.renderDashboardAndHistory();
+    assert.ok(el('homeJarShelf').innerHTML.includes('ค่ากินอยู่สุดคิวท์') || api.FUND_BUCKET_LABELS.general_expense.includes('ค่ากินอยู่สุดคิวท์'), 'renamed bucket updates label');
+    api.openQuickScanPopup();
+    assert.equal(el('quickScanPopupModal').hidden, false);
+    api.closeQuickScanPopup();
+    assert.equal(el('quickScanPopupModal').hidden, true);
+    api.openJarActionPopup('investment_stock');
+    assert.equal(el('jarActionPopupModal').hidden, false);
+    api.closeJarActionPopup();
+    assert.equal(el('jarActionPopupModal').hidden, true);
+    const depRes = await api.depositToSalaryJar(50000, '2026-11-05', 'เงินเดือนพฤศจิกายน');
+    assert.equal(depRes.amount, 50000);
+    const xferRes = await api.transferBetweenBuckets('salary_bucket', [
+      { targetBucket: 'general_expense', amount: 15000 }
+    ], '2026-11-05', 'แบ่งเงินเดือน');
+    assert.equal(xferRes.totalTransferred, 15000);
+    const mAfterXfer = api.calculateDashboardMetrics(api.getState().transactions, '2026-11');
+    const salaryBal = mAfterXfer.fundBalances.find(f => f.bucket === depRes.bucketKey);
+    assert.equal(salaryBal.availableBalance, 35000);
+    api.saveDanInsurancePolicy({ id: 'policy_1', name: 'ประกันสุขภาพ ฉบับ 1', amount: 4000, dueDate: '2026-11-15', status: 'pending' });
+    api.saveDanInsurancePolicy({ id: 'policy_2', name: 'ประกันชีวิต ฉบับ 2', amount: 3500, dueDate: '2026-12-20', status: 'pending' });
+    assert.equal(api.getDanInsurancePolicies().length, 2);
+    await api.payDanInsurancePolicy('policy_1');
+    assert.equal(api.getDanInsurancePolicies().find(p => p.id === 'policy_1').status, 'paid');
+    assert.equal(api.getDanInsurancePolicies().find(p => p.id === 'policy_2').status, 'pending');
+    api.upsertPortfolioHoldings([
+      api.calculateDimeHoldingMetrics({ ticker: 'AMZN', marketValue: 388.95, unrealizedPL: -5.22, unrealizedPLPct: -1.32, shares: 1, currentPrice: 388.95 }),
+      api.calculateDimeHoldingMetrics({ ticker: 'NVDA', marketValue: 373.28, unrealizedPL: -65.24, unrealizedPLPct: -14.88, shares: 1, currentPrice: 373.28 })
+    ], true);
+    const afterDeleteOne = api.deletePortfolioHolding('AMZN');
+    assert.equal(afterDeleteOne.length, 1);
+    assert.equal(afterDeleteOne[0].ticker, 'NVDA');
+    const afterClearAll = api.clearAllPortfolioHoldings();
+    assert.equal(afterClearAll.length, 0);
   }
 }

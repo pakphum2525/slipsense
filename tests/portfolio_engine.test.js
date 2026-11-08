@@ -410,4 +410,26 @@ module.exports = async function runPortfolioEngineTests() {
   assert.strictEqual(dcaResult.shares, 125);
   assert.strictEqual(Math.round(dcaResult.costBasis * 100) / 100, 3139.28);
   assert.strictEqual(Math.round(dcaResult.avgCost * 100) / 100, 25.11);
+
+  // 1.15 User DIME USD Screenshot Extraction (AMZN, NVDA, META, GOOG, LLY, MSFT)
+  const userDimeRaw = [
+    { ticker: 'AMZN', marketValue: 388.95, unrealizedPL: -5.22, unrealizedPLPct: -1.32, shares: 1.85, currentPrice: 210.24 },
+    { ticker: 'NVDA', marketValue: 373.28, unrealizedPL: -65.24, unrealizedPLPct: -14.88, shares: 2.66, currentPrice: 140.33 },
+    { ticker: 'META', marketValue: 366.09, unrealizedPL: 4.80, unrealizedPLPct: 1.33, shares: 0.62, currentPrice: 590.47 },
+    { ticker: 'GOOG', marketValue: 355.69, unrealizedPL: 50.08, unrealizedPLPct: 16.39, shares: 1.98, currentPrice: 179.64 },
+    { ticker: 'LLY', marketValue: 270.80, unrealizedPL: 80.04, unrealizedPLPct: 41.96, shares: 0.34, currentPrice: 796.47 },
+    { ticker: 'MSFT', marketValue: 265.31, unrealizedPL: 56.70, unrealizedPLPct: 27.18, shares: 0.63, currentPrice: 421.13 }
+  ];
+  const computedUserDime = userDimeRaw.map(calculateDimeHoldingMetrics);
+  assert.strictEqual(computedUserDime.length, 6);
+  const amzn = computedUserDime.find(h => h.ticker === 'AMZN');
+  assert.strictEqual(Math.round(amzn.costBasis * 100) / 100, 394.17);
+  const lly = computedUserDime.find(h => h.ticker === 'LLY');
+  assert.strictEqual(Math.round(lly.costBasis * 100) / 100, 190.76);
+  const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  assert.ok(html.includes('id="btnClearAllPortfolio"'), 'Portfolio header should include clear all portfolio button');
+  assert.ok(html.includes('id="btnPopupClearPortfolio"'), 'Portfolio 3D dialog should include clear portfolio button');
+  assert.ok(html.includes('id="chkReplaceAllPortfolioOnImport"'), 'DIME verify dialog should include replace-all checkbox');
+  assert.ok(html.includes('deletePortfolioHolding'), 'Bundle should include deletePortfolioHolding');
+  assert.ok(html.includes('clearAllPortfolioHoldings'), 'Bundle should include clearAllPortfolioHoldings');
 };

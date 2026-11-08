@@ -3110,8 +3110,8 @@ interface DashboardMetrics {
       function bindAutomationEvents() {
         const on = (id, event, handler) => document.getElementById(id)?.addEventListener(event, handler);
         const safe = (fn) => async () => { try { await fn(); } catch (err) { showToast(err.message || 'ดำเนินการไม่สำเร็จ', 'error'); } };
-        let theme = 'fintrack'; try { theme = localStorage.getItem('slipsense_theme') ?? 'fintrack'; } catch (_) {}
-        if (!['light', 'dark', 'blue', 'dark-red', 'fintrack'].includes(theme)) theme = 'light';
+        let theme = 'cute-pastel'; try { theme = localStorage.getItem('slipsense_theme') ?? 'cute-pastel'; } catch (_) {}
+        if (!['cute-pastel', 'light', 'dark', 'blue', 'dark-red', 'fintrack'].includes(theme)) theme = 'light';
         document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeSelect').value = theme;
         if (automationBound) return; automationBound = true;
         on('themeSelect', 'change', event => { document.documentElement.setAttribute('data-theme', event.target.value); try { localStorage.setItem('slipsense_theme', event.target.value); } catch (_) {} });
@@ -4967,8 +4967,8 @@ interface DashboardMetrics {
         };
       }
 
-      function upsertPortfolioHoldings(newHoldings: any[]) {
-        const holdings = getStockHoldingsFromStorage();
+      function upsertPortfolioHoldings(newHoldings: any[], replaceAll = false) {
+        const holdings = replaceAll ? [] : getStockHoldingsFromStorage();
         newHoldings.forEach(nh => {
           const t = String(nh.ticker || '').toUpperCase().trim();
           if (!t) return;
@@ -5396,31 +5396,527 @@ interface DashboardMetrics {
         container.appendChild(iframe);
       }
 
-      function openStockTradeModal(presetTicker = '', defaultAction = 'buy') {
-        const modal = document.getElementById('stockTradeModal');
+            // =======================================================================
+      // DAN INSURANCE & JAR TRANSFER & PORTFOLIO MANAGEMENT
+      // =======================================================================
+      interface DanInsurancePolicy {
+        id: string;
+        name: string;
+        amount: number;
+        dueDate: string;
+        status: "pending" | "paid";
+        paidAt?: string;
+      }
+
+      function getDanInsurancePolicies(): DanInsurancePolicy[] {
+        try {
+          const raw = localStorage.getItem("slipsense_dan_insurance_policies");
+          return raw ? JSON.parse(raw) : [];
+        } catch (_) {
+          return [];
+        }
+      }
+
+      function saveDanInsurancePolicy(policy: DanInsurancePolicy): DanInsurancePolicy[] {
+        const policies = getDanInsurancePolicies();
+        const idx = policies.findIndex(p => p.id === policy.id);
+        if (idx >= 0) {
+          policies[idx] = policy;
+        } else {
+          policies.push(policy);
+        }
+        try {
+          localStorage.setItem("slipsense_dan_insurance_policies", JSON.stringify(policies));
+        } catch (_) {}
+        return policies;
+      }
+
+      async function payDanInsurancePolicy(policyId: string): Promise<DanInsurancePolicy | null> {
+        const policies = getDanInsurancePolicies();
+        const policy = policies.find(p => p.id === policyId);
+        if (!policy) return null;
+        policy.status = "paid";
+        policy.paidAt = new Date().toISOString();
+        try {
+          localStorage.setItem("slipsense_dan_insurance_policies", JSON.stringify(policies));
+        } catch (_) {}
+        const newTx: any = {
+          id: generateUuid(),
+          date: getBangkokTodayIso(),
+          type: "expense",
+          category: "insurance_dan",
+          amount: policy.amount,
+          description: "จ่ายเบี้ย " + policy.name,
+          fund_bucket: "insurance_dan",
+          source: "manual",
+          needs_verification: false
+        };
+        appState.transactions.unshift(newTx);
+        await persistTransactionsToLocal();
+        renderDashboardAndHistory();
+        return policy;
+      }
+
+      async function persistTransactionsToLocal() {
+        for (const tx of appState.transactions) {
+          await dbPutTransaction(tx);
+        }
+      }
+
+      async function depositToSalaryJar(amount: number, date?: string, description?: string) {
+        const txDate = date || getBangkokTodayIso();
+        const txDesc = description || "เงินเดือนเข้ากระปุก";
+        if (!FUND_BUCKET_ORDER.includes("salary_bucket")) {
+          FUND_BUCKET_ORDER.push("salary_bucket");
+          FUND_BUCKET_LABELS["salary_bucket"] = "💰 เงินเดือน";
+          if (bucketRegistry && Array.isArray(bucketRegistry.buckets)) {
+            if (!bucketRegistry.buckets.some((b: any) => b.bucket_key === "salary_bucket")) {
+              bucketRegistry.buckets.push({
+                bucket_key: "salary_bucket",
+                name: "เงินเดือน",
+                icon: "💰",
+                color: "#10b981",
+                is_cumulative: true,
+                sort_order: 99
+              });
+            }
+          }
+        }
+        const newTx: any = {
+          id: generateUuid(),
+          date: txDate,
+          type: "income",
+          category: "salary_bucket",
+          amount: Number(amount) || 0,
+          description: txDesc,
+          fund_bucket: "salary_bucket",
+          source: "manual",
+          needs_verification: false
+        };
+        appState.transactions.unshift(newTx);
+        await persistTransactionsToLocal();
+        renderDashboardAndHistory();
+        return { amount, date: txDate, description: txDesc, bucketKey: "salary_bucket" };
+      }
+
+      async function transferBetweenBuckets(sourceBucket: string, transfers: Array<{ targetBucket: string; amount: number }>, date?: string, description?: string) {
+        const txDate = date || getBangkokTodayIso();
+        let totalTransferred = 0;
+        for (const t of transfers) {
+          const amt = Number(t.amount) || 0;
+          if (amt > 0) {
+            totalTransferred += amt;
+            const outTx: any = {
+              id: generateUuid(),
+              date: txDate,
+              type: "expense",
+              category: sourceBucket,
+              amount: amt,
+              description: (description || "โอนย้ายเงิน") + " ไปยัง " + (FUND_BUCKET_LABELS[t.targetBucket] || t.targetBucket),
+              fund_bucket: sourceBucket,
+              source: "manual",
+              needs_verification: false
+            };
+            const inTx: any = {
+              id: generateUuid(),
+              date: txDate,
+              type: "income",
+              category: t.targetBucket,
+              amount: amt,
+              description: (description || "รับโอนเงิน") + " จาก " + (FUND_BUCKET_LABELS[sourceBucket] || sourceBucket),
+              fund_bucket: t.targetBucket,
+              source: "manual",
+              needs_verification: false
+            };
+            appState.transactions.unshift(outTx);
+            appState.transactions.unshift(inTx);
+          }
+        }
+        await persistTransactionsToLocal();
+        renderDashboardAndHistory();
+        return { totalTransferred, transfers };
+      }
+
+      function openQuickScanPopup() {
+        const modal = document.getElementById("quickScanPopupModal");
+        if (modal) modal.hidden = false;
+      }
+
+      function closeQuickScanPopup() {
+        const modal = document.getElementById("quickScanPopupModal");
+        if (modal) modal.hidden = true;
+      }
+
+      function openJarActionPopup(bucketKey?: string) {
+        const modal = document.getElementById("jarActionPopupModal");
+        if (modal) modal.hidden = false;
+      }
+
+      function closeJarActionPopup() {
+        const modal = document.getElementById("jarActionPopupModal");
+        if (modal) modal.hidden = true;
+      }
+
+      function deletePortfolioHolding(ticker: string) {
+        const upper = (ticker || "").toUpperCase().trim();
+        const holdings = getStockHoldingsFromStorage().filter(h => h.ticker.toUpperCase() !== upper);
+        saveStockHoldingsToStorage(holdings);
+        renderStockPortfolioUI();
+        return holdings;
+      }
+
+      function clearAllPortfolioHoldings() {
+        saveStockHoldingsToStorage([]);
+        renderStockPortfolioUI();
+        return [];
+      }
+
+      // =======================================================================
+      // ROCKETTOOL REBALANCE SYSTEM (TASK-SLIPSENSE-V4-027)
+      // =======================================================================
+      let isCashIncludedInRebalance = false;
+      let targetAllocDraftMap: Record<string, number> = {};
+      let targetAllocCashDraft = 0;
+
+      function openPortfolioRebalanceModal() {
+        const modal = document.getElementById("portfolioRebalanceModal");
         if (!modal) return;
-        const form = document.getElementById('stockTradeForm') as HTMLFormElement;
+        modal.hidden = false;
+        renderRebalanceUI();
+      }
+
+      function closePortfolioRebalanceModal() {
+        const modal = document.getElementById("portfolioRebalanceModal");
+        if (modal) modal.hidden = true;
+      }
+
+      function renderRebalanceUI() {
+        const holdings = getStockHoldingsFromStorage();
+        const cashBalance = getStockJarCashBalance();
+        const stockTotal = holdings.reduce((sum, h) => sum + (h.shares * h.currentPrice), 0);
+        const totalPortfolioVal = isCashIncludedInRebalance ? (stockTotal + cashBalance) : stockTotal;
+
+        const subTitleEl = document.getElementById("rebalanceModalSubtitle");
+        if (subTitleEl) {
+          subTitleEl.textContent = "กำหนดเอง · รวม $" + Math.round(totalPortfolioVal).toLocaleString("en-US");
+        }
+
+        // Target completeness check
+        const sumTargets = holdings.reduce((sum, h) => sum + (Number(h.targetPct) || 0), 0) + (isCashIncludedInRebalance ? targetAllocCashDraft : 0);
+        const warnCard = document.getElementById("rebalanceTargetWarningCard");
+        const warnTitle = document.getElementById("rebalanceTargetWarningTitle");
+        if (warnCard && warnTitle) {
+          if (Math.round(sumTargets) !== 100) {
+            warnCard.style.display = "block";
+            warnTitle.textContent = "เป้ารวมตอนนี้ " + sumTargets.toFixed(1) + "% ยังไม่ครบ 100%";
+          } else {
+            warnCard.style.display = "none";
+          }
+        }
+
+        // Cash notice card
+        const cashNoticeTitle = document.getElementById("rebalanceCashNoticeTitle");
+        const btnToggleCash = document.getElementById("btnToggleCashInRebalance");
+        if (cashNoticeTitle && btnToggleCash) {
+          if (!isCashIncludedInRebalance) {
+            cashNoticeTitle.textContent = "คำแนะนำนี้คิดจากหุ้นอย่างเดียว ยังไม่นับเงินสด $" + Math.round(cashBalance).toLocaleString("en-US") + " ของพอร์ต";
+            btnToggleCash.textContent = "+ ใส่เงินสดในเป้า";
+          } else {
+            cashNoticeTitle.textContent = "คำแนะนำนี้นับรวมเงินสด $" + Math.round(cashBalance).toLocaleString("en-US") + " ในเป้าหมายพอร์ตแล้ว";
+            btnToggleCash.textContent = "เอาเงินสดออกจากเป้า";
+          }
+        }
+
+        // Holdings Table
+        const listEl = document.getElementById("rebalanceHoldingsList");
+        if (!listEl) return;
+        listEl.innerHTML = "";
+
+        if (holdings.length === 0) {
+          listEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px 10px;">ยังไม่มีรายการหุ้นในพอร์ต<br><small>สามารถกด "📷 นำเข้าพอร์ต DIME" เพื่อนำเข้าภาพพอร์ตได้ทันที</small></div>';
+          return;
+        }
+
+        const sorted = [...holdings].sort((a, b) => (b.shares * b.currentPrice) - (a.shares * a.currentPrice));
+
+        sorted.forEach(h => {
+          const currentVal = h.shares * h.currentPrice;
+          const currentPct = totalPortfolioVal > 0 ? (currentVal / totalPortfolioVal * 100) : 0;
+          const targetPct = Number(h.targetPct) || 0;
+          const targetVal = totalPortfolioVal * (targetPct / 100);
+          const diffVal = targetVal - currentVal;
+
+          let actionLabel = "พอดีเป้า";
+          let actionClass = "rt-action-hold";
+          let actionType = "hold";
+
+          if (diffVal > 0.5) {
+            actionLabel = "ซื้อ $" + Math.round(diffVal).toLocaleString("en-US");
+            actionClass = "rt-action-buy";
+            actionType = "buy";
+          } else if (diffVal < -0.5) {
+            actionLabel = "ขาย $" + Math.round(Math.abs(diffVal)).toLocaleString("en-US");
+            actionClass = "rt-action-sell";
+            actionType = "sell";
+          }
+
+          const row = document.createElement("div");
+          row.className = "rt-row-item";
+          row.title = "คลิกเพื่อเปิดหน้าบันทึก " + (actionType === "sell" ? "ขาย" : "ซื้อ") + " " + h.ticker;
+
+          const badgeBg = "#232736";
+          const firstChar = (h.ticker || "S").slice(0, 1).toUpperCase();
+
+          row.innerHTML =
+            '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+              '<span style="width:26px;height:26px;border-radius:50%;background:' + badgeBg + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;flex-shrink:0;">' + firstChar + '</span>' +
+              '<span style="font-weight:700;font-size:0.9rem;color:var(--text-main);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + h.ticker + '</span>' +
+            '</div>' +
+            '<div style="text-align:right;font-size:0.86rem;color:var(--text-muted);font-weight:600;">' + currentPct.toFixed(1) + '%</div>' +
+            '<div style="text-align:right;font-size:0.86rem;color:var(--text-main);font-weight:700;">' + targetPct.toFixed(1) + '%</div>' +
+            '<div class="rt-action-chip ' + actionClass + '">' + actionLabel + '</div>';
+
+          row.onclick = () => {
+            closePortfolioRebalanceModal();
+            const sharesToTrade = (h.currentPrice > 0 && Math.abs(diffVal) > 0) ? (Math.abs(diffVal) / h.currentPrice) : 0;
+            openStockTradeModal(h.ticker, actionType === "sell" ? "sell" : "buy", sharesToTrade, Math.abs(diffVal));
+          };
+
+          listEl.appendChild(row);
+        });
+      }
+
+      function openTargetAllocationModal() {
+        closePortfolioRebalanceModal();
+        const modal = document.getElementById("portfolioTargetAllocationModal");
+        if (!modal) return;
+        modal.hidden = false;
+
+        const holdings = getStockHoldingsFromStorage();
+        targetAllocDraftMap = {};
+        holdings.forEach(h => {
+          targetAllocDraftMap[h.ticker] = Number(h.targetPct) || 0;
+        });
+
+        renderTargetAllocationUI();
+      }
+
+      function closeTargetAllocationModal() {
+        const modal = document.getElementById("portfolioTargetAllocationModal");
+        if (modal) modal.hidden = true;
+        openPortfolioRebalanceModal();
+      }
+
+      function renderTargetAllocationUI() {
+        const holdings = getStockHoldingsFromStorage();
+        const cashBalance = getStockJarCashBalance();
+        const stockTotal = holdings.reduce((sum, h) => sum + (h.shares * h.currentPrice), 0);
+        const totalPortfolioVal = isCashIncludedInRebalance ? (stockTotal + cashBalance) : stockTotal;
+
+        let totalDraftPct = 0;
+        holdings.forEach(h => {
+          totalDraftPct += Number(targetAllocDraftMap[h.ticker]) || 0;
+        });
+        if (isCashIncludedInRebalance) {
+          totalDraftPct += Number(targetAllocCashDraft) || 0;
+        }
+
+        const heroEl = document.getElementById("targetAllocTotalPercentHero");
+        const hintEl = document.getElementById("targetAllocTotalHint");
+        const saveBtn = document.getElementById("btnSaveTargetAllocation") as HTMLButtonElement;
+
+        const roundedTotal = Math.round(totalDraftPct * 10) / 10;
+        if (heroEl) {
+          heroEl.textContent = roundedTotal.toFixed(0) + "%";
+          heroEl.style.color = (roundedTotal === 100) ? "#10b981" : (roundedTotal > 100 ? "#f43f5e" : "#f59e0b");
+        }
+
+        if (hintEl) {
+          if (roundedTotal === 100) {
+            hintEl.textContent = holdings.length + " หุ้น — สัดส่วนครบ 100% พร้อมบันทึก";
+            hintEl.style.color = "#10b981";
+          } else if (roundedTotal < 100) {
+            hintEl.textContent = "รวม " + roundedTotal + "% — เพิ่มอีก " + (100 - roundedTotal).toFixed(1) + "% เพื่อบันทึก";
+            hintEl.style.color = "#f59e0b";
+          } else {
+            hintEl.textContent = "รวม " + roundedTotal + "% — เกินมา " + (roundedTotal - 100).toFixed(1) + "% เพื่อบันทึก";
+            hintEl.style.color = "#f43f5e";
+          }
+        }
+
+        if (saveBtn) {
+          saveBtn.disabled = (roundedTotal !== 100);
+          saveBtn.style.opacity = (roundedTotal === 100) ? "1" : "0.6";
+          saveBtn.style.cursor = (roundedTotal === 100) ? "pointer" : "not-allowed";
+        }
+
+        const cashSubtext = document.getElementById("targetAllocCashSubtext");
+        const cashDesc = document.getElementById("targetAllocCashDesc");
+        const cashControlWrap = document.getElementById("targetAllocCashControlWrap");
+
+        const cashPctCurrent = (stockTotal + cashBalance) > 0 ? (cashBalance / (stockTotal + cashBalance) * 100) : 0;
+        if (cashSubtext) cashSubtext.textContent = "ตอนนี้ " + cashPctCurrent.toFixed(1) + "%";
+
+        if (cashControlWrap) {
+          if (!isCashIncludedInRebalance) {
+            if (cashDesc) cashDesc.textContent = "ยังไม่นับในเป้า";
+            cashControlWrap.innerHTML = '<button type="button" id="btnTargetAllocIncludeCash" class="btn btn-secondary btn-sm" style="border-radius:16px;font-size:0.75rem;padding:4px 10px;color:#a78bfa;border-color:#7c3aed;">+ ใส่เงินสดในเป้า</button>';
+            document.getElementById("btnTargetAllocIncludeCash")?.addEventListener("click", () => {
+              isCashIncludedInRebalance = true;
+              targetAllocCashDraft = Math.round(cashPctCurrent);
+              renderTargetAllocationUI();
+            });
+          } else {
+            if (cashDesc) cashDesc.textContent = "เก็บเงินสดไว้ " + targetAllocCashDraft + "% ของพอร์ต";
+            cashControlWrap.innerHTML =
+              '<div style="display:flex;align-items:center;gap:6px;">' +
+                '<button type="button" class="rt-stepper-btn btn-cash-minus">-</button>' +
+                '<input class="rt-stepper-input input-cash-alloc" type="number" step="1" min="0" max="100" value="' + targetAllocCashDraft + '">' +
+                '<button type="button" class="rt-stepper-btn btn-cash-plus">+</button>' +
+              '</div>';
+
+            cashControlWrap.querySelector(".btn-cash-minus")?.addEventListener("click", () => {
+              targetAllocCashDraft = Math.max(0, targetAllocCashDraft - 1);
+              renderTargetAllocationUI();
+            });
+            cashControlWrap.querySelector(".btn-cash-plus")?.addEventListener("click", () => {
+              targetAllocCashDraft = Math.min(100, targetAllocCashDraft + 1);
+              renderTargetAllocationUI();
+            });
+            cashControlWrap.querySelector(".input-cash-alloc")?.addEventListener("change", (e: any) => {
+              targetAllocCashDraft = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+              renderTargetAllocationUI();
+            });
+          }
+        }
+
+        const stockListEl = document.getElementById("targetAllocStockList");
+        if (!stockListEl) return;
+        stockListEl.innerHTML = "";
+
+        holdings.forEach(h => {
+          const currentVal = h.shares * h.currentPrice;
+          const currentPct = totalPortfolioVal > 0 ? (currentVal / totalPortfolioVal * 100) : 0;
+          const draftVal = Number(targetAllocDraftMap[h.ticker]) || 0;
+
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-color);";
+
+          const firstChar = (h.ticker || "S").slice(0, 1).toUpperCase();
+          row.innerHTML =
+            '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+              '<span style="width:26px;height:26px;border-radius:50%;background:#232736;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;flex-shrink:0;">' + firstChar + '</span>' +
+              '<div>' +
+                '<span style="font-weight:700;font-size:0.9rem;color:var(--text-main);">' + h.ticker + '</span>' +
+                '<small style="margin-left:6px;color:var(--text-muted);font-size:0.75rem;">' + currentPct.toFixed(1) + '%</small>' +
+              '</div>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
+              '<button type="button" class="rt-stepper-btn btn-stock-minus" data-ticker="' + h.ticker + '">-</button>' +
+              '<input class="rt-stepper-input input-stock-alloc" data-ticker="' + h.ticker + '" type="number" step="0.5" min="0" max="100" value="' + draftVal + '">' +
+              '<button type="button" class="rt-stepper-btn btn-stock-plus" data-ticker="' + h.ticker + '">+</button>' +
+            '</div>';
+
+          row.querySelector(".btn-stock-minus")?.addEventListener("click", () => {
+            targetAllocDraftMap[h.ticker] = Math.max(0, (targetAllocDraftMap[h.ticker] || 0) - 1);
+            renderTargetAllocationUI();
+          });
+
+          row.querySelector(".btn-stock-plus")?.addEventListener("click", () => {
+            targetAllocDraftMap[h.ticker] = Math.min(100, (targetAllocDraftMap[h.ticker] || 0) + 1);
+            renderTargetAllocationUI();
+          });
+
+          row.querySelector(".input-stock-alloc")?.addEventListener("change", (e: any) => {
+            targetAllocDraftMap[h.ticker] = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+            renderTargetAllocationUI();
+          });
+
+          stockListEl.appendChild(row);
+        });
+      }
+
+      function saveTargetAllocations() {
+        const holdings = getStockHoldingsFromStorage();
+        holdings.forEach(h => {
+          if (targetAllocDraftMap[h.ticker] !== undefined) {
+            h.targetPct = targetAllocDraftMap[h.ticker];
+          }
+        });
+        saveStockHoldingsToStorage(holdings);
+        showToast("บันทึกเป้าหมายสัดส่วนพอร์ตสำเร็จ", "success");
+        closeTargetAllocationModal();
+        renderStockPortfolioUI();
+      }
+
+      function openStockTradeModal(presetTicker = "", defaultAction = "buy", suggestedShares: number | string = "", suggestedAmount: number | string = "") {
+        const modal = document.getElementById("stockTradeModal");
+        if (!modal) return;
+        const form = document.getElementById("stockTradeForm") as HTMLFormElement;
         if (form) form.reset();
 
-        const tickerIn = document.getElementById('stockTradeTicker') as HTMLInputElement;
-        const targetPctIn = document.getElementById('stockTradeTargetPct') as HTMLInputElement;
-        const priceIn = document.getElementById('stockTradePrice') as HTMLInputElement;
-        const simOut = document.getElementById('stockTradeSimOutput');
-        if (simOut) simOut.style.display = 'none';
+        const tickerIn = document.getElementById("stockTradeTicker") as HTMLInputElement;
+        const targetPctIn = document.getElementById("stockTradeTargetPct") as HTMLInputElement;
+        const priceIn = document.getElementById("stockTradePrice") as HTMLInputElement;
+        const sharesIn = document.getElementById("stockTradeShares") as HTMLInputElement;
+        const dateIn = document.getElementById("stockTradeDate") as HTMLInputElement;
+        const noteIn = document.getElementById("stockTradeNote") as HTMLInputElement;
+        const simOut = document.getElementById("stockTradeSimOutput");
+        if (simOut) simOut.style.display = "none";
+
+        if (dateIn && !dateIn.value) {
+          dateIn.value = getBangkokTodayIso();
+        }
+
+        const holdings = getStockHoldingsFromStorage();
+        const found = presetTicker ? holdings.find(h => h.ticker.toUpperCase() === presetTicker.toUpperCase()) : null;
+
+        const holdingSharesEl = document.getElementById("stockTradeHoldingShares");
+        if (holdingSharesEl) holdingSharesEl.textContent = String(found?.shares || 0);
+
+        const btnSellAll = document.getElementById("btnStockTradeSellAll");
+        if (btnSellAll) {
+          btnSellAll.onclick = (e) => {
+            e.preventDefault();
+            if (sharesIn && found) {
+              sharesIn.value = String(found.shares);
+              updateTradeSimulatorUI();
+            }
+          };
+        }
 
         if (presetTicker && tickerIn) {
           tickerIn.value = presetTicker;
-          const holdings = getStockHoldingsFromStorage();
-          const found = holdings.find(h => h.ticker.toUpperCase() === presetTicker.toUpperCase());
           if (found) {
             if (targetPctIn && found.targetPct) targetPctIn.value = String(found.targetPct);
             if (priceIn && found.currentPrice) priceIn.value = String(found.currentPrice);
           }
         }
 
-        const actionRadios = document.getElementsByName('stockTradeAction') as NodeListOf<HTMLInputElement>;
-        actionRadios.forEach(r => { if (r.value === defaultAction) r.checked = true; });
+        if (suggestedShares && sharesIn) {
+          sharesIn.value = String(suggestedShares);
+        }
 
+        const actionRadios = document.getElementsByName("stockTradeAction") as NodeListOf<HTMLInputElement>;
+        actionRadios.forEach(r => {
+          if (r.value === defaultAction) {
+            r.checked = true;
+          }
+        });
+
+        const lblBuy = document.getElementById("lblStockTradeBuy");
+        const lblSell = document.getElementById("lblStockTradeSell");
+        if (lblBuy && lblSell) {
+          if (defaultAction === "buy") {
+            lblBuy.className = "rt-trade-type-btn active-buy";
+            lblSell.className = "rt-trade-type-btn";
+          } else {
+            lblBuy.className = "rt-trade-type-btn";
+            lblSell.className = "rt-trade-type-btn active-sell";
+          }
+        }
+
+        updateTradeSimulatorUI();
         modal.hidden = false;
         tickerIn?.focus();
       }
@@ -5599,8 +6095,89 @@ interface DashboardMetrics {
 
         // Rebalance & Header Add buttons
         document.getElementById('btnPortfolioRebalance')?.addEventListener('click', () => {
+          openPortfolioRebalanceModal();
+        });
+
+        // RocketTool Rebalance Event Listeners
+        document.getElementById("btnCloseRebalanceModal")?.addEventListener("click", closePortfolioRebalanceModal);
+        document.getElementById("btnOpenTargetAllocationModal")?.addEventListener("click", openTargetAllocationModal);
+        document.getElementById("btnRebalanceFixTarget")?.addEventListener("click", openTargetAllocationModal);
+        document.getElementById("btnCloseTargetAllocModal")?.addEventListener("click", closeTargetAllocationModal);
+        document.getElementById("btnToggleCashInRebalance")?.addEventListener("click", () => {
+          isCashIncludedInRebalance = !isCashIncludedInRebalance;
+          renderRebalanceUI();
+        });
+        document.getElementById("btnSaveTargetAllocation")?.addEventListener("click", saveTargetAllocations);
+
+        document.getElementById("btnQuickEqualWeight")?.addEventListener("click", () => {
           const holdings = getStockHoldingsFromStorage();
-          openStockTradeModal(holdings[0]?.ticker || '', 'buy');
+          if (holdings.length === 0) return;
+          const equal = Math.round((100 / holdings.length) * 10) / 10;
+          holdings.forEach((h, idx) => {
+            targetAllocDraftMap[h.ticker] = (idx === holdings.length - 1) ? (100 - (equal * (holdings.length - 1))) : equal;
+          });
+          renderTargetAllocationUI();
+        });
+
+        document.getElementById("btnResetTargetAlloc")?.addEventListener("click", () => {
+          const holdings = getStockHoldingsFromStorage();
+          const stockTotal = holdings.reduce((sum, h) => sum + (h.shares * h.currentPrice), 0);
+          if (stockTotal > 0) {
+            let runningSum = 0;
+            holdings.forEach((h, idx) => {
+              if (idx === holdings.length - 1) {
+                targetAllocDraftMap[h.ticker] = Math.max(0, Math.round((100 - runningSum) * 10) / 10);
+              } else {
+                const val = Math.round((h.shares * h.currentPrice / stockTotal * 100) * 10) / 10;
+                targetAllocDraftMap[h.ticker] = val;
+                runningSum += val;
+              }
+            });
+          }
+          renderTargetAllocationUI();
+        });
+
+        const lblBuy = document.getElementById("lblStockTradeBuy");
+        const lblSell = document.getElementById("lblStockTradeSell");
+        lblBuy?.addEventListener("click", () => {
+          if (lblBuy && lblSell) {
+            lblBuy.className = "rt-trade-type-btn active-buy";
+            lblSell.className = "rt-trade-type-btn";
+            const radio = lblBuy.querySelector("input") as HTMLInputElement;
+            if (radio) radio.checked = true;
+            updateTradeSimulatorUI();
+          }
+        });
+        lblSell?.addEventListener("click", () => {
+          if (lblBuy && lblSell) {
+            lblBuy.className = "rt-trade-type-btn";
+            lblSell.className = "rt-trade-type-btn active-sell";
+            const radio = lblSell.querySelector("input") as HTMLInputElement;
+            if (radio) radio.checked = true;
+            updateTradeSimulatorUI();
+          }
+        });
+
+        document.getElementById("btnUploadTradeSlipBanner")?.addEventListener("click", () => {
+          document.getElementById("tradeSlipFileInput")?.click();
+        });
+
+        document.getElementById("stockTradeNote")?.addEventListener("input", (e: any) => {
+          const countEl = document.getElementById("stockTradeNoteCount");
+          if (countEl) countEl.textContent = (e.target.value?.length || 0) + "/100";
+        });
+
+        document.getElementById("btnClearAllPortfolio")?.addEventListener("click", () => {
+          if (confirm("คุณต้องการลบรายการหุ้นทั้งหมดในพอร์ตใช่หรือไม่?")) {
+            clearAllPortfolioHoldings();
+          }
+        });
+
+        document.getElementById("btnPopupClearPortfolio")?.addEventListener("click", () => {
+          if (confirm("คุณต้องการลบรายการหุ้นทั้งหมดในพอร์ตใช่หรือไม่?")) {
+            clearAllPortfolioHoldings();
+            closeJarActionPopup();
+          }
         });
         document.getElementById('btnOpenStockTradeHeader')?.addEventListener('click', () => {
           openStockTradeModal();
@@ -5825,7 +6402,7 @@ interface DashboardMetrics {
               try {
                 const totalAmount = shares * price;
                 const newTx: any = {
-                  id: generateUuidSafe(),
+                  id: generateUuid(),
                   date: getBangkokTodayIso(),
                   type: 'expense',
                   category: 'investment_stock',
@@ -5857,7 +6434,7 @@ interface DashboardMetrics {
               try {
                 const totalAmount = shares * price;
                 const newTx: any = {
-                  id: generateUuidSafe(),
+                  id: generateUuid(),
                   date: getBangkokTodayIso(),
                   type: 'income',
                   category: 'investment_stock',
@@ -5930,6 +6507,7 @@ interface DashboardMetrics {
 
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
+        deletePortfolioHolding, clearAllPortfolioHoldings, openQuickScanPopup, closeQuickScanPopup, openJarActionPopup, closeJarActionPopup, depositToSalaryJar, transferBetweenBuckets, saveDanInsurancePolicy, getDanInsurancePolicies, payDanInsurancePolicy, openPortfolioRebalanceModal, closePortfolioRebalanceModal, renderRebalanceUI, openTargetAllocationModal, closeTargetAllocationModal, renderTargetAllocationUI, saveTargetAllocations,
         calculateWeightedAverageCost, calculateSellExecution, calculateHoldingPnL, calculatePortfolioSummary, simulateTrade, createSvgArcPath, renderStockPortfolioUI, calculateDimeHoldingMetrics, upsertPortfolioHoldings, parseDimeTextMock,
         init: initApp, render3dIcon, renderBottomNavIcons, renderCategoryPicker, updateCategoryPickerSelection, jarProgress, renderFundBucketsAndChecklist, 'registerServiceWorkerSafe': registerServiceWorkerSafe, renderShortcutIcons, CATEGORY_SHORT_LABELS,
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,

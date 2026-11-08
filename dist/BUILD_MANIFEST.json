@@ -1,14 +1,14 @@
 {
-  "source_sha256": "605f7d93415662aefcaf5649282a11c74d494dc5d1143e175eed1b85443c0dea",
+  "source_sha256": "5fff5d62aeaf0dae9b41ba1bba31c843eac8b2d05725d8b8e5d57599a34512d7",
   "node_version": "v24.16.0",
   "source_stats": {
-    "app_ts_bytes": 338752,
-    "sw_ts_bytes": 9086
+    "app_ts_bytes": 360485,
+    "sw_ts_bytes": 9096
   },
   "production_stats": {
-    "compiled_app_js_bytes": 242223,
-    "compiled_sw_js_bytes": 6206,
-    "dist_index_html_bytes": 358261,
+    "compiled_app_js_bytes": 262582,
+    "compiled_sw_js_bytes": 6216,
+    "dist_index_html_bytes": 419490,
     "mangled_internal_identifiers": 44,
     "source_maps_generated": false
   },
@@ -45,8 +45,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 358261,
-      "sha256": "ec3e073aba0b24c0ce59e5511e46524edb2137ff2af0603a1bcbad7c1dc5763a"
+      "bytes": 419490,
+      "sha256": "6dd43f9669185c592104974adb0b47acbf1274717e8fb85229275fabb3cd6a28"
     },
     {
       "path": "manifest.json",
@@ -55,8 +55,8 @@
     },
     {
       "path": "sw.js",
-      "bytes": 6207,
-      "sha256": "7ebeb0154aa81fb0503867f7bbc24263eafec7f16c7354236bb91deb03124293"
+      "bytes": 6217,
+      "sha256": "8d25ad5ab5617eeb640726613819320306de5dd3afc4b19f783d0424d8071604"
     },
     {
       "path": "vendor/supabase.min.js",

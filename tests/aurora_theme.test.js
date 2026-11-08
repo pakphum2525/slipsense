@@ -27,7 +27,7 @@ module.exports = async function () {
   assert.equal(bucketApp.el('bucketIconPicker').children.length, 19);
   assert.deepEqual(bucketApp.el('bucketIconPicker').children.map(n => n.getAttribute('data-icon')), ['🐷', '🏡', '📈', '🍜', '🛟', '🛡️', '✈️', '🐱', '🚗', '🎁', '💎', '☕', '🍔', '🎓', '📌', '🌈', '🍄', '🍎', '🐝']);
   assert(bucketApp.el('bucketIconPicker').children.every(n => n.children[0]?.className === 'icon-3d-badge' && n.children[0]?.children[0]?.getAttribute('class') === 'cute-3d-svg'));
-  for (const name of ['light', 'dark', 'blue', 'dark-red', 'fintrack']) {
+  for (const name of ['light', 'dark', 'blue', 'dark-red', 'fintrack', 'cute-pastel']) {
     const block = html.match(new RegExp('\\[data-theme="' + name + '"\\]\\s*\\{([^}]+)'))[1];
     const alpha = Number(block.match(/--glass:rgba\([^,]+,[^,]+,[^,]+,([\d.]+)\)/)[1]);
     assert(alpha >= .05 && alpha <= .10);
@@ -93,10 +93,10 @@ module.exports = async function () {
   }
   const { api, el, context } = loadApp();
   api.bindAutomationEvents();
-  assert.equal(el('themeSelect').value, 'fintrack', 'new users default to FinTrack');
-  assert.equal(context.document.documentElement.getAttribute('data-theme'), 'fintrack');
+  assert.equal(el('themeSelect').value, 'cute-pastel', 'new users default to Cute Pastel');
+  assert.equal(context.document.documentElement.getAttribute('data-theme'), 'cute-pastel');
   assert.equal(context.localStorage.getItem('slipsense_theme'), null, 'initialization does not persist a preference');
-  for (const theme of ['light', 'dark', 'blue', 'dark-red', 'fintrack']) {
+  for (const theme of ['light', 'dark', 'blue', 'dark-red', 'fintrack', 'cute-pastel']) {
     const saved = loadApp(); saved.context.localStorage.setItem('slipsense_theme', theme);
     saved.api.bindAutomationEvents(); assert.equal(saved.el('themeSelect').value, theme);
     assert.equal(saved.context.document.documentElement.getAttribute('data-theme'), theme);
@@ -111,24 +111,24 @@ module.exports = async function () {
     assert.equal(reloaded.context.document.documentElement.getAttribute('data-theme'), theme);
   }
   const blocked = loadApp(); blocked.context.localStorage.getItem = () => { throw new Error('storage unavailable'); };
-  blocked.api.bindAutomationEvents(); assert.equal(blocked.el('themeSelect').value, 'fintrack');
+  blocked.api.bindAutomationEvents(); assert.equal(blocked.el('themeSelect').value, 'cute-pastel');
   blocked.context.localStorage.setItem = () => { throw new Error('storage unavailable'); };
   blocked.el('themeSelect').value = 'blue';
   blocked.el('themeSelect').dispatchEvent({ type: 'change', target: blocked.el('themeSelect') });
   assert.equal(blocked.context.document.documentElement.getAttribute('data-theme'), 'blue');
   const early = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   const vm = require('node:vm');
-  for (const stored of [null, 'light', 'dark', 'blue', 'dark-red', 'fintrack', 'invalid']) {
+  for (const stored of [null, 'light', 'dark', 'blue', 'dark-red', 'fintrack', 'cute-pastel', 'invalid']) {
     let actual;
     vm.runInNewContext(early, { localStorage: { getItem: () => stored }, document: { documentElement: { setAttribute: (_, value) => { actual = value; } } } });
-    const expected = stored === 'invalid' ? 'light' : stored ?? 'fintrack';
+    const expected = stored === 'invalid' ? 'light' : stored ?? 'cute-pastel';
     assert.equal(actual, expected, 'theme applied before first paint');
     const app = loadApp();
     if (stored !== null) app.context.localStorage.setItem('slipsense_theme', stored);
     app.api.bindAutomationEvents();
     assert.equal(app.el('themeSelect').value, expected);
   }
-  assert.match(html, /<html[^>]*data-theme="fintrack"/);
+  assert.match(html, /<html[^>]*data-theme="cute-pastel"/);
   vm.runInNewContext(early, { localStorage: { getItem: () => { throw new Error('blocked'); } } });
   context.localStorage.setItem('slipsense_theme', 'blue'); api.bindAutomationEvents();
   assert.equal(el('themeSelect').value, 'blue');

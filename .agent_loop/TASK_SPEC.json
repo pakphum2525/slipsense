@@ -1,25 +1,30 @@
 {
   "schema_version": "4.0.0",
-  "task_id": "TASK-SLIPSENSE-V4-023",
-  "created_at": "2026-11-05T14:15:00.000Z",
+  "task_id": "TASK-SLIPSENSE-V4-027",
+  "created_at": "2026-11-08T05:30:00.000Z",
   "producer": "Antigravity",
   "risk_level": "STANDARD",
-  "title": "Dynamic Merchant/Source Title Label with Quick Chips & Cute 3D Category Dropdown Selector",
-  "objective": "Improve the Transaction Verification modal UX: dynamically switch merchant label to 'ที่มาของรายรับ / รายการ *' with quick chips (เงินเดือน, ปันผล, etc.) when transaction is an Income, and replace the dual category pickers with a unified custom cute 3D Dropdown Selector displaying vibrant 3D category icons.",
-  "user_story": "As a user recording transactions, I want the merchant field to intelligently adapt when recording salary/income without confusing merchant terms, and I want a single cute 3D dropdown to select categories easily.",
+  "title": "Full RocketTool Rebalance Experience: ปรับสมดุลพอร์ต, ตรวจเป้าสัดส่วน Stepper & เพิ่มธุรกรรม Modal",
+  "objective": "Implement the complete authentic RocketTool rebalancing system across 3 interconnected modals: 1) Screen 1 ปรับสมดุลพอร์ต: Rebalance action sheet with target completeness alert, cash allocation toggle, and stock table with Current % vs Target % and colored action chips (ขาย $X in red, ซื้อ $X in green); 2) Screen 2 ตรวจเป้าสัดส่วน: Interactive target allocation manager with total % hero (85% warning vs 100% ready), cash target toggle/stepper, and per-stock [-] X% [+] steppers; 3) Screen 3 เพิ่มธุรกรรม: Trade modal matching RocketTool layout with 'นำเข้าจากสลิป' banner, stock/gold tabs, buy/sell switcher, 'ขายทั้งหมด' auto-fill, and USD total.",
+  "user_story": "As a stock investor using SlipSense, I want the Rebalance feature to work exactly like Rocket Tool with 'ปรับสมดุลพอร์ต', 'ตรวจเป้าสัดส่วน' steppers, and pre-filled 'เพิ่มธุรกรรม' trade forms, so that I can rebalance my USD stock portfolio accurately and effortlessly.",
   "acceptance_criteria": [
-    "Merchant field label and placeholder adapt dynamically based on transaction type (Expense: 'ร้านค้า / ผู้รับเงิน *' vs Income: 'ที่มาของรายรับ / รายการ *')",
-    "Income transactions display quick chips for instant autofill (เงินเดือน, ปันผล, โบนัส, คืนเงิน)",
-    "Category selection is unified into a single custom Cute 3D Dropdown with 3D icons, clean animations and smooth selection",
-    "Hidden native select remains bound for full backward compatibility with test suites and form validation",
-    "All 42 automated tests continue to pass with exit code 0"
+    "Clicking btnPortfolioRebalance opens the new modal 'ปรับสมดุลพอร์ต' (#portfolioRebalanceModal) displaying all stocks, Current %, Target %, and smart recommendations (ขาย $X / ซื้อ $X)",
+    "Clicking 'ปรับสัดส่วน' opens 'ตรวจเป้าสัดส่วน' (#portfolioTargetAllocationModal) with hero total % badge, quick plans (Equal Weight / Current Weight), cash toggle, and interactive [-] X.X% [+] steppers",
+    "Target % modifications update the hero total in real-time; saving targets persists to IndexedDB/localStorage and recalculates rebalance actions immediately",
+    "Clicking any 'ขาย $X' or 'ซื้อ $X' action in the rebalance table opens 'เพิ่มธุรกรรม' (#stockTradeModal) with ticker, buy/sell action, and amount pre-filled",
+    "Trade modal (#stockTradeModal) layout matches RocketTool with 'นำเข้าจากสลิป' banner, Buy/Sell switch, and 'ขายทั้งหมด' quick-fill",
+    "All existing DOM IDs are strictly preserved and all 42 automated tests pass with exit code 0"
   ],
   "write_allowlist": [
-    "src/app.ts",
     "src/index.template.html",
+    "src/app.ts",
+    "src/sw.ts",
+    "sw.js",
+    "dist/sw.js",
     "index.html",
     "dist/index.html",
     "dist/BUILD_MANIFEST.json",
+    "tests/portfolio_engine.test.js",
     "STATUS.md"
   ],
   "protected_denylist": [
@@ -27,5 +32,10 @@
     ".env*",
     "Production/**"
   ],
-  "environment": "DEVELOPMENT"
+  "constraints": {
+    "max_planning_attempts": 3,
+    "max_repair_attempts": 3,
+    "timeout_seconds": 300,
+    "test_command": "npm test"
+  }
 }

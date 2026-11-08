@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="th" dir="ltr" data-theme="fintrack">
+<html lang="th" dir="ltr" data-theme="cute-pastel">
 <head>
   <meta charset="utf-8">
   <script>
     // ตั้งโทนสีก่อนแสดงหน้าให้ตรงกับค่าที่ผู้ใช้บันทึกไว้
     try {
-      const theme = localStorage.getItem('slipsense_theme') ?? 'fintrack';
-      document.documentElement.setAttribute('data-theme', ['light', 'dark', 'blue', 'dark-red', 'fintrack'].includes(theme) ? theme : 'light');
+      const theme = localStorage.getItem('slipsense_theme') ?? 'cute-pastel';
+      document.documentElement.setAttribute('data-theme', ['cute-pastel', 'light', 'dark', 'blue', 'dark-red', 'fintrack'].includes(theme) ? theme : 'light');
     } catch (_) {}
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -990,6 +990,70 @@
     .fund-card-header { flex-wrap:wrap; }
     @media (max-width:400px) { .app-panels .card { padding:14px; } .fund-grid,.kpi-grid { grid-template-columns:1fr; } .filters-grid { grid-template-columns:1fr; } .batch-row { flex-wrap:wrap; } }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+    [data-theme="cute-pastel"] {
+      color-scheme:light; --bg-app:#fcf8f2; --bg-surface:#ffffff; --bg-subtle:#f6efe6;
+      --text-main:#2b2320; --text-secondary:#5f514a; --text-muted:#8e7e76;
+      --border-color:#ede3d7; --border-strong:#dbcbb8; --glass-border:#ede3d7;
+      --brand-primary:#10b981; --brand-primary-hover:#059669; --brand-soft:#e6f9f0;
+      --ai-color:#8b5cf6; --expense-color:#f43f5e; --expense-bg:#fff1f2; --income-color:#059669; --income-bg:#ecfdf5;
+      --glass:rgba(255,255,255,0.08); --aurora-blue:rgba(147,197,253,0.14); --aurora-green:rgba(52,211,153,0.16); --aurora-purple:rgba(244,114,182,0.15);
+      --shadow-sm:0 2px 8px rgba(180,140,110,0.06); --shadow-md:0 6px 20px rgba(180,140,110,0.10); --shadow-lg:0 12px 32px rgba(180,140,110,0.14);
+    }
+    [data-theme="cute-pastel"] body {
+      background:radial-gradient(ellipse at 10% 8%, rgba(52,211,153,0.14) 0%, transparent 55%),
+        radial-gradient(ellipse at 92% 15%, rgba(244,114,182,0.14) 0%, transparent 55%),
+        radial-gradient(ellipse at 45% 75%, rgba(147,197,253,0.12) 0%, transparent 60%),
+        #fcf8f2;
+      background-attachment:fixed;
+    }
+    [data-theme="cute-pastel"] .card,
+    [data-theme="cute-pastel"] .fund-card,
+    [data-theme="cute-pastel"] .tx-item {
+      background:#ffffff;
+      border-color:#ede3d7;
+      box-shadow:0 4px 18px rgba(180,140,110,0.06);
+      border-radius:20px;
+    }
+    [data-theme="cute-pastel"] .kpi-box {
+      background:#ffffff;
+      border-color:#ede3d7;
+      border-radius:16px;
+    }
+    [data-theme="cute-pastel"] .app-header {
+      background:rgba(252,248,242,0.92);
+      border-bottom:1px solid #ede3d7;
+    }
+    [data-theme="cute-pastel"] .bottom-nav {
+      background:rgba(255,255,255,0.96);
+      border-top:1px solid #ede3d7;
+      box-shadow:0 -4px 20px rgba(180,140,110,0.06);
+    }
+    [data-theme="cute-pastel"] .bottom-nav [aria-selected="true"] {
+      background:linear-gradient(135deg, #10b981, #059669);
+      color:#ffffff;
+      box-shadow:0 3px 10px rgba(16,185,129,0.3);
+      border-radius:14px;
+    }
+    [data-theme="cute-pastel"] .form-control {
+      background:#ffffff;
+      color:var(--text-main);
+      border-color:#ede3d7;
+    }
+    [data-theme="cute-pastel"] .btn-primary {
+      background:linear-gradient(135deg, #10b981, #059669);
+      color:#ffffff;
+      box-shadow:0 4px 12px rgba(16,185,129,0.25);
+    }
+    [data-theme="cute-pastel"] .balance-hero::before {
+      background:radial-gradient(ellipse at 90% 0, rgba(244,114,182,0.18), transparent 65%);
+    }
+    [data-theme="cute-pastel"] .balance-hero .kpi-grid .kpi-box {
+      background:#fcf8f2;
+      border:1px solid #ede3d7;
+    }
+    [data-theme="cute-pastel"] :focus-visible {
+      outline-color:#10b981;
+    }
     [data-theme="fintrack"] {
       color-scheme:dark; --bg-app:#090a0f; --bg-surface:#12141c; --bg-subtle:#191c27;
       --border-color:#1e2230; --border-strong:#67728a; --glass-border:#1e2230;
@@ -1106,11 +1170,108 @@
     .subnav-pill { flex:1; padding:9px 12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-muted); font-size:0.88rem; font-weight:600; cursor:pointer; transition:all 0.2s; text-align:center; }
     .subnav-pill.active { background:linear-gradient(135deg, #168065, #2dd4bf); color:#fff; border-color:transparent; box-shadow:0 2px 8px rgba(45,212,191,0.25); }
 
-    .portfolio-header-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    .portfolio-header-title { font-size:1.35rem; font-weight:800; color:var(--text-main); margin:0; }
-    .portfolio-header-actions { display:flex; align-items:center; gap:8px; }
-    .btn-rebalance-pill { background:#7c3aed; color:#fff; border-radius:20px; font-weight:600; font-size:0.82rem; padding:6px 14px; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 6px rgba(124,58,237,0.3); }
-    .btn-rebalance-pill:hover { background:#6d28d9; }
+    .portfolio-header-section { margin-bottom:14px; }
+    .portfolio-header-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .portfolio-header-title { font-size:1.25rem; font-weight:800; color:var(--text-main); margin:0; white-space:nowrap; letter-spacing:-0.3px; }
+    .portfolio-header-utilities { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+    
+    .btn-util-pill {
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border-color);
+      color:var(--text-main);
+      border-radius:20px;
+      font-size:0.75rem;
+      font-weight:600;
+      padding:5px 10px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .btn-util-pill:hover { background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+
+    .btn-rebalance-pill {
+      background:linear-gradient(135deg, #7c3aed, #6366f1);
+      color:#fff;
+      border-radius:20px;
+      font-weight:700;
+      font-size:0.75rem;
+      padding:5px 12px;
+      border:none;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow:0 2px 8px rgba(124,58,237,0.25);
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .btn-rebalance-pill:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(124,58,237,0.4); }
+
+    .btn-clear-pill {
+      background:rgba(239,68,68,0.1);
+      border:1px solid rgba(239,68,68,0.25);
+      color:#f87171;
+      border-radius:20px;
+      font-size:0.75rem;
+      font-weight:600;
+      padding:5px 10px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display:inline-flex;
+      align-items:center;
+      gap:3px;
+    }
+    .btn-clear-pill:hover { background:rgba(239,68,68,0.2); color:#ef4444; }
+
+    .portfolio-primary-actions {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .btn-portfolio-primary {
+      background:linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color:#ffffff;
+      border:none;
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:0.84rem;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      cursor:pointer;
+      white-space:nowrap;
+      box-shadow:0 4px 14px rgba(16,185,129,0.28);
+      transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-portfolio-primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,185,129,0.38); }
+    .btn-portfolio-primary:active { transform:scale(0.98); }
+
+    .btn-portfolio-secondary {
+      background:var(--bg-surface);
+      border:1px solid var(--border-color);
+      color:var(--text-main);
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:0.84rem;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      cursor:pointer;
+      white-space:nowrap;
+      box-shadow:0 2px 8px rgba(0,0,0,0.06);
+      transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-portfolio-secondary:hover { background:rgba(255,255,255,0.06); transform:translateY(-1px); }
+    .btn-portfolio-secondary:active { transform:scale(0.98); }
     .btn-add-pill { background:#7c3aed; color:#fff; border-radius:12px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; font-weight:700; border:none; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 6px rgba(124,58,237,0.3); }
     .btn-add-pill:hover { background:#6d28d9; transform:scale(1.05); }
 
@@ -1432,7 +1593,56 @@
       border-style: solid;
     }
 
-  </style>
+    .modal-overlay { position:fixed !important; inset:0 !important; z-index:1000 !important; background:rgba(9,10,15,0.76) !important; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); display:flex !important; align-items:center !important; justify-content:center !important; padding:14px !important; margin:0 !important; border:0 !important; border-radius:0 !important; max-width:none !important; width:100vw !important; height:100dvh !important; overflow-y:auto !important; }
+    .modal-overlay[hidden] { display:none !important; }
+    .modal-content { background:var(--bg-surface,#12141c); border:1.5px solid var(--border-color,rgba(255,255,255,0.14)); border-radius:24px; padding:20px; width:min(94vw,500px); max-height:90dvh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.55); position:relative; margin:auto; }
+    .luxury-3d-popup-card { background:var(--bg-surface,#12141c); border:1.5px solid rgba(255,255,255,0.14); border-radius:26px; padding:20px; max-width:480px; width:94vw; max-height:88vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.5),0 0 0 1px rgba(16,185,129,0.16),inset 0 1px 0 rgba(255,255,255,0.12); position:relative; margin:auto; }
+    .popup-3d-hero { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:20px; background:linear-gradient(135deg,rgba(16,185,129,0.14),rgba(99,102,241,0.14),rgba(244,63,94,0.08)); border:1px solid rgba(255,255,255,0.12); margin-bottom:14px; }
+    .popup-3d-action-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
+    .popup-3d-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px; padding:14px 10px; border-radius:18px; border:1.5px solid var(--border-color,rgba(255,255,255,0.1)); background:var(--glass,rgba(255,255,255,0.06)); color:var(--text-main); font-weight:700; font-size:0.84rem; cursor:pointer; }
+    .popup-3d-tile:hover, .popup-3d-tile:focus-visible { border-color:var(--brand-primary,#10b981); background:rgba(16,185,129,0.12); }
+    .popup-3d-tile small { font-size:0.72rem; color:var(--text-muted); font-weight:500; }
+    .compact-3d-launcher-bar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    @media (min-width:640px) { .compact-3d-launcher-bar { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+    .insurance-policy-card { background:var(--bg-subtle,rgba(255,255,255,0.04)); border:1.5px solid var(--border-color,rgba(255,255,255,0.1)); border-radius:18px; padding:14px; margin-bottom:10px; }
+    .insurance-policy-card.paid { border-color:rgba(16,185,129,0.45); background:rgba(16,185,129,0.06); }
+    .insurance-policy-card.pending { border-color:rgba(245,158,11,0.45); }
+  
+    /* ==========================================================================
+       RocketTool Authentic Rebalance UI Styles (TASK-SLIPSENSE-V4-027)
+       ========================================================================== */
+    .rt-rebalance-modal { max-width:540px; width:95%; max-height:92vh; display:flex; flex-direction:column; padding:16px; border-radius:22px; background:#11131a; color:#f3f5fa; border:1px solid #232736; box-shadow:0 12px 40px rgba(0,0,0,0.6); }
+    [data-theme="cute-pastel"] .rt-rebalance-modal { background:#ffffff; color:#2b2320; border-color:#ede3d7; box-shadow:0 12px 40px rgba(180,140,110,0.18); }
+    
+    .rt-card { background:#161922; border:1px solid #232736; border-radius:14px; padding:12px; }
+    [data-theme="cute-pastel"] .rt-card { background:#fcf8f2; border-color:#ede3d7; }
+
+    .rt-pill-btn { border-radius:20px; font-size:0.8rem; padding:6px 14px; font-weight:700; cursor:pointer; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border:none; display:inline-flex; align-items:center; gap:4px; }
+    .rt-pill-purple { background:#7c3aed; color:#ffffff; box-shadow:0 2px 8px rgba(124,58,237,0.3); }
+    .rt-pill-purple:hover { background:#6d28d9; transform:translateY(-1px); }
+    
+    .rt-row-item { display:grid; grid-template-columns:1.8fr 1fr 1fr 1.2fr; align-items:center; padding:10px 8px; border-radius:10px; cursor:pointer; transition:background 0.15s; }
+    .rt-row-item:hover { background:rgba(255,255,255,0.04); }
+    [data-theme="cute-pastel"] .rt-row-item:hover { background:rgba(0,0,0,0.03); }
+
+    .rt-stepper-btn { width:32px; height:32px; border-radius:8px; border:1px solid #2d3345; background:#1b1f2b; color:#fff; font-size:1.1rem; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; user-select:none; }
+    [data-theme="cute-pastel"] .rt-stepper-btn { border-color:#dcd1c4; background:#f4ebe0; color:#2b2320; }
+    .rt-stepper-btn:hover { background:#7c3aed; border-color:#7c3aed; color:#fff; }
+    .rt-stepper-btn:active { transform:scale(0.92); }
+
+    .rt-stepper-input { width:64px; text-align:center; font-weight:700; font-size:0.9rem; border:1px solid #2d3345; background:#161922; color:#fff; border-radius:8px; padding:4px 6px; }
+    [data-theme="cute-pastel"] .rt-stepper-input { border-color:#dcd1c4; background:#ffffff; color:#2b2320; }
+
+    .rt-action-chip { font-size:0.85rem; font-weight:800; text-align:right; white-space:nowrap; }
+    .rt-action-buy { color:#10b981; }
+    .rt-action-sell { color:#f43f5e; }
+    .rt-action-hold { color:#9ba3b8; }
+
+    .rt-trade-type-btn { flex:1; height:44px; border-radius:12px; border:1px solid #232736; background:#161922; color:#9ba3b8; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .rt-trade-type-btn.active-buy { background:rgba(16,185,129,0.15); border-color:#10b981; color:#10b981; }
+    .rt-trade-type-btn.active-sell { background:rgba(244,63,94,0.15); border-color:#f43f5e; color:#f43f5e; }
+
+</style>
 </head>
 <body>
   <div class="mobile-frame-glow">
@@ -1517,9 +1727,10 @@
       </section>
       <section class="card" aria-labelledby="latestTitle"><h2 id="latestTitle" class="card-title">รายการล่าสุด</h2><div class="latest-filters" role="group" aria-label="กรองรายการล่าสุด"><button id="latest-all" type="button" aria-pressed="true">ทั้งหมด</button><button id="latest-expense" type="button" aria-pressed="false">รายจ่าย</button><button id="latest-income" type="button" aria-pressed="false">รายรับ</button></div><div id="latestTransactionList" class="transaction-list"></div></section>
       <section class="card jar-shelf-section" aria-labelledby="homeJarShelfTitle"><h2 id="homeJarShelfTitle" class="card-title">กระปุกของฉัน</h2><p class="jar-caption">ค่อย ๆ เติมความฝัน ทีละนิดทุกวัน</p><div id="homeJarShelf" class="jar-shelf"></div></section>
-            <section class="card" aria-labelledby="scanSectionTitle">
+      <section class="card" id="homeQuick3dLauncherSection" aria-labelledby="homeQuick3dTitle"><div class="card-header" style="margin-bottom:0.5rem;"><h2 id="homeQuick3dTitle" class="card-title">⚡ ทางลัดทำรายการด่วน</h2><span style="font-size:0.75rem;color:var(--text-muted);">แตะเพื่อเด้งหน้าต่างสแกนด่วน · โอนเงิน · นำเข้าพอร์ต · ซื้อ/ขายหุ้น</span></div><div id="homeQuick3dLauncher" class="compact-3d-launcher-bar"><button type="button" id="btnOpenQuickScanPopup" class="popup-3d-tile"><span id="icon3dQuickScan">📸</span><span>สแกนด่วน / โอนเงิน</span><small>เด้งหน้าต่างสแกนเข้า/ออก</small></button><button type="button" id="btnOpenSalaryTransferPopup" class="popup-3d-tile"><span id="icon3dSalaryTransfer">💎</span><span>กระปุกเงินเดือน</span><small>รับเงินเดือน · โอนไปกระปุกอื่น</small></button><button type="button" id="btnOpenPortfolioPopupHub" class="popup-3d-tile"><span id="icon3dPortfolioHub">📈</span><span>นำเข้าพอร์ต / ซื้อขายหุ้น</span><small>เด้งหน้าต่างนำเข้า &amp; เทรด</small></button><button type="button" id="btnOpenDanInsurancePopup" class="popup-3d-tile"><span id="icon3dInsuranceHub">🛡️</span><span>ประกันแดน 2 ฉบับ</span><small>ตั้งยอดรอจ่าย · ตัดจ่ายเอง</small></button></div></section>
+      <section id="quickScanPopupModal" class="card modal-overlay" role="dialog" aria-modal="true" aria-labelledby="scanSectionTitle" hidden><div class="luxury-3d-popup-card">
         <div class="card-header">
-          <h2 id="scanSectionTitle" class="card-title">สแกนด่วน</h2>
+          <div style="display:flex;align-items:center;gap:8px;"><span id="quickScan3dHeaderIcon"></span><div><h2 id="scanSectionTitle" class="card-title">สแกนด่วน</h2><div id="quickScanTargetBucketBadge" style="font-size:0.76rem;color:var(--brand-primary,#10b981);font-weight:700;">พร้อมบันทึกสลิป · โอนเงินเข้า/ออก</div></div></div><button type="button" id="btnCloseQuickScanPopup" class="btn btn-secondary btn-sm">✕ ปิด</button>
         </div>
 
         <div class="upload-zone" id="uploadDropZone">
@@ -1565,7 +1776,7 @@
         <div role="status" aria-live="polite" id="aiAnalysisProgressBox" class="alert-box alert-info" style="margin-top:0.85rem;margin-bottom:0;" hidden>
           กำลังอ่านสลิป รอสักครู่…
         </div>
-        <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div>
+        <div id="aiAnalysisErrorBox" class="alert-box alert-error" style="margin-top:0.85rem;margin-bottom:0;" hidden></div><div class="popup-3d-action-grid" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);"><button type="button" id="btnQuickPopupIncome" class="popup-3d-tile"><span>📥 โอนเงินเข้า</span><small>เติมเงินเข้ากระปุกนี้</small></button><button type="button" id="btnQuickPopupExpense" class="popup-3d-tile"><span>📤 โอนเงินออก</span><small>ตัดจ่ายจากกระปุกนี้</small></button><button type="button" id="btnQuickPopupTransfer" class="popup-3d-tile"><span>🔄 โอนระหว่างกระปุก</span><small>ย้ายเงินจากเงินเดือน/กระปุกอื่น</small></button><button type="button" id="btnQuickPopupPortfolio" class="popup-3d-tile"><span>📷 นำเข้าพอร์ต DIME</span><small>เด้งหน้าต่างส่งรูปพอร์ตให้ AI</small></button><button type="button" id="btnQuickPopupStockTrade" class="popup-3d-tile"><span>📈 บันทึกซื้อ/ขายหุ้น</span><small>เด้งหน้าต่างเทรดหุ้น</small></button><button type="button" id="btnQuickPopupInsurance" class="popup-3d-tile"><span>🛡️ ประกันแดน 2 ฉบับ</span><small>บันทึกยอดรอจ่าย · ตัดจ่ายเอง</small></button></div></div>
       </section>
 
     </section>
@@ -1605,7 +1816,7 @@
       <details class="card"><summary>ผู้ช่วยและรายการจ่ายประจำเดือน</summary><section class="card automation-panel" aria-labelledby="automationTitle">
       <h2 id="automationTitle">ผู้ช่วยบันทึกประจำวัน</h2>
       <div class="automation-bar">
-        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="fintrack">ฟินแทร็ก เขียวมรกต</option><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
+        <label for="themeSelect">โทนสี</label><select id="themeSelect"><option value="cute-pastel">🌸 คิวท์พาสเทล อบอุ่น</option><option value="fintrack">ฟินแทร็ก เขียวมรกต</option><option value="light">สว่าง</option><option value="dark">มืด</option><option value="blue">น้ำเงิน</option><option value="dark-red">แดงทับทิม</option></select>
         <button id="btnUseSalaryTemplate" type="button" class="btn btn-secondary">ใช้แบบเงินเดือนล่าสุด</button>
         <button id="btnClearSalaryTemplate" type="button" class="btn btn-secondary">ล้างแบบเงินเดือน</button>
         <button id="btnVoiceEntry" type="button" class="btn btn-secondary">พูดเพื่อกรอกรายการ</button>
@@ -1642,16 +1853,30 @@
 
       <!-- View 1: Stock Portfolio & Allocation (RocketTool Logic) -->
       <div id="subviewPortfolio" class="analytics-subview">
-        <!-- Top Action Header -->
-        <div class="portfolio-header-bar">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <h2 class="portfolio-header-title">พอร์ตของฉัน</h2>
+        <!-- Top Action Header & Quick Actions -->
+        <div class="portfolio-header-section">
+          <!-- Row 1: Title & Utility Pills -->
+          <div class="portfolio-header-bar">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h2 class="portfolio-header-title">พอร์ตของฉัน</h2>
+            </div>
+            <div class="portfolio-header-utilities">
+              <button type="button" id="btnQuickPriceUpdate" class="btn-util-pill" title="อัปเดตราคาตลาดล่าสุด">⚡ ราคา</button>
+              <button type="button" id="btnPortfolioRebalance" class="btn-rebalance-pill" title="คำนวณปรับสัดส่วนพอร์ต (Rebalance)">⚖️ Rebalance</button>
+              <button type="button" id="btnClearAllPortfolio" class="btn-clear-pill" title="ล้างหุ้นทั้งหมดในพอร์ตเพื่อเริ่มใหม่">🗑️ ล้าง</button>
+            </div>
           </div>
-          <div class="portfolio-header-actions">
-            <button type="button" id="btnOpenPortfolioImport" class="btn btn-secondary btn-sm" title="นำเข้าพอร์ตจากภาพแคป DIME หรือสลิปการเทรด" style="border-radius:12px;font-size:0.8rem;padding:6px 10px;font-weight:700;">📷 นำเข้าพอร์ต</button>
-            <button type="button" id="btnPortfolioRebalance" class="btn-rebalance-pill">⚖️ Rebalance</button>
-            <button type="button" id="btnOpenStockTradeHeader" class="btn-add-pill" title="เพิ่มหุ้น หรือบันทึกซื้อ/ขาย">➕</button>
-            <button type="button" id="btnQuickPriceUpdate" class="btn btn-secondary btn-sm" title="อัปเดตราคาตลาด">⚡ ราคา</button>
+
+          <!-- Row 2: Primary Action Bar (50/50 Thumb-Friendly Grid) -->
+          <div class="portfolio-primary-actions">
+            <button type="button" id="btnOpenPortfolioImport" class="btn-portfolio-primary" title="เด้งหน้าต่างนำเข้าพอร์ตจากภาพแคป DIME">
+              <span style="font-size:1.05rem;">📷</span>
+              <span>นำเข้าพอร์ต DIME</span>
+            </button>
+            <button type="button" id="btnOpenStockTradeHeader" class="btn-portfolio-secondary" title="เด้งหน้าต่างบันทึกซื้อ/ขายหุ้น">
+              <span style="font-size:1.05rem;">➕</span>
+              <span>บันทึกซื้อ / ขาย</span>
+            </button>
           </div>
         </div>
 
@@ -2236,69 +2461,244 @@
   <!-- ======================================================================= -->
   <!-- MODAL: บันทึกซื้อ/ขายหุ้น & คำนวณ Rebalance Simulator (RocketTool Logic) -->
   <!-- ======================================================================= -->
-  <div id="stockTradeModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="stockTradeModalTitle" hidden>
-    <div class="modal-content" style="max-width:480px;">
-      <h2 id="stockTradeModalTitle">บันทึกซื้อ/ขายหุ้น</h2>
-      <form id="stockTradeForm">
-        <!-- AI Trade Slip Helper Banner -->
-        <div style="background:rgba(124,58,237,0.06);border:1px dashed #8b5cf6;border-radius:12px;padding:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+  
+  <!-- ======================================================================= -->
+  <!-- MODAL: ปรับสมดุลพอร์ต (RocketTool Screen 1)                               -->
+  <!-- ======================================================================= -->
+  <div id="portfolioRebalanceModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rebalanceModalTitle" hidden>
+    <div class="modal-content rt-rebalance-modal">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button type="button" id="btnCloseRebalanceModal" class="btn btn-secondary btn-sm" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;font-size:1.1rem;">❮</button>
           <div>
-            <span style="font-weight:700;font-size:0.82rem;color:var(--text-main);">🧾 มีสลิปการเทรด? ให้ AI กรอกให้:</span>
-            <small id="tradeSlipStatusText" style="display:block;font-size:0.75rem;color:var(--text-muted);">ดึง Ticker, จำนวนหุ้น, และราคาอัตโนมัติ</small>
+            <h2 id="rebalanceModalTitle" style="margin:0;font-size:1.2rem;font-weight:800;color:var(--text-main);">ปรับสมดุลพอร์ต</h2>
+            <small id="rebalanceModalSubtitle" style="color:var(--text-muted);font-size:0.78rem;">กำหนดเอง · รวม $0</small>
+          </div>
+        </div>
+        <button type="button" id="btnOpenTargetAllocationModal" class="rt-pill-btn rt-pill-purple">ปรับสัดส่วน</button>
+      </div>
+
+      <!-- Scrollable Content -->
+      <div style="flex:1;overflow-y:auto;padding-right:2px;display:flex;flex-direction:column;gap:10px;">
+        <!-- Alert 1: Target Completion Warning -->
+        <div id="rebalanceTargetWarningCard" class="rt-card" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div>
+              <div id="rebalanceTargetWarningTitle" style="font-weight:700;font-size:0.86rem;color:#f59e0b;margin-bottom:4px;">เป้ารวมตอนนี้ 85.0% ยังไม่ครบ 100%</div>
+              <small style="display:block;font-size:0.75rem;color:var(--text-muted);line-height:1.4;">หุ้นที่ขายหมดแล้วถูกเอาออกจากเป้า คำแนะนำด้านล่างจึงยังไม่ตรงแผน — ปรับสัดส่วนใหม่ให้ครบ 100%</small>
+            </div>
+            <button type="button" id="btnRebalanceFixTarget" style="border-radius:16px;border:1px solid #7c3aed;background:transparent;color:#a78bfa;font-size:0.75rem;padding:4px 10px;font-weight:600;white-space:nowrap;cursor:pointer;">ปรับสัดส่วนใหม่</button>
+          </div>
+        </div>
+
+        <!-- Alert 2: Cash Inclusion Notice -->
+        <div id="rebalanceCashNoticeCard" class="rt-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div>
+              <div id="rebalanceCashNoticeTitle" style="font-weight:700;font-size:0.84rem;color:var(--text-main);">คำแนะนำนี้คิดจากหุ้นอย่างเดียว ยังไม่นับเงินสด $0 ของพอร์ต</div>
+              <small style="font-size:0.75rem;color:var(--text-muted);">% ในหน้านี้จึงต่างจากการ์ดหุ้นในหน้าพอร์ต</small>
+            </div>
+            <button type="button" id="btnToggleCashInRebalance" style="border-radius:16px;border:1px solid #7c3aed;background:rgba(124,58,237,0.12);color:#c4b5fd;font-size:0.75rem;padding:5px 12px;font-weight:600;white-space:nowrap;cursor:pointer;">+ ใส่เงินสดในเป้า</button>
+          </div>
+        </div>
+
+        <!-- Holdings Rebalance Table Header -->
+        <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr 1.2fr;padding:8px 8px;font-size:0.75rem;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border-color);margin-bottom:2px;">
+          <div>หุ้น</div>
+          <div style="text-align:right;">ปัจจุบัน <small style="display:block;font-weight:400;font-size:0.68rem;">% ของหุ้น</small></div>
+          <div style="text-align:right;">เป้า <small style="display:block;font-weight:400;font-size:0.68rem;">%</small></div>
+          <div style="text-align:right;">ต้องทำ</div>
+        </div>
+
+        <!-- Dynamic Rebalance Items List -->
+        <div id="rebalanceHoldingsList" style="display:flex;flex-direction:column;gap:2px;">
+          <!-- Populated dynamically by renderRebalanceUI() -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: ตรวจเป้าสัดส่วน (RocketTool Screen 2 & 4)                           -->
+  <!-- ======================================================================= -->
+  <div id="portfolioTargetAllocationModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="targetAllocModalTitle" hidden>
+    <div class="modal-content rt-rebalance-modal" style="max-height:94vh;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button type="button" id="btnCloseTargetAllocModal" class="btn btn-secondary btn-sm" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;font-size:1.1rem;">❮</button>
+          <div>
+            <h2 id="targetAllocModalTitle" style="margin:0;font-size:1.2rem;font-weight:800;color:var(--text-main);">ตรวจเป้าสัดส่วน</h2>
+            <small style="color:var(--text-muted);font-size:0.78rem;">กำหนดเอง</small>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button type="button" id="btnQuickEqualWeight" class="btn btn-secondary btn-sm" style="border-radius:18px;font-size:0.75rem;padding:4px 10px;font-weight:600;">สัดส่วนเท่ากัน</button>
+          <button type="button" id="btnResetTargetAlloc" class="btn btn-secondary btn-sm" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;" title="รีเซ็ตตามสัดส่วนปัจจุบัน">🔄</button>
+        </div>
+      </div>
+
+      <!-- Hero Total Target Stat -->
+      <div style="text-align:center;padding:6px 0 12px 0;flex-shrink:0;">
+        <div style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:2px;">สัดส่วนรวม</div>
+        <div id="targetAllocTotalPercentHero" style="font-size:2.8rem;font-weight:900;line-height:1;color:#f59e0b;letter-spacing:-1px;">85%</div>
+        <small id="targetAllocTotalHint" style="font-size:0.8rem;color:#f59e0b;font-weight:600;display:block;margin-top:6px;">รวม 85% — เพิ่มอีก 15% เพื่อบันทึก</small>
+      </div>
+
+      <!-- Steppers List Container -->
+      <div style="flex:1;overflow-y:auto;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:16px;padding:8px 12px;margin-bottom:12px;">
+        <!-- Cash Stepper Row -->
+        <div id="targetAllocCashRow" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-color);">
+          <div>
+            <div style="font-weight:700;font-size:0.9rem;color:var(--text-main);">เงินสด <small id="targetAllocCashSubtext" style="color:var(--text-muted);font-weight:400;">ตอนนี้ 0%</small></div>
+            <small id="targetAllocCashDesc" style="color:var(--text-muted);font-size:0.75rem;">ยังไม่นับในเป้า</small>
+          </div>
+          <div id="targetAllocCashControlWrap">
+            <button type="button" id="btnTargetAllocIncludeCash" class="btn btn-secondary btn-sm" style="border-radius:16px;font-size:0.75rem;padding:4px 10px;color:#a78bfa;border-color:#7c3aed;">+ ใส่เงินสดในเป้า</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Stock Stepper Rows -->
+        <div id="targetAllocStockList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Bottom Action Button -->
+      <button type="button" id="btnSaveTargetAllocation" class="btn btn-primary" style="width:100%;height:46px;border-radius:14px;font-size:0.95rem;font-weight:800;background:#7c3aed;color:#fff;border:none;box-shadow:0 4px 14px rgba(124,58,237,0.35);flex-shrink:0;">บันทึกเป็นเป้าหมาย</button>
+    </div>
+  </div>
+
+  <div id="stockTradeModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="stockTradeModalTitle" hidden>
+    <div class="modal-content rt-rebalance-modal" style="max-width:480px;padding:18px;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button type="button" id="btnCancelStockTrade" class="btn btn-secondary btn-sm" style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;font-size:1.1rem;">✕</button>
+          <h2 id="stockTradeModalTitle" style="margin:0;font-size:1.2rem;font-weight:800;color:var(--text-main);">เพิ่มธุรกรรม</h2>
+        </div>
+        <span style="border-radius:16px;background:rgba(124,58,237,0.15);color:#c4b5fd;font-size:0.75rem;padding:4px 12px;font-weight:700;">พอร์ตของฉัน</span>
+      </div>
+
+      <form id="stockTradeForm" style="display:flex;flex-direction:column;gap:10px;">
+        <!-- AI Trade Slip Helper Banner (Image 3) -->
+        <div id="btnUploadTradeSlipBanner" style="background:#6d28d9;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 4px 14px rgba(109,40,217,0.35);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.4rem;">📷</span>
+            <div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <b style="font-size:0.9rem;color:#ffffff;">นำเข้าจากสลิป</b>
+                <span style="background:#fef08a;color:#854d0e;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:8px;">ใหม่</span>
+              </div>
+              <small id="tradeSlipStatusText" style="display:block;font-size:0.75rem;color:rgba(255,255,255,0.85);">ถ่ายรูปสลิป กรอกให้อัตโนมัติ</small>
+            </div>
           </div>
           <input type="file" id="tradeSlipFileInput" accept="image/*" hidden>
-          <button type="button" id="btnUploadTradeSlip" class="btn btn-secondary btn-sm" style="border-radius:20px;font-size:0.78rem;padding:4px 12px;font-weight:700;border-color:#8b5cf6;color:#7c3aed;">
-            📎 เลือกรูปสลิป
-          </button>
-        </div>
-        <label for="stockTradeTicker">ชื่อย่อหุ้น / Ticker (เช่น NVDA, AAPL, PTT.BK, BTC) *</label>
-        <input id="stockTradeTicker" class="form-control" placeholder="NVDA" required style="text-transform:uppercase;">
-
-        <div style="display:flex;gap:12px;margin:10px 0;">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;">
-            <input type="radio" name="stockTradeAction" value="buy" checked> 🟢 ซื้อ (Buy)
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;">
-            <input type="radio" name="stockTradeAction" value="sell"> 🔴 ขาย (Sell)
-          </label>
+          <button type="button" id="btnUploadTradeSlip" style="background:transparent;border:none;color:#ffffff;font-size:1.2rem;font-weight:800;cursor:pointer;">❯</button>
         </div>
 
+        <!-- Divider -->
+        <div style="display:flex;align-items:center;margin:2px 0 6px 0;color:var(--text-muted);font-size:0.75rem;font-weight:600;">
+          <div style="flex:1;height:1px;background:var(--border-color);"></div>
+          <span style="padding:0 10px;">หรือกรอกเอง</span>
+          <div style="flex:1;height:1px;background:var(--border-color);"></div>
+        </div>
+
+        <!-- Asset Type Tabs -->
+        <div>
+          <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">ประเภทสินทรัพย์</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button type="button" id="tabAssetStock" class="rt-trade-type-btn" style="background:rgba(124,58,237,0.18);border-color:#7c3aed;color:var(--text-main);font-weight:800;">หุ้น</button>
+            <button type="button" id="tabAssetGold" class="rt-trade-type-btn" style="background:transparent;color:var(--text-muted);">ทองคำ</button>
+          </div>
+        </div>
+
+        <!-- Stock Ticker Input with Search Icon -->
+        <div>
+          <label for="stockTradeTicker" style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">หุ้น *</label>
+          <div style="position:relative;display:flex;align-items:center;">
+            <input id="stockTradeTicker" class="form-control" placeholder="ค้นหาหุ้น เช่น AMZN, NVDA, AAPL" required style="text-transform:uppercase;padding-left:14px;padding-right:36px;height:44px;font-weight:700;border-radius:12px;">
+            <span style="position:absolute;right:12px;color:var(--text-muted);font-size:0.9rem;pointer-events:none;">🔍</span>
+          </div>
+        </div>
+
+        <!-- Transaction Type Switch (Buy / Sell) -->
+        <div>
+          <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">ประเภท</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <label id="lblStockTradeBuy" class="rt-trade-type-btn active-buy" style="cursor:pointer;margin:0;">
+              <input type="radio" name="stockTradeAction" value="buy" checked style="position:absolute;opacity:0;pointer-events:none;">
+              <span>▲ ซื้อ</span>
+            </label>
+            <label id="lblStockTradeSell" class="rt-trade-type-btn" style="cursor:pointer;margin:0;">
+              <input type="radio" name="stockTradeAction" value="sell" style="position:absolute;opacity:0;pointer-events:none;">
+              <span>▼ ขาย</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Quantity with Holding Info & Sell All link -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="stockTradeShares" style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin:0;">จำนวนหุ้น *</label>
+            <div id="stockTradeHoldingInfo" style="font-size:0.75rem;color:var(--text-muted);">
+              ถืออยู่ <span id="stockTradeHoldingShares">0</span> หุ้น 
+              <a href="#" id="btnStockTradeSellAll" style="color:#a78bfa;font-weight:700;text-decoration:none;margin-left:4px;">ขายทั้งหมด</a>
+            </div>
+          </div>
+          <input id="stockTradeShares" class="form-control" type="number" step="any" min="0.0001" placeholder="0.00" required style="height:44px;font-weight:700;border-radius:12px;">
+        </div>
+
+        <!-- Price & Total Amount -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
-            <label for="stockTradeShares">จำนวนหุ้น *</label>
-            <input id="stockTradeShares" class="form-control" type="number" step="any" min="0.0001" placeholder="10" required>
+            <label for="stockTradePrice" style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">ราคาต่อหุ้น (USD) *</label>
+            <input id="stockTradePrice" class="form-control" type="number" step="any" min="0" placeholder="125.50" required style="height:44px;font-weight:700;border-radius:12px;">
           </div>
           <div>
-            <label for="stockTradePrice">ราคาต่อหุ้น *</label>
-            <input id="stockTradePrice" class="form-control" type="number" step="any" min="0" placeholder="125.50" required>
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">เงินรวม (USD)</label>
+            <div style="height:44px;background:var(--bg-subtle,#191c27);border:1px solid var(--border-color);border-radius:12px;padding:0 12px;display:flex;align-items:center;">
+              <span style="color:var(--text-muted);margin-right:4px;">$</span>
+              <b id="stockTradeTotalAmount" style="color:var(--text-main);font-size:1rem;">0.00</b>
+            </div>
           </div>
         </div>
 
-        <div style="margin:8px 0;font-size:0.85rem;color:var(--text-muted);">
-          มูลค่ารวมรายการ: <b id="stockTradeTotalAmount" style="color:var(--text-main);font-size:1rem;">0.00</b>
+        <!-- Date -->
+        <div>
+          <label id="stockTradeDateLabel" for="stockTradeDate" style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">วันที่</label>
+          <input id="stockTradeDate" type="date" class="form-control" style="height:44px;font-weight:700;border-radius:12px;">
         </div>
 
-        <div style="margin:8px 0;">
-          <label for="stockTradeTargetPct">เป้าหมายสัดส่วนในพอร์ต % (Target Allocation)</label>
-          <input id="stockTradeTargetPct" class="form-control" type="number" step="any" min="0" max="100" placeholder="เช่น 20">
+        <!-- Target Allocation % -->
+        <div>
+          <label for="stockTradeTargetPct" style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">เป้าหมายสัดส่วนในพอร์ต % (Target Allocation)</label>
+          <input id="stockTradeTargetPct" class="form-control" type="number" step="any" min="0" max="100" placeholder="เช่น 8.0" style="height:44px;border-radius:12px;">
         </div>
 
-        <div style="margin:10px 0;">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;">
+        <!-- Link Cash -->
+        <div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--text-muted);margin:0;">
             <input type="checkbox" id="stockTradeLinkCash" checked>
             <span>เชื่อมโยงเงินสดกับกระปุก <b>📈 หุ้น/ลงทุน</b> (หักเงิน/เติมเงินอัตโนมัติ)</span>
           </label>
         </div>
 
-        <!-- Realtime Rebalance Simulator Output -->
-        <div id="stockTradeSimOutput" class="ch-warn" style="display:none;margin:10px 0;">
-          <!-- Injected by simulateStockTradeUI -->
+        <!-- Note (Optional) with 0/100 counter -->
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <label for="stockTradeNote" style="font-size:0.78rem;color:var(--text-muted);font-weight:600;margin:0;">โน้ต (ไม่บังคับ)</label>
+            <small id="stockTradeNoteCount" style="color:var(--text-muted);font-size:0.72rem;">0/100</small>
+          </div>
+          <input id="stockTradeNote" class="form-control" maxlength="100" placeholder="เพิ่มโน้ตสั้นๆ..." style="height:44px;border-radius:12px;">
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-          <button type="button" id="btnCancelStockTrade" class="btn btn-secondary">ยกเลิก</button>
-          <button type="submit" id="btnSaveStockTrade" class="btn btn-primary">ยืนยันบันทึก</button>
-        </div>
+        <!-- Realtime Rebalance Simulator Output -->
+        <div id="stockTradeSimOutput" class="ch-warn" style="display:none;margin:4px 0;"></div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="btnSaveStockTrade" class="btn btn-primary" style="width:100%;height:48px;border-radius:14px;font-size:1rem;font-weight:800;background:#7c3aed;color:#ffffff;border:none;box-shadow:0 4px 14px rgba(124,58,237,0.35);margin-top:6px;">บันทึก</button>
       </form>
     </div>
   </div>
@@ -2406,7 +2806,7 @@
     <div class="modal-content" style="max-width:640px;border-radius:20px;padding:20px;max-height:90vh;display:flex;flex-direction:column;">
       <div style="margin-bottom:12px;">
         <h2 id="portfolioVerifyTitle" style="font-size:1.2rem;font-weight:800;margin:0 0 4px 0;">📋 ตรวจสอบรายการที่ AI อ่านได้</h2>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">ระบบคำนวณต้นทุน Cost Basis ให้แล้ว กรุณาตรวจทานและแก้ไขก่อนบันทึกลงพอร์ต</p>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 8px 0;">ระบบคำนวณต้นทุน Cost Basis ให้แล้ว กรุณาตรวจทานและแก้ไขก่อนบันทึกลงพอร์ต</p><label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:700;cursor:pointer;padding:8px 10px;border-radius:10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);"><input type="checkbox" id="chkReplaceAllPortfolioOnImport" checked style="width:18px;height:18px;accent-color:#7c3aed;"><span>🧹 ล้างหุ้นเก่าในพอร์ตก่อนนำเข้า (แทนที่พอร์ตเดิมทั้งหมด)</span></label>
       </div>
 
       <div id="portfolioVerifyListContainer" style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:12px;padding:8px;margin-bottom:14px;background:var(--bg-subtle);">
@@ -2419,6 +2819,197 @@
           ✓ ยืนยันบันทึกเข้าพอร์ต
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: 3D Luxury Jar & Portfolio Action Hub Popup                       -->
+  <!-- ======================================================================= -->
+  <div id="jarActionPopupModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="jarActionPopupTitle" hidden>
+    <div class="luxury-3d-popup-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span id="jarActionPopupTag" style="font-size:0.78rem;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(16,185,129,0.14);color:var(--brand-primary,#10b981);">✨ 3D Smart Popup</span>
+        <button type="button" id="btnCloseJarActionPopup" class="btn btn-secondary btn-sm">✕ ปิด</button>
+      </div>
+      <div class="popup-3d-hero">
+        <div id="jarAction3dIconHost" style="flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <h2 id="jarActionPopupTitle" style="margin:0;font-size:1.18rem;font-weight:800;">กระปุกของฉัน</h2>
+          <div id="jarActionPopupBalance" style="font-size:1.35rem;font-weight:800;color:var(--brand-primary,#10b981);margin-top:2px;">฿0.00</div>
+          <div id="jarActionPopupSub" style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">แตะเลือกทำรายการในป๊อปอัปได้ทันที</div>
+        </div>
+        <button type="button" id="btnPopupRenameJar" class="btn btn-secondary btn-sm" title="เปลี่ยนชื่อและไอคอนกระปุก">✏️ แก้ชื่อ</button>
+      </div>
+
+      <!-- Portfolio USD Summary Banner (Shown when opening Portfolio / investment_stock) -->
+      <div id="jarPopupPortfolioSection" style="margin-bottom:12px;" hidden>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);border-radius:14px;padding:10px;">
+            <div style="font-size:0.74rem;color:var(--text-muted);">มูลค่าหุ้นในพอร์ต (USD)</div>
+            <div id="popupPortfolioUsdValue" style="font-size:1.1rem;font-weight:800;color:#a78bfa;">$0.00</div>
+            <div id="popupPortfolioPnlText" style="font-size:0.74rem;font-weight:700;color:#10b981;">+$0.00 (0.00%)</div>
+          </div>
+          <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:10px;">
+            <div style="font-size:0.74rem;color:var(--text-muted);">เงินสดในกระปุกหุ้น (THB)</div>
+            <div id="popupPortfolioCashThb" style="font-size:1.1rem;font-weight:800;color:#10b981;">฿0.00</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">แยกจากมูลค่าหุ้น USD</div>
+          </div>
+        </div>
+        <div class="popup-3d-action-grid" style="margin-bottom:8px;">
+          <button type="button" id="btnPopupImportPortfolioDime" class="popup-3d-tile" style="border-color:rgba(124,58,237,0.45);background:rgba(124,58,237,0.12);">
+            <span id="icon3dPopupDimeImport">📷</span>
+            <span>นำเข้าพอร์ต DIME</span>
+            <small>ส่งรูปให้ AI อ่านหุ้น (USD)</small>
+          </button>
+          <button type="button" id="btnPopupRecordStockTrade" class="popup-3d-tile" style="border-color:rgba(16,185,129,0.45);background:rgba(16,185,129,0.12);">
+            <span id="icon3dPopupStockTrade">➕</span>
+            <span>บันทึกซื้อ/ขายหุ้น</span>
+            <small>เพิ่มรายการเทรดใน Popup</small>
+          </button>
+        </div>
+        <button type="button" id="btnPopupClearPortfolio" class="btn btn-danger btn-sm" style="width:100%;border-radius:12px;font-weight:700;margin-bottom:4px;">🗑️ ล้างพอร์ตหุ้นทั้งหมด (เริ่มใหม่)</button>
+      </div>
+
+      <!-- Dan Insurance Quick Banner (Shown when opening dan_insurance) -->
+      <div id="jarPopupInsuranceSection" style="margin-bottom:12px;" hidden>
+        <button type="button" id="btnPopupOpenInsurancePolicies" class="btn btn-primary" style="width:100%;border-radius:16px;padding:12px;font-weight:800;">
+          🛡️ จัดการประกันแดน 2 ฉบับ (บันทึกยอดรอจ่าย / ตัดจ่ายเอง)
+        </button>
+      </div>
+
+      <!-- Standard 3D Actions for Any Jar -->
+      <div class="popup-3d-action-grid">
+        <button type="button" id="btnPopupQuickScanIn" class="popup-3d-tile">
+          <span id="icon3dPopupScanIn">📥</span>
+          <span>โอนเงินเข้า / สแกน</span>
+          <small>สแกนสลิปหรือเติมเงินเข้า</small>
+        </button>
+        <button type="button" id="btnPopupQuickScanOut" class="popup-3d-tile">
+          <span id="icon3dPopupScanOut">📤</span>
+          <span>โอนเงินออก / สแกน</span>
+          <small>สแกนใบเสร็จหรือตัดจ่าย</small>
+        </button>
+        <button type="button" id="btnPopupTransferBetweenJars" class="popup-3d-tile">
+          <span id="icon3dPopupTransfer">🔄</span>
+          <span>โอนระหว่างกระปุก</span>
+          <small>ย้ายเงินจากเงินเดือน/กระปุกอื่น</small>
+        </button>
+        <button type="button" id="btnPopupManualRecord" class="popup-3d-tile">
+          <span id="icon3dPopupManual">✏️</span>
+          <span>จดรายการเอง</span>
+          <small>กรอกยอดเงินเข้า-ออกด่วน</small>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: 3D Salary Jar & Inter-Jar Transfer Popup                         -->
+  <!-- ======================================================================= -->
+  <div id="jarTransferModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="jarTransferModalTitle" hidden>
+    <div class="luxury-3d-popup-card" style="max-width:540px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="jarTransfer3dIconHost"></span>
+          <div>
+            <h2 id="jarTransferModalTitle" style="margin:0;font-size:1.15rem;font-weight:800;">💎 กระปุกเงินเดือน &amp; โอนระหว่างกระปุก</h2>
+            <small style="color:var(--text-muted);">รับเงินเดือนเข้ากระปุกเงินเดือน แล้วโอนต่อไปกระปุกอื่นได้ทันที</small>
+          </div>
+        </div>
+        <button type="button" id="btnCloseJarTransferModal" class="btn btn-secondary btn-sm">✕ ปิด</button>
+      </div>
+
+      <!-- Step 1: Deposit Salary into Salary Jar -->
+      <div style="background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);border-radius:16px;padding:12px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-weight:800;font-size:0.9rem;">💰 เงินเดือนออก: โอนเงินใส่กระปุกเงินเดือน</span>
+          <span id="salaryJarCurrentBalanceBadge" style="font-weight:800;color:var(--brand-primary,#10b981);font-size:0.9rem;">คงเหลือ ฿0.00</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
+          <input type="number" id="salaryDepositAmountInput" class="form-control" step="any" min="0" placeholder="ระบุยอดเงินเดือนเข้า เช่น 35000">
+          <button type="button" id="btnConfirmSalaryDeposit" class="btn btn-primary btn-sm" style="min-height:42px;border-radius:12px;font-weight:700;">+ เติมเข้ากระปุกเงินเดือน</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Transfer from Salary Jar (or any Source Jar) to Other Jars -->
+      <div style="margin-bottom:10px;">
+        <label for="jarTransferSourceSelect" style="font-weight:700;font-size:0.85rem;">โอนออกจากกระปุกต้นทาง</label>
+        <select id="jarTransferSourceSelect" class="form-control" style="margin-top:4px;"></select>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button type="button" id="btnTransferModeSingle" class="btn btn-primary btn-sm" style="flex:1;border-radius:12px;">โอนทีละกระปุก</button>
+        <button type="button" id="btnTransferModeMulti" class="btn btn-secondary btn-sm" style="flex:1;border-radius:12px;">กระจายหลายกระปุกพร้อมกัน</button>
+      </div>
+
+      <!-- Mode A: Single Target Transfer -->
+      <div id="jarTransferSinglePanel">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <label for="jarTransferTargetSelect" style="font-size:0.82rem;font-weight:700;">ไปใส่กระปุกปลายทาง</label>
+            <select id="jarTransferTargetSelect" class="form-control" style="margin-top:4px;"></select>
+          </div>
+          <div>
+            <label for="jarTransferSingleAmount" style="font-size:0.82rem;font-weight:700;">จำนวนเงินที่โอน (บาท)</label>
+            <input type="number" id="jarTransferSingleAmount" class="form-control" step="any" min="0" placeholder="เช่น 5000" style="margin-top:4px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode B: Multi-Jar Distribution from Source Jar -->
+      <div id="jarTransferMultiPanel" hidden>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 8px 0;">กรอกยอดเงินที่ต้องการโอนจากกระปุกต้นทางเข้าแต่ละกระปุก (เว้นว่างกระปุกที่ไม่ต้องการโอน)</p>
+        <div id="jarTransferMultiList" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;padding-right:4px;"></div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <label for="jarTransferDateInput" style="font-size:0.8rem;color:var(--text-muted);">วันที่โอน</label>
+        <input type="date" id="jarTransferDateInput" class="form-control" style="margin-top:2px;">
+      </div>
+
+      <p id="jarTransferStatusMsg" role="status" aria-live="polite" style="font-size:0.82rem;margin:8px 0 0 0;color:var(--brand-primary,#10b981);"></p>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+        <button type="button" id="btnCancelJarTransfer" class="btn btn-secondary">ยกเลิก</button>
+        <button type="button" id="btnSubmitJarTransfer" class="btn btn-primary" style="font-weight:800;">✓ ยืนยันโอนเงินเข้ากระปุก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: 3D Dan Insurance 2-Policy Scheduled & Manual Pay Popup           -->
+  <!-- ======================================================================= -->
+  <div id="danInsurancePolicyModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="danInsuranceModalTitle" hidden>
+    <div class="luxury-3d-popup-card" style="max-width:540px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="danInsurance3dIconHost"></span>
+          <div>
+            <h2 id="danInsuranceModalTitle" style="margin:0;font-size:1.15rem;font-weight:800;">🛡️ กระปุกประกันแดน (2 ฉบับ คนละวัน)</h2>
+            <small style="color:var(--text-muted);">บันทึกค่าประกันที่ต้องจ่ายจริงไว้ก่อน ถึงเวลาจ่ายค่อยกดตัดจ่ายเอง</small>
+          </div>
+        </div>
+        <button type="button" id="btnCloseDanInsuranceModal" class="btn btn-secondary btn-sm">✕ ปิด</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;text-align:center;">
+        <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:8px;">
+          <div style="font-size:0.72rem;color:var(--text-muted);">เงินในกระปุก</div>
+          <div id="insModalAvailableBal" style="font-size:0.98rem;font-weight:800;color:#10b981;">฿0.00</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:14px;padding:8px;">
+          <div style="font-size:0.72rem;color:var(--text-muted);">ยอดรอจ่ายรวม</div>
+          <div id="insModalPendingTotal" style="font-size:0.98rem;font-weight:800;color:#f59e0b;">฿0.00</div>
+        </div>
+        <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:14px;padding:8px;">
+          <div style="font-size:0.72rem;color:var(--text-muted);">หลังหักรอจ่าย</div>
+          <div id="insModalNetAfterPending" style="font-size:0.98rem;font-weight:800;color:#818cf8;">฿0.00</div>
+        </div>
+      </div>
+
+      <div id="danInsurancePoliciesContainer"></div>
+
+      <p id="danInsuranceModalStatus" role="status" aria-live="polite" style="font-size:0.82rem;margin:8px 0 0 0;color:var(--brand-primary,#10b981);"></p>
     </div>
   </div>
 

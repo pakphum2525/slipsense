@@ -477,7 +477,47 @@ Deno.serve(async (req: Request) => {
   userTimestamps.push(nowMs);
   memoryRateWindow.set(userId, userTimestamps);
 
-  // 5. เตรียม Prompt และ JSON Schema สำหรับ Gemini Structured Output
+  // 5. เตรียม Prompt และ JSON Schema สำหรับ Gemini Structured Output (รองรับทั้งโหมดใบเสร็จปกติและโหมดพอร์ตหุ้น DIME)
+  const isPortfolioMode = payload.action === 'analyze_portfolio';
+
+  const portfolioSystemInstruction = `คุณคือผู้เชี่ยวชาญการอ่านภาพแคปหน้าจอพอร์ตหุ้นสหรัฐฯ และสินทรัพย์การลงทุน (โดยเฉพาะแอป DIME!, InnovestX, Streaming)
+กฎเหล็กที่ต้องปฏิบัติตามอย่างเคร่งครัด:
+1. อ่านรายการหุ้นทุกตัวที่ปรากฏในภาพตามลำดับจากบนลงล่าง ห้ามแต่งหรือเดาหุ้นที่ไม่มีในภาพเด็ดขาด
+2. สำหรับหน้าจอพอร์ต DIME ที่แสดงคอลัมน์ "มูลค่าสินทรัพย์ (USD)" และ "% กำไรและมูลค่า":
+   - ticker: ชื่อย่อหุ้นตัวพิมพ์ใหญ่ เช่น AMZN, NVDA, META, GOOG, LLY, MSFT (ข้ามป้ายแจ้งเตือน เช่น "XD 13 พ.ย." ไม่ใช่ชื่อหุ้น)
+   - portfolioWeightPct: ตัวเลขเปอร์เซ็นต์สัดส่วนพอร์ตใต้ชื่อหุ้น (เช่น 10.41 จาก "10.41%")
+   - marketValue: มูลค่าสินทรัพย์หน่วย USD ตัวเลขหลักตรงกลาง (เช่น 388.95, 373.28, 366.09, 355.69, 270.80, 265.31)
+   - marketValueThb: มูลค่าเทียบเท่าเงินบาทใต้ตัวเลข USD (เช่น 13018.16 จาก "≈ 13,018.16 THB")
+   - unrealizedPLPct: เปอร์เซ็นต์กำไร/ขาดทุนฝั่งขวา พร้อมเครื่องหมายบวก/ลบ (เช่น -1.32, -14.88, 1.33, 16.39, 41.96, 27.18)
+   - unrealizedPL: ตัวเลขกำไร/ขาดทุนหน่วย USD ในวงเล็บฝั่งขวา พร้อมเครื่องหมายบวก/ลบ (เช่น -5.22 จาก "(-5.22 USD)", -65.24 จาก "(-65.24 USD)", 4.80 จาก "(+4.80 USD)")
+   - shares: จำนวนหุ้นถ้ามีแสดงในภาพ หากไม่แสดงให้ส่ง 0
+   - currentPrice: ราคาตลาดต่อหุ้นถ้ามีแสดงในภาพ หากไม่แสดงให้ส่ง 0`;
+
+  const portfolioResponseSchema = {
+    type: 'OBJECT',
+    properties: {
+      currency: { type: 'STRING', description: 'สกุลเงินหลักของพอร์ต เช่น USD' },
+      holdings: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            ticker: { type: 'STRING', description: 'สัญลักษณ์หุ้น เช่น AMZN, NVDA, META, GOOG, LLY, MSFT' },
+            marketValue: { type: 'NUMBER', description: 'มูลค่าสินทรัพย์ปัจจุบันในหน่วย USD เช่น 388.95' },
+            marketValueThb: { type: 'NUMBER', nullable: true, description: 'มูลค่าประมาณการหน่วย THB เช่น 13018.16' },
+            unrealizedPL: { type: 'NUMBER', description: 'กำไร/ขาดทุนรวมในหน่วย USD (ติดลบเมื่อขาดทุน) เช่น -5.22 หรือ 4.80' },
+            unrealizedPLPct: { type: 'NUMBER', description: 'เปอร์เซ็นต์กำไร/ขาดทุน (ติดลบเมื่อขาดทุน) เช่น -1.32 หรือ 1.33' },
+            portfolioWeightPct: { type: 'NUMBER', nullable: true, description: 'สัดส่วนในพอร์ตเป็น % เช่น 10.41' },
+            shares: { type: 'NUMBER', nullable: true, description: 'จำนวนหุ้น หากไม่แสดงในภาพให้เป็น 0' },
+            currentPrice: { type: 'NUMBER', nullable: true, description: 'ราคาต่อหุ้น หากไม่แสดงในภาพให้เป็น 0' }
+          },
+          required: ['ticker', 'marketValue', 'unrealizedPL', 'unrealizedPLPct']
+        }
+      }
+    },
+    required: ['currency', 'holdings']
+  };
+
   const systemInstruction = `คุณคือผู้เชี่ยวชาญการอ่านใบเสร็จรับเงิน ใบกำกับภาษี และสลิปโอนเงินของประเทศไทยสำหรับระบบบัญชีรายรับ-รายจ่าย
 กฎเหล็กที่ต้องปฏิบัติตามอย่างเคร่งครัด:
 1. ห้ามแต่งหรือเดาข้อมูลที่ไม่ปรากฏในภาพโดยเด็ดขาด
@@ -601,7 +641,7 @@ Deno.serve(async (req: Request) => {
       signal: controller.signal,
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: systemInstruction }]
+          parts: [{ text: isPortfolioMode ? portfolioSystemInstruction : systemInstruction }]
         },
         contents: [
           {
@@ -614,7 +654,9 @@ Deno.serve(async (req: Request) => {
                 }
               },
               {
-                text: 'กรุณาอ่านข้อมูลจากภาพใบเสร็จหรือสลิปนี้และส่งออกตาม JSON Schema ที่กำหนด หากภาพไม่ใช่ใบเสร็จหรือสลิป ให้ตั้ง date=null, amount=null, type="unknown" และแจ้งใน warnings'
+                text: isPortfolioMode
+                  ? 'กรุณาอ่านข้อมูลหุ้นทุกตัวในภาพพอร์ตการลงทุนนี้ (เช่น AMZN, NVDA, META, GOOG, LLY, MSFT) พร้อมมูลค่าสินทรัพย์ (USD), มูลค่าบาท (THB), กำไร/ขาดทุน (USD และ %) และสัดส่วนพอร์ต (%) ตาม JSON Schema'
+                  : 'กรุณาอ่านข้อมูลจากภาพใบเสร็จหรือสลิปนี้และส่งออกตาม JSON Schema ที่กำหนด หากภาพไม่ใช่ใบเสร็จหรือสลิป ให้ตั้ง date=null, amount=null, type="unknown" และแจ้งใน warnings'
               }
             ]
           }
@@ -622,7 +664,7 @@ Deno.serve(async (req: Request) => {
         generationConfig: {
           temperature: 0.1,
           responseMimeType: 'application/json',
-          responseSchema
+          responseSchema: isPortfolioMode ? portfolioResponseSchema : responseSchema
         }
       })
     });
@@ -710,6 +752,48 @@ Deno.serve(async (req: Request) => {
     if (!parsedResult || typeof parsedResult !== 'object' || Array.isArray(parsedResult)) {
       return jsonResponse({ error: 'ผลลัพธ์ AI ไม่ตรงรูปแบบข้อมูล', code: 'INVALID_AI_SCHEMA' }, 422, corsHeaders);
     }
+
+    if (isPortfolioMode) {
+      const rawHoldings = Array.isArray(parsedResult.holdings) ? parsedResult.holdings : [];
+      const holdings = rawHoldings
+        .map((item: any) => {
+          const ticker = String(item?.ticker || '').trim().toUpperCase().replace(/[^A-Z0-9.-]/g, '');
+          const marketValue = Number(item?.marketValue);
+          const marketValueThb = Number(item?.marketValueThb);
+          const unrealizedPL = Number(item?.unrealizedPL);
+          const unrealizedPLPct = Number(item?.unrealizedPLPct);
+          const portfolioWeightPct = Number(item?.portfolioWeightPct);
+          const shares = Number(item?.shares);
+          const currentPrice = Number(item?.currentPrice);
+          if (!ticker || !Number.isFinite(marketValue) || marketValue < 0) return null;
+          return {
+            ticker,
+            marketValue: Math.round(marketValue * 100) / 100,
+            marketValueThb: Number.isFinite(marketValueThb) && marketValueThb > 0 ? Math.round(marketValueThb * 100) / 100 : 0,
+            unrealizedPL: Number.isFinite(unrealizedPL) ? Math.round(unrealizedPL * 100) / 100 : 0,
+            unrealizedPLPct: Number.isFinite(unrealizedPLPct) ? Math.round(unrealizedPLPct * 100) / 100 : 0,
+            portfolioWeightPct: Number.isFinite(portfolioWeightPct) ? Math.round(portfolioWeightPct * 100) / 100 : 0,
+            shares: Number.isFinite(shares) && shares > 0 ? shares : 0,
+            currentPrice: Number.isFinite(currentPrice) && currentPrice > 0 ? currentPrice : 0,
+            currency: 'USD'
+          };
+        })
+        .filter(Boolean);
+
+      return jsonResponse(
+        {
+          ok: true,
+          model,
+          data: {
+            currency: 'USD',
+            holdings
+          }
+        },
+        200,
+        corsHeaders
+      );
+    }
+
     const validatedData = normalizeAndValidateAiResult(parsedResult);
 
     return jsonResponse(
