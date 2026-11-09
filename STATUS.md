@@ -474,3 +474,19 @@ SQL แทนที่ CHECK เดิมแบบ transaction/รันซ้�
 - Offline: ผ่านการทดสอบ IndexedDB และ client จำลอง ไม่ได้ยืนยัน offline browser restart หรือ service worker upgrade จริงบนอุปกรณ์
 - SQL ยังไม่ได้ apply ฐานข้อมูลจริง และไม่ได้รัน RLS integration ด้วยผู้ใช้สองราย/anon หรือ concurrent delete จริง ไม่มีผลทดสอบ PostgreSQL อ้างอิงแทน unit assertions ต้องตรวจในฐานข้อมูลทดสอบก่อนใช้จริง
 - ตรวจขอบเขตด้วย git status รวม untracked และ diff: การแก้ไขอยู่ใน allowlist ของงานเท่านั้น รายงาน DEV_REPORT ส่งเป็น JSON ในผลตอบกลับเพื่อให้ runner รับต่อ โดยไม่สร้างไฟล์นอก allowlist
+
+## TASK-SLIPSENSE-V4-029 — ลดภาระแบตเตอรี่และความร้อน (9 พฤศจิกายน 2026)
+
+งาน Developer อยู่บนสาขา `agent-task/TASK-SLIPSENSE-V4-029` ใน isolated worktree ที่ Global Runner สร้างไว้แล้ว พบแผนและ `PLAN_REVIEW_REQUEST.json` พร้อม provisional permission ของโหมด failover ก่อนทำงาน ข้อมูลสถานะงานก่อนหน้านี้เป็นประวัติ ไม่ใช่ผลตรวจของงานนี้
+
+- ย้ายพื้นหลังไปยัง `#appFixedBg` แบบ fixed พร้อม `translateZ(0)`, `aria-hidden` และไม่รับ pointer รักษาธีมและ DOM IDs เดิม ลด blur เหลือไม่เกิน 14px และคง layer พื้นหลังเมื่อเปิด reduced motion โดยไม่เพิ่ม layer ให้ทุกการ์ด
+- ซ่อนแท็บแล้วถอดเฉพาะ Realtime channel ที่แอปเป็นเจ้าของและหยุด share heartbeat กลับมาแล้วตรวจ session ก่อน reconnect และใช้เส้นทางซิงก์เดิม มี generation ป้องกัน async setup/renewal รอบเก่า การเปลี่ยนบัญชีและ release หยุด heartbeat ด้วย
+- คืนขนาด Canvas เป็นศูนย์ ล้าง Image src และถอด handlers ใน finally ทั้งสำเร็จและผิดพลาด คงผลลัพธ์ JPEG, quality และการย่อขนาดเดิม ฟังก์ชันใช้ FileReader จึงไม่มี object URL ที่ต้อง revoke
+- เปลี่ยนเฉพาะรุ่น app-shell cache เป็น `v4-3d-cute-3-battery-v8` ไม่เปลี่ยนนโยบาย cache และไม่ล้าง IndexedDB
+- System Node.js `v24.16.0` และ Git จาก codex-primary-runtime: production pipeline ผ่าน exit code 0 ด้วย `node -e "require('./tests/battery_optimization.test').buildScoped()"` ซึ่งเรียก `scripts/build_prod.js` เดิม โดยจำกัดการลบ/เขียนเฉพาะ artifact ใน allowlist และตรวจ static assets ที่ไม่อนุญาตให้เขียนว่ามีเนื้อหาเดิม จึงไม่เรียก build เปล่า ๆ ที่จะลบทั้ง dist
+- `npm test`: ผ่าน 43/43 รายการ ล้มเหลว 0, exit code 0 รวมชุดทดสอบธีมเดิม, RocketTool/portfolio และ regression ใหม่ การทดสอบเดิมสร้าง build ในหน่วยความจำ มีการทดสอบ source และ generated HTML บนดิสก์แยกอีกครั้ง ผ่าน exit code 0
+- Regression ครอบคลุม hidden/visible, async session และ channel removal ที่ค้าง, session ไม่ตรงบัญชี, logout ระหว่าง resume, refresh ล้มเหลว, share pause/resume/release/เสีย claim และ Canvas/Image cleanup เมื่อ decode/context/draw/encode ผิดพลาด รวมทั้ง CSS ทุกธีมและ DOM IDs จาก template ถึง generated HTML
+- ตรวจ SHA-256 และขนาด artifact ตาม BUILD_MANIFEST, root/dist ตรงกัน และ DOM IDs เดิมครบ ผ่าน ตรวจ HTTP ด้วย dev server บน `127.0.0.1:8080` แล้ว root/dist HTML และ SW ส่งเนื้อหาตรงกับไฟล์จริง (200) ปิด server หลังตรวจแล้ว
+- ScopeVerifier ของ Global Runner ตรวจทั้ง diff และ untracked: ผ่าน ไม่มี violation ไม่แก้ `Production/**`, `.env*` หรือ `supabase.sql` รายงาน Developer ส่งเป็น JSON ในผลตอบกลับให้ Runner รับต่อ
+- ข้อจำกัด: browser inventory แจ้ง `The browser access host is unavailable` จึงยังไม่ได้ตรวจ scroll, เปลี่ยนธีม, dialog stacking, hidden/visible, offline/online, logout, release share และ RocketTool ในเบราว์เซอร์จริง พฤติกรรมที่กล่าวว่าผ่านข้างต้นเป็น automated mocks/source/artifact checks ไม่ใช่ผลทดสอบ Supabase จริงหรือเครื่องโทรศัพท์ ไม่มีผลวัดพลังงาน อุณหภูมิ FPS หรือ GPU repaint จึงยังยืนยันขนาดการประหยัดแบตเตอรี่ไม่ได้
+- การส่งต่อ: ณ เวลาตรวจ STATE ของ Runner ยังเป็น `IMPLEMENTING`, active_agent `Codex` การสร้าง QA_REPORT/QA_REVIEW_REQUEST และเปลี่ยนเป็น Gate 12 `QA_RUNNING`, active_agent `Antigravity` เป็นหน้าที่ Runner หลังรับ DEV_REPORT และ Independent QA ผ่าน งานนี้ไม่เขียนสถานะ QA ผ่านแทน Runner ไม่สร้าง RELEASE_MANIFEST และไม่ merge ต้องหยุดรอ Antigravity ที่ Gate 12 ตามแผน

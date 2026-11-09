@@ -1322,55 +1322,63 @@ interface DashboardMetrics {
           reader.readAsDataURL(file);
         });
 
-        const img = await new Promise((resolve, reject) => {
-          const imageEl = new Image();
-          imageEl.onload = () => resolve(imageEl);
-          imageEl.onerror = () => reject(new Error('ไม่สามารถเปิดไฟล์รูปภาพนี้ได้ กรุณาใช้ไฟล์ JPEG หรือ PNG ที่ไม่เสียหาย'));
-          imageEl.src = dataUrl;
-        });
+        let canvas: any = null;
+        const imageEl = new Image();
+        try {
+          const img: any = await new Promise((resolve, reject) => {
+            imageEl.onload = () => resolve(imageEl);
+            imageEl.onerror = () => reject(new Error('ไม่สามารถเปิดไฟล์รูปภาพนี้ได้ กรุณาใช้ไฟล์ JPEG หรือ PNG ที่ไม่เสียหาย'));
+            imageEl.src = dataUrl;
+          });
 
-        const origW = img.naturalWidth || img.width || 1;
-        const origH = img.naturalHeight || img.height || 1;
-        let targetW = origW;
-        let targetH = origH;
+          const origW = img.naturalWidth || img.width || 1;
+          const origH = img.naturalHeight || img.height || 1;
+          let targetW = origW;
+          let targetH = origH;
 
-        const longestSide = Math.max(origW, origH);
-        if (longestSide > maxDimension) {
-          const ratio = maxDimension / longestSide;
-          targetW = Math.max(1, Math.round(origW * ratio));
-          targetH = Math.max(1, Math.round(origH * ratio));
+          const longestSide = Math.max(origW, origH);
+          if (longestSide > maxDimension) {
+            const ratio = maxDimension / longestSide;
+            targetW = Math.max(1, Math.round(origW * ratio));
+            targetH = Math.max(1, Math.round(origH * ratio));
+          }
+
+          canvas = document.createElement('canvas');
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            throw new Error('เบราว์เซอร์ไม่รองรับการประมวลผลภาพด้วย Canvas');
+          }
+
+          // วาดพื้นหลังสีขาวเพื่อป้องกันภาพ PNG พื้นใสกลายเป็นสีดำเวลาแปลงเป็น JPEG
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, targetW, targetH);
+          ctx.drawImage(img, 0, 0, targetW, targetH);
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          if (!compressedDataUrl || !compressedDataUrl.startsWith('data:image/jpeg;base64,')) {
+            throw new Error('การบีบอัดรูปภาพล้มเหลว กรุณาลองใช้รูปภาพอื่น');
+          }
+
+          const base64Data = compressedDataUrl.split(',')[1] || '';
+          const compressedSize = Math.floor((base64Data.length * 3) / 4);
+
+          return {
+            dataUrl: compressedDataUrl,
+            base64: base64Data,
+            mimeType: 'image/jpeg',
+            originalSize: file.size,
+            compressedSize,
+            width: targetW,
+            height: targetH
+          };
+        } finally {
+          if (canvas) { canvas.width = 0; canvas.height = 0; }
+          imageEl.onload = null;
+          imageEl.onerror = null;
+          imageEl.src = '';
         }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = targetW;
-        canvas.height = targetH;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          throw new Error('เบราว์เซอร์ไม่รองรับการประมวลผลภาพด้วย Canvas');
-        }
-
-        // วาดพื้นหลังสีขาวเพื่อป้องกันภาพ PNG พื้นใสกลายเป็นสีดำเวลาแปลงเป็น JPEG
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, targetW, targetH);
-        ctx.drawImage(img, 0, 0, targetW, targetH);
-
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        if (!compressedDataUrl || !compressedDataUrl.startsWith('data:image/jpeg;base64,')) {
-          throw new Error('การบีบอัดรูปภาพล้มเหลว กรุณาลองใช้รูปภาพอื่น');
-        }
-
-        const base64Data = compressedDataUrl.split(',')[1] || '';
-        const compressedSize = Math.floor((base64Data.length * 3) / 4);
-
-        return {
-          dataUrl: compressedDataUrl,
-          base64: base64Data,
-          mimeType: 'image/jpeg',
-          originalSize: file.size,
-          compressedSize,
-          width: targetW,
-          height: targetH
-        };
       }
 
       // =====================================================================
@@ -1469,22 +1477,30 @@ interface DashboardMetrics {
         }
       }
 
+      let realtimeGeneration = 0;
       async function cleanupRealtimeSubscription() {
-        if (appState.realtimeChannel && appState.supabaseClient) {
+        realtimeGeneration++;
+        const channel = appState.realtimeChannel;
+        const client = appState.supabaseClient;
+        appState.realtimeChannel = null;
+        if (channel && client) {
           try {
-            await appState.supabaseClient.removeChannel(appState.realtimeChannel);
+            await client.removeChannel(channel);
           } catch (_e) {}
         }
-        appState.realtimeChannel = null;
       }
 
       async function setupRealtimeSubscription() {
-        await cleanupRealtimeSubscription();
-        if (!appState.supabaseClient || !appState.currentUser) return;
+        const cleanup = cleanupRealtimeSubscription();
+        const generation = realtimeGeneration;
+        const client = appState.supabaseClient;
+        const userId = appState.currentUser?.id;
+        await cleanup;
+        if (document.hidden || generation !== realtimeGeneration || !client || !userId ||
+            client !== appState.supabaseClient || userId !== appState.currentUser?.id) return;
 
         try {
-          const userId = appState.currentUser.id;
-          const channel = appState.supabaseClient
+          const channel = client
             .channel(`transactions_sync_${userId}`)
             .on(
               'postgres_changes',
@@ -1494,8 +1510,10 @@ interface DashboardMetrics {
                 table: 'transactions',
                 filter: `user_id=eq.${userId}`
               },
-              async () => {
-                await pullCloudTransactionsAndMerge();
+              () => {
+                if (!document.hidden && generation === realtimeGeneration && userId === appState.currentUser?.id) {
+                  pullCloudTransactionsAndMerge().catch(() => {});
+                }
               }
             )
             .subscribe();
@@ -1552,6 +1570,7 @@ interface DashboardMetrics {
             const nextUser = session?.user || null;
             appState.currentUser = nextUser;
             if (prevUserId !== (nextUser?.id || null)) {
+              stopShareHeartbeat();
               suggestionRequest++; historyRequest++;
               document.getElementById('txMerchantHistory').replaceChildren();
             }
@@ -3031,6 +3050,58 @@ interface DashboardMetrics {
       let activeShare: any = null;
       const shareClaimToken = generateUuid();
       let shareHeartbeat: any = null;
+      let shareHeartbeatGeneration = 0;
+      function stopShareHeartbeat() {
+        shareHeartbeatGeneration++;
+        if (shareHeartbeat !== null) clearInterval(shareHeartbeat);
+        shareHeartbeat = null;
+      }
+      async function startShareHeartbeat() {
+        stopShareHeartbeat();
+        const generation = shareHeartbeatGeneration;
+        const current = activeShare;
+        const owner = appState.currentUser?.id;
+        if (document.hidden || !current || !owner || current.owner !== owner) return;
+        const renew = () => shareInboxChange(current.id, row =>
+          generation === shareHeartbeatGeneration && !document.hidden && activeShare === current && appState.currentUser?.id === owner &&
+          row.state === 'claimed' && row.claim === shareClaimToken && row.owner === owner
+            ? { ...row, lease: Date.now() + 60000 } : null);
+        const row = await renew();
+        if (generation !== shareHeartbeatGeneration || document.hidden || activeShare !== current || appState.currentUser?.id !== owner) return;
+        if (!row) { activeShare = null; return; }
+        shareHeartbeat = setInterval(() => {
+          renew().then(row => {
+            if (!row && generation === shareHeartbeatGeneration && activeShare === current) { stopShareHeartbeat(); activeShare = null; }
+          }).catch(() => {});
+        }, 20000);
+      }
+
+      let visibilityGeneration = 0;
+      async function handleAppVisibilityChange() {
+        const generation = ++visibilityGeneration;
+        if (document.hidden) {
+          stopShareHeartbeat();
+          await cleanupRealtimeSubscription();
+          return;
+        }
+        const client = appState.supabaseClient;
+        const userId = appState.currentUser?.id;
+        const realtime = realtimeGeneration;
+        if (!client || !userId) return;
+        try {
+          const { data, error } = await client.auth.getSession();
+          if (error || data?.session?.user?.id !== userId || document.hidden ||
+              generation !== visibilityGeneration || realtime !== realtimeGeneration ||
+              client !== appState.supabaseClient || userId !== appState.currentUser?.id) return;
+          await setupRealtimeSubscription();
+          await startShareHeartbeat();
+          if (document.hidden || generation !== visibilityGeneration || userId !== appState.currentUser?.id) return;
+          if (navigator.onLine) await syncPendingTransactions();
+          else await refreshTransactionsFromLocal();
+        } catch (_e) {
+          // เก็บข้อมูลออฟไลน์และรายการรอซิงก์ไว้ให้ลองใหม่ได้
+        }
+      }
       async function shareInboxChange(id: string, change: (row: any) => any) {
         const db: any = await new Promise((resolve, reject) => {
           const req = indexedDB.open('slipsense_share_inbox', 1);
@@ -3065,16 +3136,13 @@ interface DashboardMetrics {
           activeShare = row;
           if (!validReceiptFile(row.file)) throw new Error('ภาพที่แชร์ไม่รองรับ');
           await handleImageFileSelected(row.file);
-          if (shareHeartbeat) clearInterval(shareHeartbeat);
-          shareHeartbeat = setInterval(() => {
-            shareInboxChange(id, row => row.claim === shareClaimToken && row.owner === appState.currentUser?.id ? { ...row, lease: Date.now() + 60000 } : null).catch(() => {});
-          }, 20000);
+          await startShareHeartbeat();
           captureMessage('รับภาพแชร์แล้ว กดวิเคราะห์และตรวจข้อมูลก่อนบันทึก');
         } catch (err) { await releaseSharedReceipt(); captureMessage(err.message || 'รับภาพแชร์ไม่ได้ กรุณาเลือกจากอัลบั้ม'); }
       }
 
       async function releaseSharedReceipt(ack = false) {
-        if (shareHeartbeat) { clearInterval(shareHeartbeat); shareHeartbeat = null; }
+        stopShareHeartbeat();
         const current = activeShare; activeShare = null;
         if (!current) return;
         await shareInboxChange(current.id, row => row.claim === shareClaimToken ?
@@ -4760,7 +4828,10 @@ interface DashboardMetrics {
       }
 
       async function handleAuthSignOut() {
+        appState.currentUser = null;
+        stopShareHeartbeat();
         await cleanupRealtimeSubscription();
+        await releaseSharedReceipt().catch(() => {});
         if (appState.supabaseClient) {
           await appState.supabaseClient.auth.signOut();
         }
@@ -6504,6 +6575,8 @@ interface DashboardMetrics {
         await resumeSharedReceipt();
         renderStockPortfolioUI();
       }
+
+      document.addEventListener('visibilitychange', () => { handleAppVisibilityChange().catch(() => {}); });
 
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
