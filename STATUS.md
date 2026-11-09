@@ -490,3 +490,27 @@ SQL แทนที่ CHECK เดิมแบบ transaction/รันซ้�
 - ScopeVerifier ของ Global Runner ตรวจทั้ง diff และ untracked: ผ่าน ไม่มี violation ไม่แก้ `Production/**`, `.env*` หรือ `supabase.sql` รายงาน Developer ส่งเป็น JSON ในผลตอบกลับให้ Runner รับต่อ
 - ข้อจำกัด: browser inventory แจ้ง `The browser access host is unavailable` จึงยังไม่ได้ตรวจ scroll, เปลี่ยนธีม, dialog stacking, hidden/visible, offline/online, logout, release share และ RocketTool ในเบราว์เซอร์จริง พฤติกรรมที่กล่าวว่าผ่านข้างต้นเป็น automated mocks/source/artifact checks ไม่ใช่ผลทดสอบ Supabase จริงหรือเครื่องโทรศัพท์ ไม่มีผลวัดพลังงาน อุณหภูมิ FPS หรือ GPU repaint จึงยังยืนยันขนาดการประหยัดแบตเตอรี่ไม่ได้
 - การส่งต่อ: ณ เวลาตรวจ STATE ของ Runner ยังเป็น `IMPLEMENTING`, active_agent `Codex` การสร้าง QA_REPORT/QA_REVIEW_REQUEST และเปลี่ยนเป็น Gate 12 `QA_RUNNING`, active_agent `Antigravity` เป็นหน้าที่ Runner หลังรับ DEV_REPORT และ Independent QA ผ่าน งานนี้ไม่เขียนสถานะ QA ผ่านแทน Runner ไม่สร้าง RELEASE_MANIFEST และไม่ merge ต้องหยุดรอ Antigravity ที่ Gate 12 ตามแผน
+
+
+## TASK-SLIPSENSE-V4-030 — ผล Developer ใน worktree (9 พฤศจิกายน 2026)
+
+Runner สร้าง isolated worktree และอนุมัติแผนแล้ว (STATE ที่ตรวจพบ: IMPLEMENTING, active_agent: Codex) งานนี้ต่อยอดการแก้ metric/storage ที่ค้างอยู่ใน src/app.ts โดยไม่แก้ไฟล์ควบคุมของ Runner
+
+- นำเข้าภาพ JPEG/PNG/WebP ครั้งละ 1–5 ภาพ ย่อผ่าน Canvas แล้วส่ง base64 จริงพร้อม action analyze_portfolio และ JWT ผ่าน Edge Function เดิมตามลำดับ ไม่เก็บภาพหรือ token ใน persistent storage
+- รวม ticker ที่ trim/uppercase ด้วย Map ไม่มีเพดานแถว ทดสอบ 23 holdings ภาพซ้อนกันไม่บวกจำนวน/มูลค่า หากขัดแย้งใช้ภาพแรกและแสดงคำเตือนให้ตรวจแก้
+- ฟอร์มแก้ชื่อหุ้น มูลค่า ต้นทุน และจำนวนหุ้นได้ คำนวณ metrics ใหม่ผ่าน engine เดิม แสดง USD และเปอร์เซ็นต์ที่คำนวณไม่ได้อย่างชัดเจน ทุกแถวต้องตรวจยืนยันใหม่หลังแก้ ปฏิเสธชื่อหุ้นซ้ำและค่าที่ไม่ครบ
+- อ่าน checkbox แทนที่พอร์ต ณ เวลายืนยัน ค่าเริ่มต้นไม่เลือก หากไม่เลือกให้อ่านพอร์ตล่าสุดและ upsert รักษา identity/metadata ของหุ้นเดิม เขียน localStorage key เดียวแบบ atomic ไม่ล้างก่อนเขียน เมื่อ storage ล้มเหลวคงพอร์ตและฟอร์มไว้
+- ป้องกัน batch ซ้อน การยืนยันซ้ำ และผลเก่าหลังยกเลิก/เปลี่ยนบัญชี คืนปุ่มและรีเซ็ต input ใน finally ข้อผิดพลาด offline/auth/compression/network/401/403/429/server/response ว่างหรือผิดรูปแบบแสดงภาษาไทย ไม่เปิดผลบางส่วน
+
+ผลตรวจจริง:
+- Baseline npm test: 42/43 ผ่าน, ล้มเหลว 1 (validateDimeReview ยังไม่ประกาศในโค้ดที่ค้างเดิม)
+- npm test หลังแก้: 43/43 ผ่าน, ล้มเหลว 0, exit code 0 รวม regression importer ที่รันทั้ง source และ generated bundle ใน sandbox เดิม โดยจำลองเฉพาะ DOM/image/network/auth/storage boundaries ไม่เรียกบริการจริง
+- node -e "require('./tests/portfolio_engine.test')().catch(e=>{console.error(e);process.exitCode=1})": ผ่าน exit code 0 ก่อนเพิ่มกรณีเปลี่ยนบัญชี/แก้ ticker ซ้ำ/ต้นทุนว่าง/อ่านพอร์ตล่าสุด ซึ่งกรณีเพิ่มได้ผ่านใน npm test รอบสุดท้าย
+- Build: node -e "require('./tests/battery_optimization.test').buildScoped()" ผ่าน exit code 0 ใช้ scripts/build_prod.js เดิมพร้อม guard จำกัดการเขียน/ลบเฉพาะ generated artifacts ที่อนุญาต ตรวจ static assets นอก allowlist ว่าเหมือนเดิมก่อนข้ามการเขียน สร้าง BUILD_MANIFEST จาก build จริง
+- ตรวจ SHA-256 และขนาดทุก artifact ใน manifest, root/dist HTML และ SW ตรงกัน, checkbox ID ไม่ซ้ำ/default unchecked และ UTF-8 without BOM: ผ่าน
+- Service Worker สร้างจาก src/sw.ts เดิม ไม่เปลี่ยน revision เพราะ navigation ใช้ network-first และ authenticated/API requests bypass cache อยู่แล้ว ผู้ใช้ต้องเชื่อมต่อออนไลน์เพื่อรับหน้าใหม่
+- Smoke ที่ทำได้: npm test ตรวจ static HTTP server, syntax และพฤติกรรม source/built ใน browser sandbox ผ่าน ยังไม่ได้ทดสอบคลิก UI ในเบราว์เซอร์จริง หรือ AI กับบัญชี Supabase จริง
+
+ข้อจำกัด: backend ปัจจุบันแปลงค่าที่ AI อ่านไม่ได้บางช่องเป็น 0 และส่ง currency USD เสมอ frontend จึงแยกศูนย์จริงจากค่าที่ backend เติมไม่ได้ ต้องตรวจทานทุกแถว; ไม่แก้ backend ตามขอบเขต ภาพที่ถูกยกเลิกระหว่างส่งอาจยังประมวลผลบน server แต่ผลจะไม่ถูกนำมาใช้
+
+การส่งต่อ: Developer self-tests ผ่าน ไม่ใช่ผล Independent QA รอ Runner รับ DEV_REPORT และทำ ScopeVerifier/Independent QARunner ก่อนหยุด Gate 12 ที่ QA_RUNNING, active_agent Antigravity ตามกระบวนการ ห้ามถือว่าผ่าน Gate 12 แล้ว งานนี้ไม่สร้าง RELEASE_MANIFEST ไม่ merge และไม่ release

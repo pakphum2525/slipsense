@@ -255,6 +255,7 @@ function upsertPortfolioHoldings(holdingsList, newHoldings) {
 }
 
 module.exports = async function runPortfolioEngineTests() {
+  await runDimeImporterRegression();
   // 1.1 ซื้อหุ้นครั้งแรก
   const r1 = calculateWeightedAverageCost(0, 0, 10, 100);
   assert.strictEqual(r1.shares, 10);
@@ -433,3 +434,137 @@ module.exports = async function runPortfolioEngineTests() {
   assert.ok(html.includes('deletePortfolioHolding'), 'Bundle should include deletePortfolioHolding');
   assert.ok(html.includes('clearAllPortfolioHoldings'), 'Bundle should include clearAllPortfolioHoldings');
 };
+
+
+async function runDimeImporterRegression() {
+  const fs = require('fs'), vm = require('vm');
+  const { stripTypeScriptTypes } = require('node:module');
+  const { createBrowserSandbox } = require('../scripts/run_tests');
+  const key = 'slipsense_stock_holdings_v1';
+  const fixture = ticker => ({ ticker, marketValue: 150, unrealizedPL: 50, shares: 2, currentPrice: 75 });
+  const response = holdings => ({ ok: true, data: { currency: 'USD', holdings } });
+  for (const variant of ['source', 'built']) {
+    function load() {
+      const c = createBrowserSandbox(); c.document.readyState = 'loading';
+      const html = fs.readFileSync('dist/index.html', 'utf8');
+      const code = variant === 'source' ? stripTypeScriptTypes(fs.readFileSync('src/app.ts', 'utf8')) : [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('SlipSenseApp'));
+      vm.runInContext(code, c);
+      const api = c.SlipSenseApp, state = api.getState(), el = id => c.document.getElementById(id);
+      state.currentUser = { id: 'owner' }; state.settings.supabaseUrl = 'https://example.supabase.co'; state.settings.supabaseAnonKey = 'public';
+      state.supabaseClient = { auth: { getSession: async () => ({ data: { session: { access_token: 'test-jwt', user: { id: 'owner' } } } }) } };
+      el('portfolioVerifyModal').hidden = true;
+      let compressFailure = false;
+      c.FileReader = class { readAsDataURL() { this.result = 'data:image/png;base64,' + 'A'.repeat(80); this.onload(); } };
+      c.Image = class { constructor() { this.naturalWidth = 2000; this.naturalHeight = 1000; } set src(v) { if (v) queueMicrotask(() => compressFailure ? this.onerror() : this.onload()); } };
+      const create = c.document.createElement;
+      const rows = [];
+      c.document.createElement = tag => {
+        const node = create(tag);
+        if (tag === 'canvas') node.toDataURL = () => 'data:image/jpeg;base64,' + 'B'.repeat(80);
+        if (tag === 'div') {
+          const fields = ['ticker', 'marketValue', 'costBasis', 'shares'].map(field => { const n = create('input'); n.setAttribute('data-field', field); return n; });
+          const check = create('input'), summary = create('p');
+          node.querySelector = selector => selector === '.verify-item-checkbox' ? check : summary;
+          node.querySelectorAll = () => fields; node.fields = fields; node.check = check;
+        }
+        return node;
+      };
+      el('portfolioVerifyListContainer').appendChild = row => { rows.push(row); return row; };
+      c.document.querySelectorAll = selector => selector.includes('portfolioVerifyListContainer') ? rows.map(row => row.check) : [];
+      const calls = []; let replies = [response([fixture(' aapl ')])];
+      c.fetch = async (url, options) => { calls.push({ url, options, payload: JSON.parse(options.body) }); const reply = replies.shift(); if (reply instanceof Error) throw reply; return { ok: reply?.status ? false : true, status: reply?.status || 200, json: async () => reply }; };
+      api.bindStockPortfolioEvents();
+      const upload = files => el('dimePortfolioFileInput').emit('change', { target: { files } });
+      const image = { type: 'image/png', size: 100 };
+      return { c, api, state, el, calls, rows, upload, image, replies: value => replies = value, failCompression: () => compressFailure = true };
+    }
+    {
+      const h = load(), merged = new Map();
+      h.api.mergeDimePortfolioResponse(merged, response(Array.from({ length: 23 }, (_, i) => fixture('S' + i))));
+      h.api.mergeDimePortfolioResponse(merged, response([fixture(' s0 '), { ...fixture('S1'), marketValue: 200 }]));
+      assert.equal(merged.size, 23); assert.equal(merged.get('S0').shares, 2); assert.equal(merged.get('S1').marketValue, 150); assert(merged.get('S1').conflict);
+      const metrics = h.api.calculateDimeHoldingMetrics(fixture('A'));
+      assert.equal(metrics.costBasis, 100); assert.equal(metrics.avgCost, 50); assert.equal(metrics.unrealizedPLPct, 50);
+      assert.equal(h.api.calculateDimeHoldingMetrics({ ticker: 'A' }).shares, null);
+      assert.equal(h.api.calculateDimeHoldingMetrics({ ticker: 'A', marketValue: 10, unrealizedPL: 10 }).unrealizedPLPct, null);
+      assert.throws(() => h.api.validateDimeReview([{ ...metrics, shares: null }]));
+      assert.throws(() => h.api.validateDimeReview([metrics, metrics]));
+      for (const invalid of [null, response([]), response([{ ...fixture('A'), shares: 'bad' }]), { ok: true, data: { currency: 'THB', holdings: [fixture('A')] } }]) assert.throws(() => h.api.mergeDimePortfolioResponse(new Map(), invalid));
+    }
+    for (const replace of [false, true]) {
+      const h = load(); h.c.localStorage.setItem(key, JSON.stringify([{ id: 'keep-id', ticker: 'AAPL', name: 'Apple', targetPct: 20, currency: 'USD', note: 'keep' }, { id: 'other', ticker: 'OTHER' }]));
+      h.replies([response([fixture(' aapl ')]), response([fixture('AAPL'), fixture('MSFT')])]);
+      await h.upload([h.image, h.image]);
+      assert.equal(h.calls.length, 2);
+      for (const call of h.calls) { assert.equal(call.payload.action, 'analyze_portfolio'); assert.equal(call.payload.imageBase64, 'B'.repeat(80)); assert.equal(call.payload.mimeType, 'image/jpeg'); assert.equal(call.options.headers.Authorization, 'Bearer test-jwt'); }
+      assert.equal(h.rows.length, 2, h.el('dimeImportStatus').textContent); assert.equal(h.el('portfolioVerifyModal').hidden, false);
+      await h.el('btnConfirmPortfolioVerify').emit('click'); assert.equal(JSON.parse(h.c.localStorage.getItem(key)).length, 2, 'review required');
+      const shares = h.rows[0].fields[3]; shares.value = '4'; await shares.emit('input');
+      h.rows.forEach(row => row.check.checked = true);
+      h.el('chkReplaceAllPortfolioOnImport').checked = replace;
+      await h.el('btnConfirmPortfolioVerify').emit('click');
+      const saved = JSON.parse(h.c.localStorage.getItem(key)); assert.equal(saved.length, replace ? 2 : 3);
+      const aapl = saved.find(row => row.ticker === 'AAPL'); assert.equal(aapl.id, 'keep-id'); assert.equal(aapl.shares, 4); assert.equal(aapl.avgCost, 25); assert.equal(aapl.note, 'keep');
+      const before = h.c.localStorage.getItem(key); await h.el('btnConfirmPortfolioVerify').emit('click'); assert.equal(h.c.localStorage.getItem(key), before);
+    }
+    for (const failure of ['offline', 'auth', 'count', 'type', 'compression', 'network', 401, 403, 429, 500, 'malformed', 'empty']) {
+      const h = load(); h.c.localStorage.setItem(key, '[]');
+      let files = [h.image];
+      if (failure === 'offline') h.c.navigator.onLine = false;
+      if (failure === 'auth') h.state.currentUser = null;
+      if (failure === 'count') files = Array(6).fill(h.image);
+      if (failure === 'type') files = [{ type: 'text/plain' }];
+      if (failure === 'compression') h.failCompression();
+      if (failure === 'network') h.replies([Error('network')]);
+      if (typeof failure === 'number') h.replies([{ status: failure }]);
+      if (failure === 'malformed') h.replies([{}]);
+      if (failure === 'empty') h.replies([response([])]);
+      await h.upload(files);
+      assert.equal(h.el('portfolioVerifyModal').hidden, true, String(failure)); assert.equal(h.c.localStorage.getItem(key), '[]');
+      assert.equal(h.el('dimePortfolioFileInput').value, ''); assert.equal(h.el('btnStartDimeImport').disabled, false);
+      assert(/[ก-๙]/.test(h.el('dimeImportStatus').textContent));
+    }
+    {
+      const h = load(); h.replies([response([fixture('A')]), Error('network')]); await h.upload([h.image, h.image]); assert.equal(h.rows.length, 0); assert.equal(h.el('portfolioVerifyModal').hidden, true);
+    }
+    {
+      const h = load(); await h.upload([h.image]); h.rows.forEach(row => row.check.checked = true);
+      const before = h.c.localStorage.getItem(key); const set = h.c.localStorage.setItem;
+      h.c.localStorage.setItem = () => { throw Error('quota'); }; await h.el('btnConfirmPortfolioVerify').emit('click');
+      assert.equal(h.c.localStorage.getItem(key), before); assert.equal(h.el('portfolioVerifyModal').hidden, false);
+      h.c.localStorage.setItem = set; await h.el('btnConfirmPortfolioVerify').emit('click'); assert.equal(h.el('portfolioVerifyModal').hidden, true);
+    }
+    {
+      const h = load(); let finish;
+      h.c.fetch = () => new Promise(resolve => { finish = resolve; });
+      const pending = h.upload([h.image]);
+      for (let i = 0; i < 10 && !finish; i++) await new Promise(resolve => setImmediate(resolve));
+      assert(finish); await h.upload([h.image]);
+      await h.el('btnClosePortfolioImport').emit('click');
+      finish({ ok: true, json: async () => response([fixture('A')]) }); await pending;
+      assert.equal(h.rows.length, 0); assert.equal(h.el('portfolioVerifyModal').hidden, true);
+    }
+    {
+      const h = load(); let finish;
+      h.c.fetch = () => new Promise(resolve => { finish = resolve; });
+      const pending = h.upload([h.image]);
+      for (let i = 0; i < 10 && !finish; i++) await new Promise(resolve => setImmediate(resolve));
+      h.state.currentUser = { id: 'other' };
+      finish({ ok: true, json: async () => response([fixture('A')]) }); await pending;
+      assert.equal(h.rows.length, 0, 'account switch ignores old result');
+    }
+    {
+      const h = load(); h.replies([response([fixture('A'), fixture('B')])]); await h.upload([h.image]);
+      const ticker = h.rows[1].fields[0]; ticker.value = ' a '; await ticker.emit('input'); h.rows.forEach(row => row.check.checked = true);
+      h.c.localStorage.setItem(key, '[]'); await h.el('btnConfirmPortfolioVerify').emit('click');
+      assert.equal(h.c.localStorage.getItem(key), '[]', 'edited duplicate rejected'); assert.equal(h.el('portfolioVerifyModal').hidden, false);
+      ticker.value = 'B'; await ticker.emit('input');
+      const cost = h.rows[0].fields[2]; cost.value = ''; await cost.emit('input'); h.rows.forEach(row => row.check.checked = true);
+      await h.el('btnConfirmPortfolioVerify').emit('click'); assert.equal(h.c.localStorage.getItem(key), '[]', 'blank cost rejected');
+      cost.value = '100'; await cost.emit('input'); h.rows.forEach(row => row.check.checked = true);
+      h.c.localStorage.setItem(key, JSON.stringify([{ id: 'latest', ticker: 'NEW', shares: 1, costBasis: 1, avgCost: 1, currentPrice: 1, currency: 'USD' }]));
+      await h.el('btnConfirmPortfolioVerify').emit('click'); assert(JSON.parse(h.c.localStorage.getItem(key)).some(row => row.id === 'latest'), 'read latest portfolio at confirm');
+    }
+    console.log('  [PASS] DIME importer ' + variant + ': payload, 23 holdings, review, atomic storage, cancellation and 12 failure paths');
+  }
+}

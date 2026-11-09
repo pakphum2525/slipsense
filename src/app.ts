@@ -1676,7 +1676,7 @@ interface DashboardMetrics {
               appState.aiStatusMessage = 'เกิดข้อผิดพลาดจาก AI';
             }
             updateStatusBannersAndPills();
-            throw new Error(jsonBody.error || `ไม่สามารถวิเคราะห์ใบเสร็จได้ (HTTP ${response.status})`);
+            throw new Error(response.status === 401 || response.status === 403 ? 'กรุณาเข้าสู่ระบบใหม่ หรือบัญชีนี้ไม่มีสิทธิ์ใช้งาน AI' : response.status === 429 ? 'ถึงขีดจำกัดการใช้งาน AI กรุณารอสักครู่แล้วลองใหม่' : response.status >= 500 ? 'บริการ AI ขัดข้องชั่วคราว กรุณาลองใหม่ภายหลัง' : 'ไม่สามารถวิเคราะห์ภาพได้ กรุณาตรวจภาพแล้วลองใหม่');
           }
 
           appState.aiStatus = 'ready';
@@ -4999,34 +4999,37 @@ interface DashboardMetrics {
       // DIME Portfolio Screenshot Importer & Trade Slip Engine (TASK-SLIPSENSE-V4-020)
       function calculateDimeHoldingMetrics(raw: any) {
         const ticker = String(raw.ticker || '').toUpperCase().trim();
-        const marketValue = Number(raw.marketValue) || 0;
-        let unrealizedPL = Number(raw.unrealizedPL);
-        let unrealizedPLPct = Number(raw.unrealizedPLPct) || 0;
+        const numeric = (v: any) => v !== null && v !== undefined && String(v).trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
+        const marketValue = numeric(raw.marketValue);
+        let unrealizedPL = numeric(raw.unrealizedPL);
+        let unrealizedPLPct = numeric(raw.unrealizedPLPct);
 
-        if (isNaN(unrealizedPL)) {
-          if (unrealizedPLPct !== 0) {
+        if (unrealizedPL === null) {
+          if (marketValue !== null && unrealizedPLPct !== null && unrealizedPLPct > -100) {
             unrealizedPL = (marketValue * (unrealizedPLPct / 100)) / (1 + (unrealizedPLPct / 100));
           } else {
-            unrealizedPL = 0;
+            unrealizedPL = null;
           }
         }
 
-        const costBasis = Math.max(0, marketValue - unrealizedPL);
-        let shares = Number(raw.shares) || 0;
-        let currentPrice = Number(raw.currentPrice) || 0;
+        const costBasis = numeric(raw.costBasis) ?? (marketValue !== null && unrealizedPL !== null ? marketValue - unrealizedPL : null);
+        unrealizedPL = marketValue !== null && costBasis !== null ? marketValue - costBasis : null;
+        unrealizedPLPct = costBasis > 0 && unrealizedPL !== null ? unrealizedPL / costBasis * 100 : null;
+        let shares = numeric(raw.shares);
+        let currentPrice = numeric(raw.currentPrice);
 
-        if (shares <= 0 && currentPrice > 0) {
+        if (!(shares > 0) && currentPrice > 0 && marketValue !== null) {
           shares = marketValue / currentPrice;
-        } else if (shares <= 0) {
-          shares = 1;
+        } else if (!(shares > 0)) {
+          shares = null;
         }
 
-        const avgCost = shares > 0 ? (costBasis / shares) : costBasis;
-        if (currentPrice <= 0 && shares > 0) {
+        const avgCost = shares > 0 && costBasis !== null ? (costBasis / shares) : null;
+        if (shares > 0 && marketValue !== null) {
           currentPrice = marketValue / shares;
-        }
+        } else currentPrice = null;
 
-        return {
+        const result = {
           ticker,
           marketValue,
           unrealizedPL,
@@ -5036,10 +5039,15 @@ interface DashboardMetrics {
           avgCost,
           currentPrice
         };
+        for (const key of Object.keys(result)) if (typeof result[key] === 'number' && !Number.isFinite(result[key])) result[key] = null;
+        return result;
       }
 
       function upsertPortfolioHoldings(newHoldings: any[], replaceAll = false) {
-        const holdings = replaceAll ? [] : getStockHoldingsFromStorage();
+        newHoldings = validateDimeReview(newHoldings);
+        const stored = localStorage.getItem(STOCK_HOLDINGS_KEY);
+        const latest = (stored === null ? getStockHoldingsFromStorage() : JSON.parse(stored)).map(h => ({ ...h, ticker: String(h.ticker).trim().toUpperCase() }));
+        const holdings = replaceAll ? [] : latest;
         newHoldings.forEach(nh => {
           const t = String(nh.ticker || '').toUpperCase().trim();
           if (!t) return;
@@ -5049,29 +5057,60 @@ interface DashboardMetrics {
             existing.costBasis = nh.costBasis;
             existing.avgCost = nh.avgCost;
             existing.currentPrice = nh.currentPrice;
+            existing.currency = 'USD';
             if (nh.targetPct && nh.targetPct > 0) existing.targetPct = nh.targetPct;
             existing.updatedAt = new Date().toISOString();
           } else {
             holdings.push({
-              id: 'stock-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              ...(latest.find(h => h.ticker === t) || {}),
+              id: latest.find(h => h.ticker === t)?.id || 'stock-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
               ticker: t,
-              name: t,
+              name: latest.find(h => h.ticker === t)?.name || t,
               shares: nh.shares,
               costBasis: nh.costBasis,
               avgCost: nh.avgCost,
               currentPrice: nh.currentPrice,
-              targetPct: nh.targetPct || 0,
+              targetPct: nh.targetPct || latest.find(h => h.ticker === t)?.targetPct || 0,
               currency: 'USD',
               updatedAt: new Date().toISOString()
             });
           }
         });
-        saveStockHoldingsToStorage(holdings);
-        renderStockPortfolioUI();
+        // One atomic key replacement. Propagate quota/security errors to the review UI.
+        localStorage.setItem(STOCK_HOLDINGS_KEY, JSON.stringify(holdings));
+        // Rendering cannot undo a committed atomic storage write.
+        try { renderStockPortfolioUI(); } catch (_) {}
       }
 
       let stagedDimeHoldings: any[] = [];
-      let dimeSelectedFiles: File[] = [];
+      let dimeImportBusy = false;
+      let dimeImportGeneration = 0;
+      let dimeReviewOwner: string | null = null;
+
+      function validateDimeReview(items: any[]) {
+        if (!items.length) throw new Error("ไม่พบรายการหุ้น");
+        const seen = new Set();
+        return items.map(raw => {
+          if (['shares', 'marketValue', 'costBasis'].some(key => raw[key] === null || raw[key] === undefined || raw[key] === '' || !Number.isFinite(Number(raw[key])))) throw new Error("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+          const item = calculateDimeHoldingMetrics(raw);
+          if (!/^[A-Z0-9][A-Z0-9.-]*$/.test(item.ticker) || seen.has(item.ticker)) throw new Error("กรุณาตรวจชื่อหุ้นที่ว่าง ไม่ถูกต้อง หรือซ้ำกัน");
+          seen.add(item.ticker);
+          if (!(Number(raw.shares) > 0) || !(item.shares > 0) || item.marketValue === null || item.marketValue < 0 || item.costBasis === null || item.costBasis < 0 || item.currentPrice === null || item.avgCost === null) throw new Error("กรุณากรอกจำนวนหุ้น มูลค่า และต้นทุนให้ครบทุกแถว");
+          return item;
+        });
+      }
+      function mergeDimePortfolioResponse(merged: Map<string, any>, response: any) {
+        const data = response?.data;
+        if (response?.ok !== true || data?.currency !== 'USD' || !Array.isArray(data.holdings) || !data.holdings.length) throw new Error("ไม่พบหุ้น หรือผลลัพธ์ AI ไม่ถูกต้อง กรุณาเลือกภาพใหม่");
+        for (const raw of data.holdings) {
+          if (!raw || typeof raw.ticker !== 'string' || !/^[A-Z0-9][A-Z0-9.-]*$/.test(raw.ticker.trim().toUpperCase()) || (raw.currency && raw.currency !== 'USD')) throw new Error("รูปแบบชื่อหุ้นหรือสกุลเงินไม่ถูกต้อง");
+          for (const key of ['marketValue', 'unrealizedPL', 'unrealizedPLPct', 'shares', 'currentPrice']) if (raw[key] != null && (typeof raw[key] !== 'number' || !Number.isFinite(raw[key]))) throw new Error("ผลลัพธ์ AI มีตัวเลขไม่ถูกต้อง");
+          const item = { ...calculateDimeHoldingMetrics(raw), conflict: false };
+          const previous = merged.get(item.ticker);
+          if (!previous) merged.set(item.ticker, item);
+          else if (['marketValue', 'costBasis', 'shares', 'currentPrice'].some(key => previous[key] !== item[key])) previous.conflict = true;
+        }
+      }
 
       function parseDimeTextMock(text: string) {
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -6263,118 +6302,110 @@ interface DashboardMetrics {
           if (modalImport) modalImport.hidden = false;
         });
 
-        document.getElementById('btnClosePortfolioImport')?.addEventListener('click', () => {
-          if (modalImport) modalImport.hidden = true;
-        });
-
-        document.getElementById('dimePortfolioDropZone')?.addEventListener('click', () => {
-          document.getElementById('dimePortfolioFileInput')?.click();
-        });
-
-        document.getElementById('btnStartDimeImport')?.addEventListener('click', () => {
-          document.getElementById('dimePortfolioFileInput')?.click();
-        });
-
-        document.getElementById('dimePortfolioFileInput')?.addEventListener('change', (e: any) => {
-          const files = Array.from(e.target.files || []) as File[];
-          if (files.length === 0) return;
-          if (files.length > 5) {
-            alert('สามารถเลือกได้สูงสุด 5 รูปตามคำแนะนำครับ');
-            return;
-          }
-          dimeSelectedFiles = files;
-          handleDimePortfolioFiles(files);
-        });
-
-        async function handleDimePortfolioFiles(files: File[]) {
-          const statusEl = document.getElementById('dimeImportStatus');
-          if (statusEl) {
-            statusEl.hidden = false;
-            statusEl.textContent = '⏳ AI กำลังสแกน ' + files.length + ' ภาพแคปหน้าจอพอร์ต DIME...';
-          }
-
-          setTimeout(() => {
-            const sampleExtracted = [
-              calculateDimeHoldingMetrics({ ticker: 'RKLB', marketValue: 3677.75, unrealizedPL: 1450.97, unrealizedPLPct: 65.16, shares: 100, currentPrice: 36.78 }),
-              calculateDimeHoldingMetrics({ ticker: 'SLV', marketValue: 3544.20, unrealizedPL: -2575.80, unrealizedPLPct: -42.09, shares: 60, currentPrice: 59.07 }),
-              calculateDimeHoldingMetrics({ ticker: 'SOFI', marketValue: 1164.03, unrealizedPL: -620.77, unrealizedPLPct: -34.78, shares: 65, currentPrice: 17.84 }),
-              calculateDimeHoldingMetrics({ ticker: 'EOSE', marketValue: 1017.17, unrealizedPL: -1530.19, unrealizedPLPct: -60.07, shares: 280, currentPrice: 3.61 })
-            ];
-
-            stagedDimeHoldings = sampleExtracted;
-            if (statusEl) statusEl.hidden = true;
-            if (modalImport) modalImport.hidden = true;
-            renderDimeVerifyModal(sampleExtracted);
-          }, 800);
+        const input = document.getElementById('dimePortfolioFileInput') as HTMLInputElement;
+        const startButton = document.getElementById('btnStartDimeImport') as HTMLButtonElement;
+        const confirmButton = document.getElementById('btnConfirmPortfolioVerify') as HTMLButtonElement;
+        const statusEl = document.getElementById('dimeImportStatus');
+        function status(message: string) { if (statusEl) { statusEl.hidden = false; statusEl.textContent = message; } }
+        function cancelDimeImport() {
+          dimeImportGeneration++; stagedDimeHoldings = []; dimeReviewOwner = null;
+          if (input) input.value = '';
         }
-
+        document.getElementById('btnClosePortfolioImport')?.addEventListener('click', () => { cancelDimeImport(); if (modalImport) modalImport.hidden = true; });
+        document.getElementById('btnCancelPortfolioVerify')?.addEventListener('click', () => { cancelDimeImport(); if (modalVerify) modalVerify.hidden = true; });
+        document.getElementById('dimePortfolioDropZone')?.addEventListener('click', () => { if (!dimeImportBusy) input?.click(); });
+        document.getElementById('dimePortfolioDropZone')?.addEventListener('dragover', (e: any) => e.preventDefault());
+        document.getElementById('dimePortfolioDropZone')?.addEventListener('drop', (e: any) => { e.preventDefault(); handleDimePortfolioFiles(Array.from(e.dataTransfer?.files || [])); });
+        startButton?.addEventListener('click', () => { if (!dimeImportBusy) input?.click(); });
+        input?.addEventListener('change', (e: any) => handleDimePortfolioFiles(Array.from(e.target.files || [])));
+        async function handleDimePortfolioFiles(files: File[]) {
+          if (dimeImportBusy || (modalVerify && !modalVerify.hidden)) return;
+          dimeImportBusy = true;
+          const generation = ++dimeImportGeneration;
+          const owner = appState.currentUser?.id;
+          const current = () => generation === dimeImportGeneration && owner === appState.currentUser?.id;
+          if (startButton) startButton.disabled = true;
+          if (input) input.disabled = true;
+          try {
+            if (!files.length || files.length > 5) throw new Error("กรุณาเลือกภาพ 1–5 ภาพต่อครั้ง");
+            if (files.some(f => !['image/jpeg', 'image/png', 'image/webp'].includes(f.type))) throw new Error("รองรับเฉพาะ JPEG, PNG และ WebP");
+            if (!navigator.onLine) throw new Error("กรุณาเชื่อมต่ออินเทอร์เน็ตก่อนนำเข้าพอร์ตด้วย AI");
+            const session = await appState.supabaseClient?.auth.getSession();
+            if (!owner || !session?.data?.session?.access_token || session.data.session.user?.id !== owner) {
+              const auth = document.getElementById('authModal');
+              if (auth && current()) { updateAuthModalView(); auth.hidden = false; }
+              throw new Error("กรุณาเข้าสู่ระบบก่อนนำเข้าพอร์ตด้วย AI");
+            }
+            if (!current()) return;
+            const merged = new Map<string, any>();
+            for (let i = 0; i < files.length; i++) {
+              if (!current()) return;
+              if (!navigator.onLine) throw new Error("การเชื่อมต่อขาดหาย กรุณาเลือกภาพทั้งหมดใหม่");
+              status("กำลังอ่านภาพ " + (i + 1) + '/' + files.length);
+              let compressed;
+              try { compressed = await compressReceiptImage(files[i], 1600, 0.82); }
+              catch (_) { throw new Error("ไม่สามารถเตรียมภาพได้ กรุณาเลือกภาพใหม่"); }
+              if (!current()) return;
+              const response = await callAnalyzeReceiptEdgeFunction({ action: 'analyze_portfolio', mimeType: compressed.mimeType, imageBase64: compressed.base64 });
+              if (!current()) return;
+              mergeDimePortfolioResponse(merged, response);
+            }
+            stagedDimeHoldings = Array.from(merged.values()); dimeReviewOwner = owner;
+            renderDimeVerifyModal(stagedDimeHoldings);
+            if (modalImport) modalImport.hidden = true;
+          } catch (err) {
+            if (current()) { stagedDimeHoldings = []; status(/[ก-๙]/.test(err.message || '') ? err.message : "การเชื่อมต่อ AI ขัดข้อง กรุณานำเข้าภาพทั้งหมดใหม่"); }
+          } finally {
+            dimeImportBusy = false;
+            if (startButton) startButton.disabled = false;
+            if (input) { input.disabled = false; input.value = ''; }
+          }
+        }
         function renderDimeVerifyModal(items: any[]) {
-          if (!modalVerify) return;
+          const escapeHtml = (value: string) => value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
           const container = document.getElementById('portfolioVerifyListContainer');
-          if (!container) return;
+          if (!container || !modalVerify) return;
           container.innerHTML = '';
-
-          items.forEach((item, idx) => {
-            const row = document.createElement('div');
-            row.className = 'verify-holding-row';
-            row.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:8px;';
-            const isUp = item.unrealizedPL >= 0;
-            const sign = isUp ? '+' : '';
-            row.innerHTML = 
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
-                '<div style="display:flex;align-items:center;gap:8px;">' +
-                  '<input type="checkbox" id="verifyCheck_' + idx + '" class="verify-item-checkbox" data-idx="' + idx + '" checked style="width:18px;height:18px;accent-color:#7c3aed;">' +
-                  '<label for="verifyCheck_' + idx + '" style="font-weight:800;font-size:1.1rem;color:var(--text-main);cursor:pointer;">' + item.ticker + '</label>' +
-                '</div>' +
-                '<span style="font-weight:700;font-size:0.88rem;color:' + (isUp ? '#10b981' : '#ef4444') + ';">' +
-                  sign + formatCurrency(item.unrealizedPL) + ' (' + sign + item.unrealizedPLPct.toFixed(1) + '%)' +
-                '</span>' +
-              '</div>' +
-              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem;">' +
-                '<div>' +
-                  '<span style="color:var(--text-muted);">มูลค่าปัจจุบัน: </span>' +
-                  '<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="' + idx + '" data-field="marketValue" value="' + item.marketValue + '" style="font-weight:700;margin-top:2px;">' +
-                '</div>' +
-                '<div>' +
-                  '<span style="color:var(--text-muted);">ต้นทุนรวม (Cost Basis): </span>' +
-                  '<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="' + idx + '" data-field="costBasis" value="' + item.costBasis.toFixed(2) + '" style="font-weight:700;margin-top:2px;">' +
-                '</div>' +
-                '<div>' +
-                  '<span style="color:var(--text-muted);">จำนวนหุ้น: </span>' +
-                  '<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="' + idx + '" data-field="shares" value="' + item.shares + '" style="margin-top:2px;">' +
-                '</div>' +
-                '<div>' +
-                  '<span style="color:var(--text-muted);">ราคาตลาด: </span>' +
-                  '<input type="number" step="any" class="form-control form-control-sm verify-val-in" data-idx="' + idx + '" data-field="currentPrice" value="' + item.currentPrice + '" style="margin-top:2px;">' +
-                '</div>' +
-              '</div>';
-            container.appendChild(row);
+          const replace = document.getElementById('chkReplaceAllPortfolioOnImport') as HTMLInputElement;
+          if (replace) replace.checked = false;
+          items.forEach(item => {
+            const row = document.createElement('div'); row.className = 'verify-holding-row';
+            row.style.cssText = 'padding:12px;border-bottom:1px solid var(--border-color)';
+            row.innerHTML = '<p>USD ' + escapeHtml(item.ticker) + (item.conflict ? " — ข้อมูลซ้ำขัดแย้ง ใช้ภาพแรก กรุณาตรวจแก้" : '') + '</p>' +
+              [['ticker', "ชื่อหุ้น"], ['marketValue', "มูลค่าปัจจุบัน (USD)"], ['costBasis', "ต้นทุนรวม (USD)"], ['shares', "จำนวนหุ้น"]].map(([field, label]) =>
+                '<label>' + label + '<input class="form-control verify-val-in" data-field="' + field + '" type="' + (field === 'ticker' ? 'text' : 'number') + '" step="any" value="' + escapeHtml(String(item[field] ?? '')) + '"></label>').join('') +
+              "<p class=\"verify-metrics\"></p><label><input type=\"checkbox\" class=\"verify-item-checkbox\"> ตรวจทานแถวนี้แล้ว</label>";
+            const summary = row.querySelector('.verify-metrics');
+            const checked = row.querySelector('.verify-item-checkbox') as HTMLInputElement;
+            const update = () => {
+              const result = calculateDimeHoldingMetrics(item);
+              if (summary) summary.textContent = "ต้นทุนเฉลี่ย: " + (result.avgCost ?? "กรุณากรอกข้อมูล") + " USD | กำไร/ขาดทุน: " + (result.unrealizedPL ?? "กรุณากรอกข้อมูล") + ' USD (' + (result.unrealizedPLPct ?? "คำนวณไม่ได้") + '%)';
+            };
+            row.querySelectorAll('.verify-val-in').forEach((el: HTMLInputElement) => el.addEventListener('input', () => {
+              const field = el.getAttribute('data-field');
+              item[field] = field === 'ticker' ? el.value : el.value.trim() === '' ? null : Number(el.value);
+              item.unrealizedPL = null; item.unrealizedPLPct = null;
+              if (field === 'shares') item.currentPrice = null;
+              checked.checked = false; update();
+            }));
+            update(); container.appendChild(row);
           });
-
           modalVerify.hidden = false;
         }
-
-        document.getElementById('btnCancelPortfolioVerify')?.addEventListener('click', () => {
-          if (modalVerify) modalVerify.hidden = true;
-        });
-
-        document.getElementById('btnConfirmPortfolioVerify')?.addEventListener('click', () => {
-          const selectedItems: any[] = [];
-          document.querySelectorAll('.verify-item-checkbox:checked').forEach((cb: any) => {
-            const idx = Number(cb.getAttribute('data-idx'));
-            if (stagedDimeHoldings[idx]) {
-              selectedItems.push(stagedDimeHoldings[idx]);
-            }
-          });
-
-          if (selectedItems.length === 0) {
-            alert('กรุณาเลือกอย่างน้อย 1 หุ้นที่ต้องการนำเข้าครับ');
-            return;
-          }
-
-          upsertPortfolioHoldings(selectedItems);
-          if (modalVerify) modalVerify.hidden = true;
-          alert('✓ นำเข้ายอดถือครอง ' + selectedItems.length + ' หุ้นเรียบร้อยแล้วครับ');
+        confirmButton?.addEventListener('click', () => {
+          if (confirmButton.disabled || !stagedDimeHoldings.length || modalVerify?.hidden) return;
+          confirmButton.disabled = true;
+          try {
+            if (!dimeReviewOwner || dimeReviewOwner !== appState.currentUser?.id) throw new Error("บัญชีผู้ใช้เปลี่ยน กรุณานำเข้าใหม่");
+            const checks = Array.from(document.querySelectorAll('#portfolioVerifyListContainer .verify-item-checkbox')) as HTMLInputElement[];
+            if (checks.length !== stagedDimeHoldings.length || checks.some(cb => !cb.checked)) throw new Error("กรุณาตรวจทานและยืนยันทุกแถวก่อนบันทึก");
+            const validated = validateDimeReview(stagedDimeHoldings);
+            const replace = document.getElementById('chkReplaceAllPortfolioOnImport') as HTMLInputElement;
+            upsertPortfolioHoldings(validated, !!replace?.checked);
+            cancelDimeImport(); if (modalVerify) modalVerify.hidden = true;
+            showToast("บันทึกพอร์ตเรียบร้อยแล้ว", 'success');
+          } catch (err) { showToast(/[ก-๙]/.test(err.message || '') ? err.message : "บันทึกไม่สำเร็จ พอร์ตเดิมยังอยู่ กรุณาลองใหม่", 'error'); }
+          finally { confirmButton.disabled = false; }
         });
 
         // AI Trade Slip Helper
@@ -6581,7 +6612,7 @@ interface DashboardMetrics {
       // ส่งออก API สำหรับการทดสอบอัตโนมัติและการเรียกใช้งานเชิงโปรแกรม
       const SlipSenseApp = {
         deletePortfolioHolding, clearAllPortfolioHoldings, openQuickScanPopup, closeQuickScanPopup, openJarActionPopup, closeJarActionPopup, depositToSalaryJar, transferBetweenBuckets, saveDanInsurancePolicy, getDanInsurancePolicies, payDanInsurancePolicy, openPortfolioRebalanceModal, closePortfolioRebalanceModal, renderRebalanceUI, openTargetAllocationModal, closeTargetAllocationModal, renderTargetAllocationUI, saveTargetAllocations,
-        calculateWeightedAverageCost, calculateSellExecution, calculateHoldingPnL, calculatePortfolioSummary, simulateTrade, createSvgArcPath, renderStockPortfolioUI, calculateDimeHoldingMetrics, upsertPortfolioHoldings, parseDimeTextMock,
+        calculateWeightedAverageCost, calculateSellExecution, calculateHoldingPnL, calculatePortfolioSummary, simulateTrade, createSvgArcPath, renderStockPortfolioUI, calculateDimeHoldingMetrics, upsertPortfolioHoldings, parseDimeTextMock, mergeDimePortfolioResponse, validateDimeReview, bindStockPortfolioEvents,
         init: initApp, render3dIcon, renderBottomNavIcons, renderCategoryPicker, updateCategoryPickerSelection, jarProgress, renderFundBucketsAndChecklist, 'registerServiceWorkerSafe': registerServiceWorkerSafe, renderShortcutIcons, CATEGORY_SHORT_LABELS,
         automationPreference, commitAutomation, batchPayFixedExpenses, fatherInsuranceCycle,
         upgradeSalaryTemplate, legacyInsuranceReview, upgradeLegacyInsurance,

@@ -2782,18 +2782,18 @@
       </div>
 
       <!-- File Drop & Select Zone -->
-      <input type="file" id="dimePortfolioFileInput" accept="image/*" multiple hidden>
+      <input type="file" id="dimePortfolioFileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
       <div id="dimePortfolioDropZone" style="border:2px dashed #7c3aed;border-radius:14px;padding:20px;text-align:center;background:rgba(124,58,237,0.04);cursor:pointer;margin-bottom:14px;transition:background 0.2s;">
         <div style="font-size:2rem;margin-bottom:6px;">📸</div>
         <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);margin-bottom:2px;">แตะที่นี่เพื่อเลือกรูปภาพ หรือลากรูปมาวาง</div>
-        <div style="font-size:0.78rem;color:var(--text-muted);">รองรับภาพแคปพอร์ต DIME / สลิป (สูงสุด 5 รูป)</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);">รวมพอร์ตจากหลาย screenshot ได้ สูงสุด 5 ภาพ (JPEG, PNG, WebP)</div>
       </div>
 
       <!-- Image Preview Thumbnails -->
       <div id="dimeImportThumbnails" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;" hidden></div>
 
       <!-- Status indicator -->
-      <div id="dimeImportStatus" style="font-size:0.85rem;color:#7c3aed;font-weight:600;margin-bottom:12px;text-align:center;" hidden></div>
+      <div id="dimeImportStatus" role="status" aria-live="polite" style="font-size:0.85rem;color:#7c3aed;font-weight:600;margin-bottom:12px;text-align:center;" hidden></div>
 
       <button type="button" id="btnStartDimeImport" class="btn btn-primary" style="width:100%;min-height:48px;font-size:1rem;font-weight:700;border-radius:14px;background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,0.3);">
         เริ่มเลือกรูป
@@ -2808,7 +2808,7 @@
     <div class="modal-content" style="max-width:640px;border-radius:20px;padding:20px;max-height:90vh;display:flex;flex-direction:column;">
       <div style="margin-bottom:12px;">
         <h2 id="portfolioVerifyTitle" style="font-size:1.2rem;font-weight:800;margin:0 0 4px 0;">📋 ตรวจสอบรายการที่ AI อ่านได้</h2>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 8px 0;">ระบบคำนวณต้นทุน Cost Basis ให้แล้ว กรุณาตรวจทานและแก้ไขก่อนบันทึกลงพอร์ต</p><label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:700;cursor:pointer;padding:8px 10px;border-radius:10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);"><input type="checkbox" id="chkReplaceAllPortfolioOnImport" checked style="width:18px;height:18px;accent-color:#7c3aed;"><span>🧹 ล้างหุ้นเก่าในพอร์ตก่อนนำเข้า (แทนที่พอร์ตเดิมทั้งหมด)</span></label>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 8px 0;">ระบบคำนวณต้นทุน Cost Basis ให้แล้ว กรุณาตรวจทานและแก้ไขก่อนบันทึกลงพอร์ต</p><label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:700;cursor:pointer;padding:8px 10px;border-radius:10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);"><input type="checkbox" id="chkReplaceAllPortfolioOnImport" style="width:18px;height:18px;accent-color:#7c3aed;"><span>แทนที่พอร์ตเดิมทั้งหมดด้วยรายการที่ตรวจทาน</span></label>
       </div>
 
       <div id="portfolioVerifyListContainer" style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:12px;padding:8px;margin-bottom:14px;background:var(--bg-subtle);">
