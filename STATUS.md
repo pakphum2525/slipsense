@@ -1,8 +1,21 @@
 # รายงานสถานะโปรเจกต์ (STATUS.md) — SlipSense (`slipsense-expense-tracker`)
 
-**วันที่อัปเดตล่าสุด:** 8 พฤศจิกายน 2026
+**วันที่อัปเดตล่าสุด:** 10 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-027 (Authentic Rocket Tool 3-Screen Rebalance Engine & Sleek Trade Modal) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งอนุมัติของผู้ใช้; Build Production และรันชุดทดสอบอัตโนมัติ npm test ผ่านครบ 42/42 รายการ (exit code 0)
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-031D พัฒนาใน isolated worktree ของ Dual-Agent V4 Global Runner (`--failover`); self-test ผ่าน 43/43 รายการ (exit code 0) รอ runner ตรวจ ScopeVerifier และ Independent QARunner ก่อนหยุดที่ Gate 12 (`QA_RUNNING`, `active_agent: Antigravity`) ยังไม่อนุมัติ release
+
+## ผลงาน TASK-SLIPSENSE-V4-031D — Cache v9 และการอัปเดต DIME
+
+- เปลี่ยน Service Worker เป็น `slipsense-app-shell-v4-3d-cute-3-dime-v9` ติดตั้ง app shell ให้ครบก่อน `skipWaiting()`; หากโหลดไม่สำเร็จ installation ล้มเหลวและเก็บ cache เก่าไว้ การ activate ลบเฉพาะ cache เก่าที่ขึ้นต้น `slipsense-app-shell-` แล้ว `clients.claim()` โดยไม่เรียกใช้หรือลบฐานข้อมูลธุรกรรม
+- DIME แสดง status และ error toast ภาษาไทยทันทีเมื่อออฟไลน์หรือยังไม่เข้าสู่ระบบ ก่อนอ่านภาพหรือเรียก AI; เส้นทางออนไลน์ยังเปิดให้ผู้ใช้ตรวจทานก่อนบันทึก
+- registration อยู่ใน `src/app.ts` เพียงแห่งเดียว ตรวจอัปเดตเมื่อโหลด กลับ foreground และกลับออนไลน์ ด้วย `updateViaCache: none` จัดการ update failure แบบไม่ขัดขวางแอป มี controllerchange handler เดียวและ reload ครั้งเดียว เลื่อน reload ขณะนำเข้า วิเคราะห์ บันทึก มีภาพค้าง มี dialog เปิด หรือช่องข้อมูลนอก dialog ที่แก้ไขค้างอยู่ แล้วตรวจซ้ำระหว่างรอเฉพาะเมื่อแอปมองเห็นและออนไลน์
+- `npm run build`: exit code 0 ผ่าน security/IP gate; root `index.html` และ `sw.js` ตรงกับ dist แบบ byte-for-byte สร้างจาก pipeline ทั้งหมด ไม่แก้ generated files ด้วยมือ ตรวจ SHA-256 และขนาดจริงครบ 10 entries ของ `dist/BUILD_MANIFEST.json` รวมทั้ง path อยู่ใน dist และ asset references ของ HTML มีไฟล์และ manifest entry จริง
+- SHA-256 `dist/index.html`: `da433af263fd82e517550163fce4d308e19333c933fb1448145620665facb372` (430694 bytes)
+- SHA-256 `dist/sw.js`: `c32e7b355878dbcbb7192072d41531741c5d552239ff06440a0d71171e512658` (6251 bytes)
+- Baseline `npm test`: **43/43 ผ่าน, exit code 0**; หลังแก้ไข **43/43 ผ่าน, exit code 0** ขยาย assertions ใน `tests/portfolio_engine.test.js` โดยไม่ลบหรือปิด tests ตรวจทั้ง source และ bundle ครอบคลุม error toast/status, ไม่อ่านภาพ/เรียก AI เมื่อถูกบล็อก, authenticated import และ review, foreground/offline/update failure, draft protection, first install และไม่ reload ซ้ำ
+- ทดสอบ lifecycle ของ Service Worker ใน VM ร่วมกับ HTTP บน `127.0.0.1` (พอร์ตชั่วคราว): cache v8 ไป v9, failed install คง cache เก่า, cleanup คง cache ของแอปอื่น, claiming, GET_VERSION และ app shell ใหม่มี `analyze_portfolio` ใช้ mock IndexedDB ที่ปฏิเสธการเข้าถึงเพื่อยืนยันว่า update ไม่แตะฐานข้อมูล
+- **ข้อจำกัด:** ยังไม่ได้ทดสอบ iOS Safari/PWA บนอุปกรณ์จริง หรือ IndexedDB จริงข้ามการอัปเดตบนอุปกรณ์ ผล VM/HTTP ไม่ใช่หลักฐานการทดสอบ iOS; หน้า v8 ที่เปิดค้างและยังไม่มี controllerchange handler อาจต้องเปิด/นำทางเข้าแอปใหม่เพื่อโหลด HTML รุ่นใหม่ การกลับ foreground อัตโนมัติที่เพิ่มในงานนี้มีผลหลังโหลดโค้ดรุ่นใหม่แล้ว ต้องยืนยันสถานการณ์นี้บน iOS จริงในการตรวจ Gate 12
+- การส่งมอบของ Codex เป็น DEV_REPORT ให้ runner เก็บนอก worktree; runner เป็นผู้จัดการไฟล์ควบคุมและ Independent QA ไม่สร้าง `RELEASE_MANIFEST.json` และไม่ merge เข้า main ในรอบ failover นี้
 
 **สถานะก่อนหน้า:** TASK-SLIPSENSE-V4-026 (Cute Warm Pastel Theme & Delightful 3D Friendly UX for SlipSense) พัฒนาและตรวจสอบเสร็จสมบูรณ์ในโหมด Single-Agent ตามคำสั่งอนุมัติของผู้ใช้; Build Production (`index.html`, `sw.js`, `dist/**`) และรันชุดทดสอบอัตโนมัติ `npm test` ผ่านครบ **42/42 รายการ (exit code 0)**
 

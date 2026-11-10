@@ -255,6 +255,7 @@ function upsertPortfolioHoldings(holdingsList, newHoldings) {
 }
 
 module.exports = async function runPortfolioEngineTests() {
+  await runServiceWorkerRegression();
   await runDimeImporterRegression();
   // 1.1 ซื้อหุ้นครั้งแรก
   const r1 = calculateWeightedAverageCost(0, 0, 10, 100);
@@ -436,6 +437,44 @@ module.exports = async function runPortfolioEngineTests() {
 };
 
 
+async function runServiceWorkerRegression() {
+  const fs = require('fs'), vm = require('vm'), http = require('http');
+  const { stripTypeScriptTypes } = require('node:module');
+  const server = http.createServer((req, res) => { res.end(req.url.includes('index.html') ? fs.readFileSync('dist/index.html') : 'asset'); });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  try {
+    for (const variant of ['source', 'built']) {
+      const old = 'slipsense-app-shell-v4-3d-cute-3-battery-v8', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v9';
+      const cache = new Map([[old, new Map()], ['another-app', new Map()]]), events = {};
+      let skipped = 0, claimed = 0, failed = true;
+      const context = {
+        self: { location: { origin }, registration: { scope: origin + '/' }, addEventListener: (type, fn) => events[type] = fn,
+          skipWaiting: async () => { skipped++; }, clients: { claim: async () => { claimed++; } } },
+        caches: { keys: async () => [...cache.keys()], delete: async key => cache.delete(key), open: async key => {
+          if (!cache.has(key)) cache.set(key, new Map());
+          const entries = cache.get(key);
+          return { put: async (asset, value) => entries.set(asset, value), match: async asset => entries.get(asset) };
+        } },
+        Request: class extends Request { constructor(url, options) { super(new URL(url, origin), options); } },
+        Response, URL, fetch: request => failed ? Promise.resolve(new Response('', { status: 503 })) : fetch(request),
+        indexedDB: { deleteDatabase() { throw Error('local data must survive'); }, open() { throw Error('no database access during update'); } }
+      };
+      vm.runInNewContext(variant === 'source' ? stripTypeScriptTypes(fs.readFileSync('src/sw.ts', 'utf8')) : fs.readFileSync('dist/sw.js', 'utf8'), context);
+      let installation;
+      events.install({ waitUntil: promise => installation = promise });
+      await assert.rejects(installation); assert.equal(skipped, 0); assert(cache.has(old), 'failed installation retains old shell');
+      failed = false; events.install({ waitUntil: promise => installation = promise }); await installation;
+      assert.equal(skipped, 1); assert(cache.has(old), 'cleanup waits for activation');
+      let activation; events.activate({ waitUntil: promise => activation = promise }); await activation;
+      assert(!cache.has(old)); assert(cache.has(version)); assert(cache.has('another-app')); assert.equal(claimed, 1);
+      const html = await cache.get(version).get('./index.html').text(); assert(html.includes('analyze_portfolio'));
+      let reported; events.message({ data: { type: 'GET_VERSION' }, ports: [{ postMessage: data => reported = data.version }] });
+      assert.equal(reported, version);
+    }
+  } finally { await new Promise(resolve => server.close(resolve)); }
+}
+
 async function runDimeImporterRegression() {
   const fs = require('fs'), vm = require('vm');
   const { stripTypeScriptTypes } = require('node:module');
@@ -453,8 +492,8 @@ async function runDimeImporterRegression() {
       state.currentUser = { id: 'owner' }; state.settings.supabaseUrl = 'https://example.supabase.co'; state.settings.supabaseAnonKey = 'public';
       state.supabaseClient = { auth: { getSession: async () => ({ data: { session: { access_token: 'test-jwt', user: { id: 'owner' } } } }) } };
       el('portfolioVerifyModal').hidden = true;
-      let compressFailure = false;
-      c.FileReader = class { readAsDataURL() { this.result = 'data:image/png;base64,' + 'A'.repeat(80); this.onload(); } };
+      let compressFailure = false, reads = 0;
+      c.FileReader = class { readAsDataURL() { reads++; this.result = 'data:image/png;base64,' + 'A'.repeat(80); this.onload(); } };
       c.Image = class { constructor() { this.naturalWidth = 2000; this.naturalHeight = 1000; } set src(v) { if (v) queueMicrotask(() => compressFailure ? this.onerror() : this.onload()); } };
       const create = c.document.createElement;
       const rows = [];
@@ -476,7 +515,7 @@ async function runDimeImporterRegression() {
       api.bindStockPortfolioEvents();
       const upload = files => el('dimePortfolioFileInput').emit('change', { target: { files } });
       const image = { type: 'image/png', size: 100 };
-      return { c, api, state, el, calls, rows, upload, image, replies: value => replies = value, failCompression: () => compressFailure = true };
+      return { c, api, state, el, calls, rows, upload, image, reads: () => reads, replies: value => replies = value, failCompression: () => compressFailure = true };
     }
     {
       const h = load(), merged = new Map();
@@ -519,10 +558,23 @@ async function runDimeImporterRegression() {
       if (typeof failure === 'number') h.replies([{ status: failure }]);
       if (failure === 'malformed') h.replies([{}]);
       if (failure === 'empty') h.replies([response([])]);
-      await h.upload(files);
+      const pending = h.upload(files);
+      if (failure === 'offline' || failure === 'auth') {
+        const toast = h.el('toastStack').children.at(-1);
+        assert(toast, 'error toast appears synchronously before upload settles');
+        assert.equal(toast.children[0].textContent, h.el('dimeImportStatus').textContent);
+      }
+      await pending;
       assert.equal(h.el('portfolioVerifyModal').hidden, true, String(failure)); assert.equal(h.c.localStorage.getItem(key), '[]');
       assert.equal(h.el('dimePortfolioFileInput').value, ''); assert.equal(h.el('btnStartDimeImport').disabled, false);
       assert(/[ก-๙]/.test(h.el('dimeImportStatus').textContent));
+      if (failure === 'offline' || failure === 'auth') {
+        assert.equal(h.calls.length, 0, 'blocked import never calls AI');
+        assert.equal(h.reads(), 0, 'blocked import never reads files');
+        const toast = h.el('toastStack').children.at(-1);
+        assert.equal(toast.className, 'toast error');
+        assert.equal(toast.children[0].textContent, h.el('dimeImportStatus').textContent);
+      }
     }
     {
       const h = load(); h.replies([response([fixture('A')]), Error('network')]); await h.upload([h.image, h.image]); assert.equal(h.rows.length, 0); assert.equal(h.el('portfolioVerifyModal').hidden, true);
@@ -565,6 +617,41 @@ async function runDimeImporterRegression() {
       h.c.localStorage.setItem(key, JSON.stringify([{ id: 'latest', ticker: 'NEW', shares: 1, costBasis: 1, avgCost: 1, currentPrice: 1, currency: 'USD' }]));
       await h.el('btnConfirmPortfolioVerify').emit('click'); assert(JSON.parse(h.c.localStorage.getItem(key)).some(row => row.id === 'latest'), 'read latest portfolio at confirm');
     }
-    console.log('  [PASS] DIME importer ' + variant + ': payload, 23 holdings, review, atomic storage, cancellation and 12 failure paths');
+    {
+      const h = load(), events = {}, docEvents = {}, timers = [];
+      let updates = 0, registrations = 0, reloads = 0, dialog = null;
+      h.c.setTimeout = fn => { timers.push(fn); return timers.length; };
+      h.c.document.querySelector = () => dialog;
+      h.c.document.addEventListener = (type, fn) => { docEvents[type] = fn; };
+      h.c.addEventListener = (type, fn) => { events[type] = fn; };
+      h.c.location.reload = () => { reloads++; };
+      h.c.navigator.serviceWorker = {
+        controller: {}, addEventListener: (type, fn) => { events[type] = fn; },
+        register: async (url, options) => {
+          registrations++; assert.equal(url, './sw.js'); assert.equal(options.updateViaCache, 'none');
+          return { update: async () => { updates++; if (updates === 3) throw Error('network'); } };
+        }
+      };
+      await h.api.registerServiceWorkerSafe(); await h.api.registerServiceWorkerSafe();
+      assert.equal(registrations, 1); assert.equal(updates, 1);
+      h.c.document.hidden = true; await docEvents.visibilitychange(); assert.equal(updates, 1);
+      h.c.document.hidden = false; await docEvents.visibilitychange(); assert.equal(updates, 2);
+      await events.online(); assert.equal(updates, 3, 'update failure is harmless');
+      h.c.navigator.onLine = false; await events.online(); assert.equal(updates, 3);
+      h.c.navigator.onLine = true;
+      h.state.isAnalyzingAi = true; events.controllerchange(); assert.equal(reloads, 0);
+      h.state.isAnalyzingAi = false; dialog = {}; timers.shift()(); assert.equal(reloads, 0, 'review protects draft');
+      dialog = null;
+      const field = { isConnected: true, type: 'text', value: 'draft', defaultValue: '', matches: () => true };
+      docEvents.input({ target: field }); timers.shift()(); assert.equal(reloads, 0, 'unsaved field protects draft');
+      field.value = ''; timers.shift()(); assert.equal(reloads, 1);
+      events.controllerchange(); await events.online(); assert.equal(reloads, 1, 'single reload');
+      const fresh = load(); let controllerChange;
+      fresh.c.navigator.serviceWorker = { controller: null, addEventListener: (_, fn) => controllerChange = fn, register: async () => ({ update: async () => {} }) };
+      fresh.c.location.reload = () => { throw Error('first install must not reload'); };
+      fresh.c.document.querySelector = () => null;
+      await fresh.api.registerServiceWorkerSafe(); controllerChange();
+    }
+    console.log('  [PASS] DIME importer ' + variant + ': payload, 23 holdings, review, atomic storage, cancellation, 12 failure paths and safe PWA updates');
   }
 }

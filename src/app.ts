@@ -4842,10 +4842,49 @@ interface DashboardMetrics {
         showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
       }
 
+      let serviceWorkerSetup: Promise<any> | null = null;
       function registerServiceWorkerSafe() {
         const host = globalScope.location.hostname || String(globalScope.location.host || '').split(':')[0];
         if ('serviceWorker' in navigator && (globalScope.location.protocol === 'https:' || host === 'localhost' || host === '127.0.0.1')) {
-          return navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration: any) => registration?.update?.()).catch(() => {});
+          if (serviceWorkerSetup) return serviceWorkerSetup;
+          const worker = navigator.serviceWorker;
+          let controlled = Boolean(worker.controller), pendingReload = false, reloading = false, retry: any = null;
+          const editedFields = new Set<any>();
+          const hasDraft = () => appState.isAnalyzingAi || appState.isSavingTx || appState.currentCompressedImage || dimeImportBusy ||
+            Boolean(document.querySelector('[role="dialog"]:not([hidden])')) ||
+            Array.from(editedFields).some(field => field.isConnected && (field.type === 'checkbox' || field.type === 'radio' ? field.checked !== field.defaultChecked : field.value !== field.defaultValue));
+          const reloadWhenSafe = () => {
+            if (!pendingReload || reloading || !navigator.onLine || document.hidden) return;
+            if (hasDraft()) {
+              if (!retry) retry = setTimeout(() => { retry = null; reloadWhenSafe(); }, 1000);
+              return;
+            }
+            reloading = true;
+            globalScope.location.reload();
+          };
+          worker.addEventListener?.('controllerchange', () => {
+            if (controlled) pendingReload = true;
+            controlled = true;
+            reloadWhenSafe();
+          });
+          document.addEventListener('input', (event: any) => {
+            if (event.target?.matches?.('input, textarea, select') && !event.target.closest?.('[role="dialog"]')) editedFields.add(event.target);
+          });
+          document.addEventListener('change', (event: any) => {
+            if (event.target?.matches?.('input, textarea, select') && !event.target.closest?.('[role="dialog"]')) editedFields.add(event.target);
+          });
+          // รอให้ handler บันทึก/ปิดฟอร์มทำงานเสร็จก่อนตรวจการโหลดใหม่
+          document.addEventListener('click', () => { setTimeout(reloadWhenSafe, 0); });
+          serviceWorkerSetup = worker.register('./sw.js', { scope: './', updateViaCache: 'none' }).then((registration: any) => {
+            const checkUpdate = () => {
+              reloadWhenSafe();
+              if (navigator.onLine && !document.hidden) return Promise.resolve().then(() => registration?.update?.()).catch(() => {});
+            };
+            document.addEventListener('visibilitychange', checkUpdate);
+            globalScope.addEventListener('online', checkUpdate);
+            return checkUpdate();
+          }).catch(() => {});
+          return serviceWorkerSetup;
         }
       }
 
@@ -6329,12 +6368,24 @@ interface DashboardMetrics {
           try {
             if (!files.length || files.length > 5) throw new Error("กรุณาเลือกภาพ 1–5 ภาพต่อครั้ง");
             if (files.some(f => !['image/jpeg', 'image/png', 'image/webp'].includes(f.type))) throw new Error("รองรับเฉพาะ JPEG, PNG และ WebP");
-            if (!navigator.onLine) throw new Error("กรุณาเชื่อมต่ออินเทอร์เน็ตก่อนนำเข้าพอร์ตด้วย AI");
+            if (!navigator.onLine) {
+              const message = "กรุณาเชื่อมต่ออินเทอร์เน็ตก่อนนำเข้าพอร์ตด้วย AI";
+              status(message); showToast(message, 'error'); return;
+            }
+            if (!owner) {
+              const message = "กรุณาเข้าสู่ระบบก่อนนำเข้าพอร์ตด้วย AI";
+              status(message); showToast(message, 'error');
+              const auth = document.getElementById('authModal');
+              if (auth) { updateAuthModalView(); auth.hidden = false; }
+              return;
+            }
             const session = await appState.supabaseClient?.auth.getSession();
             if (!owner || !session?.data?.session?.access_token || session.data.session.user?.id !== owner) {
               const auth = document.getElementById('authModal');
               if (auth && current()) { updateAuthModalView(); auth.hidden = false; }
-              throw new Error("กรุณาเข้าสู่ระบบก่อนนำเข้าพอร์ตด้วย AI");
+              const message = "กรุณาเข้าสู่ระบบก่อนนำเข้าพอร์ตด้วย AI";
+              if (current()) { status(message); showToast(message, 'error'); }
+              return;
             }
             if (!current()) return;
             const merged = new Map<string, any>();

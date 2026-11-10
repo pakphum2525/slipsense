@@ -1,5 +1,5 @@
 const CACHE_PREFIX='slipsense-app-shell-';
-const CACHE_VERSION=`${CACHE_PREFIX}v4-3d-cute-3-battery-v8`;
+const CACHE_VERSION=`${CACHE_PREFIX}v4-3d-cute-3-dime-v9`;
 const SHARE_TTL=24*60*60*1000;
 function openShareInbox(){
 return new Promise((resolve,reject)=>{
@@ -81,18 +81,14 @@ self.addEventListener('install',(event)=>{
 event.waitUntil(
 caches.open(CACHE_VERSION).then(async(cache)=>{
 for(const asset of APP_SHELL_ASSETS){
-try{
 const req=new Request(asset,{cache:'reload'});
 const res=await fetch(req);
-if(res&&res.ok){
+if(!res||!res.ok)throw new Error('App shell download failed: '+asset);
 await cache.put(asset,res);
 }
-}catch(_err){
-}
-}
+await(self).skipWaiting();
 })
 );
-(self).skipWaiting();
 });
 self.addEventListener('activate',(event)=>{
 event.waitUntil(

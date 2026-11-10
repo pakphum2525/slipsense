@@ -12,7 +12,7 @@ interface SwMessageData {
 }
 
 const CACHE_PREFIX: string = 'slipsense-app-shell-';
-const CACHE_VERSION: string = `${CACHE_PREFIX}v4-3d-cute-3-battery-v8`;
+const CACHE_VERSION: string = `${CACHE_PREFIX}v4-3d-cute-3-dime-v9`;
 
 const SHARE_TTL = 24 * 60 * 60 * 1000;
 function openShareInbox(): Promise<any> {
@@ -104,19 +104,14 @@ self.addEventListener('install', (event: any) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(async (cache: Cache) => {
       for (const asset of APP_SHELL_ASSETS) {
-        try {
-          const req = new Request(asset, { cache: 'reload' });
-          const res = await fetch(req);
-          if (res && res.ok) {
-            await cache.put(asset, res);
-          }
-        } catch (_err) {
-          // ข้ามไฟล์ที่โหลดไม่สำเร็จขณะออฟไลน์โดยไม่ทำให้การติดตั้งล้มเหลว
-        }
+        const req = new Request(asset, { cache: 'reload' });
+        const res = await fetch(req);
+        if (!res || !res.ok) throw new Error('App shell download failed: ' + asset);
+        await cache.put(asset, res);
       }
+      await (self as any).skipWaiting();
     })
   );
-  (self as any).skipWaiting();
 });
 
 self.addEventListener('activate', (event: any) => {
