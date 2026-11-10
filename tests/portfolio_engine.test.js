@@ -445,7 +445,7 @@ async function runServiceWorkerRegression() {
   const origin = 'http://127.0.0.1:' + server.address().port;
   try {
     for (const variant of ['source', 'built']) {
-      const old = 'slipsense-app-shell-v4-3d-cute-3-battery-v8', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v9';
+      const old = 'slipsense-app-shell-v4-3d-cute-3-dime-v9', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v10';
       const cache = new Map([[old, new Map()], ['another-app', new Map()]]), events = {};
       let skipped = 0, claimed = 0, failed = true;
       const context = {
@@ -504,7 +504,7 @@ async function runDimeImporterRegression() {
           const fields = ['ticker', 'marketValue', 'costBasis', 'shares'].map(field => { const n = create('input'); n.setAttribute('data-field', field); return n; });
           const check = create('input'), summary = create('p');
           node.querySelector = selector => selector === '.verify-item-checkbox' ? check : summary;
-          node.querySelectorAll = () => fields; node.fields = fields; node.check = check;
+          node.querySelectorAll = () => fields; node.fields = fields; node.check = check; node.summary = summary;
         }
         return node;
       };
@@ -526,9 +526,84 @@ async function runDimeImporterRegression() {
       assert.equal(metrics.costBasis, 100); assert.equal(metrics.avgCost, 50); assert.equal(metrics.unrealizedPLPct, 50);
       assert.equal(h.api.calculateDimeHoldingMetrics({ ticker: 'A' }).shares, null);
       assert.equal(h.api.calculateDimeHoldingMetrics({ ticker: 'A', marketValue: 10, unrealizedPL: 10 }).unrealizedPLPct, null);
-      assert.throws(() => h.api.validateDimeReview([{ ...metrics, shares: null }]));
+      assert.equal(h.api.validateDimeReview([{ ...metrics, shares: null }])[0].shares, 1);
+      for (const shares of [undefined, null, '', 0, -2]) {
+        for (const marketValue of [150, 75]) {
+          const raw = { ticker: 'A', shares, marketValue, costBasis: 100, currentPrice: 75 };
+          const normalized = h.api.calculateDimeHoldingMetrics(raw);
+          assert.equal(normalized.shares, 1);
+          assert.equal(normalized.currentPrice, marketValue);
+          assert.equal(normalized.avgCost, 100);
+          assert.equal(normalized.unrealizedPL, marketValue - 100);
+          assert.equal(normalized.unrealizedPLPct, marketValue - 100);
+          assert.equal(h.api.validateDimeReview([raw])[0].shares, 1);
+        }
+      }
+      for (const shares of ['bad', NaN, Infinity, -Infinity, true, {}]) {
+        assert.throws(() => h.api.validateDimeReview([{ ...metrics, shares }]));
+      }
+      for (const field of ['marketValue', 'costBasis']) {
+        for (const value of [null, undefined, '', ' ', 'bad', NaN, Infinity, -Infinity, -1, true, {}]) {
+          assert.throws(() => h.api.validateDimeReview([{ ...metrics, shares: 0, [field]: value }]));
+        }
+      }
+      assert.equal(h.api.calculateDimeHoldingMetrics({ ...metrics, costBasis: 'bad' }).costBasis, null);
+      assert.equal(h.api.calculateDimeHoldingMetrics({ ...metrics, shares: 0, marketValue: 0 }).shares, null);
+      assert.equal(h.api.calculateDimeHoldingMetrics({ ticker: 'A', marketValue: 10, costBasis: 0 }).shares, null);
+      assert.equal(h.api.validateDimeReview([{ ...metrics, shares: 2, costBasis: 0 }])[0].avgCost, 0, 'existing zero cost with known shares remains valid');
       assert.throws(() => h.api.validateDimeReview([metrics, metrics]));
       for (const invalid of [null, response([]), response([{ ...fixture('A'), shares: 'bad' }]), { ok: true, data: { currency: 'THB', holdings: [fixture('A')] } }]) assert.throws(() => h.api.mergeDimePortfolioResponse(new Map(), invalid));
+    }
+    {
+      const h = load();
+      h.replies([response([
+        { ticker: 'MISSING', marketValue: 150, unrealizedPL: 50 },
+        { ticker: 'ZERO', marketValue: 75, unrealizedPL: -25, shares: 0 },
+        { ticker: 'NEGATIVE', marketValue: 120, unrealizedPL: 20, shares: -2 }
+      ])]);
+      await h.upload([h.image]);
+      assert.equal(h.rows.length, 3);
+      for (const row of h.rows) {
+        assert(/data-field="shares"[^>]*value="1"/.test(row.innerHTML), 'review input defaults to one');
+        assert(!row.summary.textContent.includes('กรุณากรอกข้อมูล'));
+        assert(row.summary.textContent.includes('ต้นทุนเฉลี่ย: 100 USD'));
+      }
+      assert(h.rows[0].summary.textContent.includes('ราคาปัจจุบัน: 150 USD'));
+      assert(h.rows[1].summary.textContent.includes('กำไร/ขาดทุน: -25 USD (-25%)'));
+      assert.equal(h.el('btnConfirmPortfolioVerify').disabled, false);
+      const before = h.c.localStorage.getItem(key);
+      await h.el('btnConfirmPortfolioVerify').emit('click');
+      assert.equal(h.c.localStorage.getItem(key), before, 'review remains mandatory');
+      h.rows.forEach(row => row.check.checked = true);
+      await h.el('btnConfirmPortfolioVerify').emit('click');
+      const saved = JSON.parse(h.c.localStorage.getItem(key));
+      for (const [ticker, price] of [['MISSING', 150], ['ZERO', 75], ['NEGATIVE', 120]]) {
+        const item = saved.find(row => row.ticker === ticker);
+        assert(item); assert.equal(item.shares, 1); assert.equal(item.currentPrice, price);
+        assert.equal(item.costBasis, 100); assert.equal(item.avgCost, 100);
+      }
+      assert.equal(h.el('portfolioVerifyModal').hidden, true);
+      const committed = h.c.localStorage.getItem(key);
+      assert.throws(() => h.api.upsertPortfolioHoldings([
+        { ticker: 'VALID', marketValue: 150, costBasis: 100, shares: 0 },
+        { ticker: 'INVALID', marketValue: 150, costBasis: 'bad', shares: 0 }
+      ], true));
+      assert.equal(h.c.localStorage.getItem(key), committed, 'invalid batch cannot partially replace portfolio');
+    }
+    {
+      const h = load();
+      h.replies([response([{ ticker: 'EDIT', marketValue: 150, unrealizedPL: 50, shares: 0 }])]);
+      await h.upload([h.image]);
+      const row = h.rows[0]; row.check.checked = true;
+      row.fields[3].value = '4'; await row.fields[3].emit('input');
+      assert.equal(row.check.checked, false);
+      assert(row.summary.textContent.includes('ราคาปัจจุบัน: 37.5 USD'));
+      assert(row.summary.textContent.includes('ต้นทุนเฉลี่ย: 25 USD'));
+      row.fields[1].value = '80'; await row.fields[1].emit('input');
+      assert(row.summary.textContent.includes('กำไร/ขาดทุน: -20 USD (-20%)'));
+      row.check.checked = true; await h.el('btnConfirmPortfolioVerify').emit('click');
+      const item = JSON.parse(h.c.localStorage.getItem(key)).find(row => row.ticker === 'EDIT');
+      assert.equal(item.shares, 4); assert.equal(item.currentPrice, 20); assert.equal(item.avgCost, 25);
     }
     for (const replace of [false, true]) {
       const h = load(); h.c.localStorage.setItem(key, JSON.stringify([{ id: 'keep-id', ticker: 'AAPL', name: 'Apple', targetPct: 20, currency: 'USD', note: 'keep' }, { id: 'other', ticker: 'OTHER' }]));

@@ -5038,7 +5038,7 @@ interface DashboardMetrics {
       // DIME Portfolio Screenshot Importer & Trade Slip Engine (TASK-SLIPSENSE-V4-020)
       function calculateDimeHoldingMetrics(raw: any) {
         const ticker = String(raw.ticker || '').toUpperCase().trim();
-        const numeric = (v: any) => v !== null && v !== undefined && String(v).trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
+        const numeric = (v: any) => (typeof v === 'number' || typeof v === 'string') && String(v).trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
         const marketValue = numeric(raw.marketValue);
         let unrealizedPL = numeric(raw.unrealizedPL);
         let unrealizedPLPct = numeric(raw.unrealizedPLPct);
@@ -5051,14 +5051,15 @@ interface DashboardMetrics {
           }
         }
 
-        const costBasis = numeric(raw.costBasis) ?? (marketValue !== null && unrealizedPL !== null ? marketValue - unrealizedPL : null);
+        const costBasis = raw.costBasis == null ? (marketValue !== null && unrealizedPL !== null ? marketValue - unrealizedPL : null) : numeric(raw.costBasis);
         unrealizedPL = marketValue !== null && costBasis !== null ? marketValue - costBasis : null;
         unrealizedPLPct = costBasis > 0 && unrealizedPL !== null ? unrealizedPL / costBasis * 100 : null;
         let shares = numeric(raw.shares);
         let currentPrice = numeric(raw.currentPrice);
 
-        if (!(shares > 0) && currentPrice > 0 && marketValue !== null) {
-          shares = marketValue / currentPrice;
+        const missingShares = raw.shares == null || (typeof raw.shares === 'string' && raw.shares.trim() === '');
+        if ((missingShares || (shares !== null && shares <= 0)) && marketValue > 0 && costBasis > 0) {
+          shares = 1;
         } else if (!(shares > 0)) {
           shares = null;
         }
@@ -5130,11 +5131,11 @@ interface DashboardMetrics {
         if (!items.length) throw new Error("ไม่พบรายการหุ้น");
         const seen = new Set();
         return items.map(raw => {
-          if (['shares', 'marketValue', 'costBasis'].some(key => raw[key] === null || raw[key] === undefined || raw[key] === '' || !Number.isFinite(Number(raw[key])))) throw new Error("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+          if (['marketValue', 'costBasis'].some(key => raw[key] === null || raw[key] === undefined || String(raw[key]).trim() === '' || !Number.isFinite(Number(raw[key])))) throw new Error("กรุณากรอกข้อมูลให้ครบทุกช่อง");
           const item = calculateDimeHoldingMetrics(raw);
           if (!/^[A-Z0-9][A-Z0-9.-]*$/.test(item.ticker) || seen.has(item.ticker)) throw new Error("กรุณาตรวจชื่อหุ้นที่ว่าง ไม่ถูกต้อง หรือซ้ำกัน");
           seen.add(item.ticker);
-          if (!(Number(raw.shares) > 0) || !(item.shares > 0) || item.marketValue === null || item.marketValue < 0 || item.costBasis === null || item.costBasis < 0 || item.currentPrice === null || item.avgCost === null) throw new Error("กรุณากรอกจำนวนหุ้น มูลค่า และต้นทุนให้ครบทุกแถว");
+          if (!(item.shares > 0) || item.marketValue === null || item.marketValue < 0 || item.costBasis === null || item.costBasis < 0 || item.currentPrice === null || item.avgCost === null) throw new Error("กรุณากรอกจำนวนหุ้น มูลค่า และต้นทุนให้ครบทุกแถว");
           return item;
         });
       }
@@ -6413,13 +6414,14 @@ interface DashboardMetrics {
           }
         }
         function renderDimeVerifyModal(items: any[]) {
+          stagedDimeHoldings = items.map(raw => ({ ...raw, ...calculateDimeHoldingMetrics(raw) }));
           const escapeHtml = (value: string) => value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
           const container = document.getElementById('portfolioVerifyListContainer');
           if (!container || !modalVerify) return;
           container.innerHTML = '';
           const replace = document.getElementById('chkReplaceAllPortfolioOnImport') as HTMLInputElement;
           if (replace) replace.checked = false;
-          items.forEach(item => {
+          stagedDimeHoldings.forEach(item => {
             const row = document.createElement('div'); row.className = 'verify-holding-row';
             row.style.cssText = 'padding:12px;border-bottom:1px solid var(--border-color)';
             row.innerHTML = '<p>USD ' + escapeHtml(item.ticker) + (item.conflict ? " — ข้อมูลซ้ำขัดแย้ง ใช้ภาพแรก กรุณาตรวจแก้" : '') + '</p>' +
@@ -6430,7 +6432,7 @@ interface DashboardMetrics {
             const checked = row.querySelector('.verify-item-checkbox') as HTMLInputElement;
             const update = () => {
               const result = calculateDimeHoldingMetrics(item);
-              if (summary) summary.textContent = "ต้นทุนเฉลี่ย: " + (result.avgCost ?? "กรุณากรอกข้อมูล") + " USD | กำไร/ขาดทุน: " + (result.unrealizedPL ?? "กรุณากรอกข้อมูล") + ' USD (' + (result.unrealizedPLPct ?? "คำนวณไม่ได้") + '%)';
+              if (summary) summary.textContent = "ราคาปัจจุบัน: " + (result.currentPrice ?? "กรุณากรอกข้อมูล") + " USD | ต้นทุนรวม: " + (result.costBasis ?? "กรุณากรอกข้อมูล") + " USD | ต้นทุนเฉลี่ย: " + (result.avgCost ?? "กรุณากรอกข้อมูล") + " USD | กำไร/ขาดทุน: " + (result.unrealizedPL ?? "กรุณากรอกข้อมูล") + ' USD (' + (result.unrealizedPLPct ?? "คำนวณไม่ได้") + '%)';
             };
             row.querySelectorAll('.verify-val-in').forEach((el: HTMLInputElement) => el.addEventListener('input', () => {
               const field = el.getAttribute('data-field');
