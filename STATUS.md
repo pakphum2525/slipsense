@@ -2,7 +2,23 @@
 
 **วันที่อัปเดตล่าสุด:** 14 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-033 ผ่านการอนุมัติ Release แล้ว (`RELEASE_APPROVED` — Single-Agent ชั่วคราวตาม `AGENTS.md`); Deploy Supabase Edge Function `analyze-receipt` **version 12** สำเร็จ พร้อม Push ขึ้น GitHub Pages (`main`)
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-034 พัฒนาและทดสอบใน Worktree เสร็จสิ้น (`npm test` ผ่าน **48/48 รายการ**) รอผลตรวจ Independent QA Review และ Gate 16 (`AWAITING_RELEASE_APPROVAL`)
+
+## ผลงาน TASK-SLIPSENSE-V4-034 — Cloud Sync พอร์ตหุ้น (`public.stock_holdings`) และนำเข้าตาราง Desktop 8 คอลัมน์
+
+- **ฐานข้อมูลและ RLS (`supabase.sql`):**
+  - เพิ่มตาราง `public.stock_holdings` แบบ Idempotent พร้อมคอลัมน์ `shares NUMERIC(18,7)`, `cost_basis`, `avg_cost`, `current_price`, `target_pct`, `currency`, `deleted_at`, `UNIQUE(user_id, ticker)`
+  - เปิด `ENABLE` และ `FORCE ROW LEVEL SECURITY` พร้อม 4 Policies (`(select auth.uid()) = user_id`), Trigger `stock_holdings_updated_at`, `REPLICA IDENTITY FULL` และเพิ่มเข้า `supabase_realtime` publication
+- **Edge Function (`supabase/functions/analyze-receipt/index.ts`):**
+  - ขยาย `portfolioSystemInstruction`, `portfolioResponseSchema` และ `isPortfolioMode` response mapper ให้รองรับ `name` และ `avgCost` จากภาพตารางพอร์ต Desktop 8 คอลัมน์ พร้อมคงทศนิยม `shares` ตามจริง
+- **Frontend Cloud Sync & Portfolio Engine (`src/app.ts`, `src/sw.ts`):**
+  - เพิ่ม `pullCloudStockHoldingsAndMerge()` และ `syncStockHoldingsToCloud()` พร้อมติดตาม Initial Sync ต่อผู้ใช้ (`slipsense_stock_cloud_synced_<user_id>`) และ Tombstone (`deleted_at`) โดยเครื่องใหม่ที่ Sign In จะรับข้อมูลจาก Cloud แทนชุดตัวอย่างเริ่มต้น
+  - เชื่อม Sync เข้ากับ `setupRealtimeSubscription` (ตาราง `stock_holdings`), `initSupabaseClientAndVerify`, `onAuthStateChange`, `upsertPortfolioHoldings`, `deletePortfolioHolding`, `clearAllPortfolioHoldings`, `saveTargetAllocations`, และฟอร์ม Trade/Update Price
+  - ปรับ `calculateDimeHoldingMetrics`, `mergeDimePortfolioResponse` และ `upsertPortfolioHoldings` ให้รักษาทศนิยม `shares (> 0)` ครบถ้วน รองรับ `name` และ `avgCost` และไม่เขียนทับ `shares` ที่เป็นบวกด้วย `1`
+  - อัปเดต Service Worker Cache เป็น `slipsense-app-shell-v4-3d-cute-3-dime-v12`
+- **การทดสอบและ Build (`scripts/run_tests.js`, `tests/portfolio_engine.test.js`, `dist/**`):**
+  - เพิ่ม Suite 3.4 (`public.stock_holdings` + RLS/Realtime), Suite 4.4 (Desktop 8-column `name`/`avgCost`), และเคสใน `tests/portfolio_engine.test.js` (SW Cache `v12`, ทศนิยม 7 ตำแหน่ง `0.0892412`, และ Cloud Sync/Tombstone)
+  - `npm test` (รวม `build_prod.js`) ผ่าน **48/48 รายการ** (ล้มเหลว 0, exit code 0) (หมายเหตุ: `Integration RLS/concurrent delete` ไม่ได้รันเนื่องจากไม่มี Test Database ในเครื่องตามเดิม)
 
 ## ผลงาน TASK-SLIPSENSE-V4-033 — แก้ไข Gemini ThinkingConfig/Timeout และการแสดง Error AI ให้ตรงสาเหตุ (Single-Agent ชั่วคราว)
 

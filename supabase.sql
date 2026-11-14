@@ -364,4 +364,77 @@ END $$;
 REVOKE ALL ON FUNCTION public.delete_fund_bucket(UUID, TEXT, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.delete_fund_bucket(UUID, TEXT, TEXT) TO authenticated;
 
+-- ============================================================================
+-- 9. ตารางพอร์ตหุ้น Cloud Sync (public.stock_holdings) + RLS + Realtime
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.stock_holdings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  ticker TEXT NOT NULL CHECK (char_length(btrim(ticker)) BETWEEN 1 AND 32),
+  name TEXT NOT NULL DEFAULT '',
+  shares NUMERIC(18,7) NOT NULL DEFAULT 0 CHECK (shares >= 0),
+  cost_basis NUMERIC(16,4) NOT NULL DEFAULT 0 CHECK (cost_basis >= 0),
+  avg_cost NUMERIC(16,6) NOT NULL DEFAULT 0 CHECK (avg_cost >= 0),
+  current_price NUMERIC(16,6) NOT NULL DEFAULT 0 CHECK (current_price >= 0),
+  target_pct NUMERIC(7,4) NOT NULL DEFAULT 0 CHECK (target_pct >= 0 AND target_pct <= 100),
+  currency TEXT NOT NULL DEFAULT 'USD' CHECK (char_length(btrim(currency)) BETWEEN 1 AND 10),
+  deleted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_holdings_user_updated
+  ON public.stock_holdings (user_id, updated_at DESC);
+
+ALTER TABLE public.stock_holdings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_holdings FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS stock_holdings_select ON public.stock_holdings;
+CREATE POLICY stock_holdings_select ON public.stock_holdings
+  FOR SELECT TO authenticated
+  USING ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS stock_holdings_insert ON public.stock_holdings;
+CREATE POLICY stock_holdings_insert ON public.stock_holdings
+  FOR INSERT TO authenticated
+  WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS stock_holdings_update ON public.stock_holdings;
+CREATE POLICY stock_holdings_update ON public.stock_holdings
+  FOR UPDATE TO authenticated
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS stock_holdings_delete ON public.stock_holdings;
+CREATE POLICY stock_holdings_delete ON public.stock_holdings
+  FOR DELETE TO authenticated
+  USING ((select auth.uid()) = user_id);
+
+REVOKE ALL ON public.stock_holdings FROM PUBLIC, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.stock_holdings TO authenticated, service_role;
+
+DROP TRIGGER IF EXISTS stock_holdings_updated_at ON public.stock_holdings;
+CREATE TRIGGER stock_holdings_updated_at
+  BEFORE UPDATE ON public.stock_holdings
+  FOR EACH ROW EXECUTE FUNCTION public.handle_transactions_before_update();
+
+ALTER TABLE public.stock_holdings REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+        AND schemaname = 'public'
+        AND tablename = 'stock_holdings'
+    ) THEN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.stock_holdings;
+    END IF;
+  END IF;
+END
+$$;
+
 COMMIT;

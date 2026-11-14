@@ -1517,6 +1517,20 @@ interface DashboardMetrics {
                 }
               }
             )
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'stock_holdings',
+                filter: `user_id=eq.${userId}`
+              },
+              () => {
+                if (!document.hidden && generation === realtimeGeneration && userId === appState.currentUser?.id) {
+                  pullCloudStockHoldingsAndMerge().catch(() => {});
+                }
+              }
+            )
             .subscribe();
 
           appState.realtimeChannel = channel;
@@ -1579,6 +1593,7 @@ interface DashboardMetrics {
             if (nextUser && nextUser.id !== prevUserId) {
               await setupRealtimeSubscription();
               await pullCloudTransactionsAndMerge();
+              await pullCloudStockHoldingsAndMerge();
               await checkAiEdgeHealthSilent();
             } else if (!nextUser) {
               await cleanupRealtimeSubscription();
@@ -1597,6 +1612,7 @@ interface DashboardMetrics {
           if (appState.currentUser) {
             await setupRealtimeSubscription();
             await pullCloudTransactionsAndMerge();
+            await pullCloudStockHoldingsAndMerge();
             await checkAiEdgeHealthSilent();
           } else {
             appState.aiStatus = 'unconfigured';
@@ -4969,6 +4985,264 @@ interface DashboardMetrics {
         } catch {}
       }
 
+      const STOCK_CLOUD_SYNCED_PREFIX = 'slipsense_stock_cloud_synced_';
+      const STOCK_TOMBSTONES_KEY = 'slipsense_stock_tombstones_v1';
+      let stockSyncInFlight = false;
+
+      function getStockTombstones(): Record<string, string> {
+        try {
+          const raw = localStorage.getItem(STOCK_TOMBSTONES_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') return parsed;
+          }
+        } catch {}
+        return {};
+      }
+
+      function saveStockTombstones(tombstones: Record<string, string>) {
+        try {
+          localStorage.setItem(STOCK_TOMBSTONES_KEY, JSON.stringify(tombstones));
+        } catch {}
+      }
+
+      function recordStockTombstones(tickers: string[], deletedAtIso = new Date().toISOString()) {
+        if (!Array.isArray(tickers) || !tickers.length) return;
+        const tombstones = getStockTombstones();
+        for (const t of tickers) {
+          const upper = String(t || '').trim().toUpperCase();
+          if (upper) tombstones[upper] = deletedAtIso;
+        }
+        saveStockTombstones(tombstones);
+      }
+
+      function mapCloudRowToStockHolding(row: any): StockHolding {
+        const ticker = String(row?.ticker || '').trim().toUpperCase();
+        return {
+          id: String(row?.id || 'stock-' + ticker.toLowerCase()),
+          ticker,
+          name: String(row?.name || ticker).trim() || ticker,
+          shares: Number(row?.shares) || 0,
+          costBasis: Number(row?.cost_basis) || 0,
+          avgCost: Number(row?.avg_cost) || 0,
+          currentPrice: Number(row?.current_price) || 0,
+          targetPct: Number(row?.target_pct) || 0,
+          currency: String(row?.currency || 'USD').trim() || 'USD',
+          updatedAt: String(row?.updated_at || new Date().toISOString())
+        };
+      }
+
+      async function pullCloudStockHoldingsAndMerge() {
+        if (!appState.supabaseClient || !appState.currentUser) return;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
+        const client = appState.supabaseClient;
+        const userId = appState.currentUser.id;
+        const syncFlagKey = STOCK_CLOUD_SYNCED_PREFIX + userId;
+        const hasInitialSynced = localStorage.getItem(syncFlagKey) === '1';
+
+        const { data: remoteRows, error } = await client
+          .from('stock_holdings')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (error || !Array.isArray(remoteRows)) return;
+
+        const remoteByTicker = new Map<string, any>();
+        for (const row of remoteRows) {
+          const upper = String(row?.ticker || '').trim().toUpperCase();
+          if (upper) remoteByTicker.set(upper, row);
+        }
+
+        const activeRemote = Array.from(remoteByTicker.values()).filter(r => !r.deleted_at);
+        const rawLocal = localStorage.getItem(STOCK_HOLDINGS_KEY);
+        const tombstones = getStockTombstones();
+
+        // First-time sign-in on a fresh device (no user-saved local portfolio yet): adopt non-empty cloud state directly instead of sample defaults
+        if (!hasInitialSynced && rawLocal === null && remoteRows.length > 0) {
+          const adopted = activeRemote.map(mapCloudRowToStockHolding);
+          saveStockHoldingsToStorage(adopted);
+          localStorage.setItem(syncFlagKey, '1');
+          try { renderStockPortfolioUI(); } catch (_) {}
+          return;
+        }
+
+        let localHoldings: StockHolding[] = [];
+        try {
+          localHoldings = rawLocal !== null ? JSON.parse(rawLocal) : [];
+        } catch {
+          localHoldings = [];
+        }
+
+        const localByTicker = new Map<string, StockHolding>();
+        for (const h of localHoldings) {
+          const upper = String(h?.ticker || '').trim().toUpperCase();
+          if (upper) localByTicker.set(upper, { ...h, ticker: upper });
+        }
+
+        const allTickers = new Set<string>([
+          ...Array.from(localByTicker.keys()),
+          ...Array.from(remoteByTicker.keys())
+        ]);
+
+        const merged: StockHolding[] = [];
+        let shouldPushToCloud = false;
+
+        for (const ticker of allTickers) {
+          const local = localByTicker.get(ticker);
+          const remote = remoteByTicker.get(ticker);
+          const localTombstoneTs = tombstones[ticker] ? Date.parse(tombstones[ticker]) : 0;
+          const localTs = local?.updatedAt ? Date.parse(local.updatedAt) : 0;
+          const remoteTs = remote?.updated_at ? Date.parse(remote.updated_at) : 0;
+          const remoteDeletedTs = remote?.deleted_at ? Date.parse(remote.deleted_at) : 0;
+
+          if (remote && remote.deleted_at) {
+            if (local && localTs > Math.max(remoteDeletedTs, remoteTs, localTombstoneTs)) {
+              merged.push(local);
+              delete tombstones[ticker];
+              shouldPushToCloud = true;
+            } else {
+              delete tombstones[ticker];
+            }
+            continue;
+          }
+
+          if (localTombstoneTs > 0) {
+            if (remote && remoteTs > localTombstoneTs) {
+              delete tombstones[ticker];
+              merged.push(mapCloudRowToStockHolding(remote));
+            } else {
+              shouldPushToCloud = true;
+            }
+            continue;
+          }
+
+          if (local && remote) {
+            if (remoteTs >= localTs) {
+              merged.push(mapCloudRowToStockHolding(remote));
+            } else {
+              merged.push(local);
+              shouldPushToCloud = true;
+            }
+          } else if (remote) {
+            merged.push(mapCloudRowToStockHolding(remote));
+          } else if (local) {
+            merged.push(local);
+            shouldPushToCloud = true;
+          }
+        }
+
+        saveStockTombstones(tombstones);
+        if (rawLocal !== null || remoteRows.length > 0) {
+          saveStockHoldingsToStorage(merged);
+        }
+        localStorage.setItem(syncFlagKey, '1');
+        try { renderStockPortfolioUI(); } catch (_) {}
+
+        if (shouldPushToCloud) {
+          await syncStockHoldingsToCloud();
+        }
+      }
+
+      async function syncStockHoldingsToCloud(options: { deletedTickers?: string[]; replaceAll?: boolean } = {}) {
+        const nowIso = new Date().toISOString();
+        if (Array.isArray(options.deletedTickers) && options.deletedTickers.length) {
+          recordStockTombstones(options.deletedTickers, nowIso);
+        }
+
+        if (!appState.supabaseClient || !appState.currentUser) return;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+        if (stockSyncInFlight) return;
+
+        stockSyncInFlight = true;
+        try {
+          const client = appState.supabaseClient;
+          const userId = appState.currentUser.id;
+          const rawLocal = localStorage.getItem(STOCK_HOLDINGS_KEY);
+          if (rawLocal === null && !options.replaceAll && !Object.keys(getStockTombstones()).length) {
+            return;
+          }
+
+          let holdings: StockHolding[] = [];
+          try {
+            holdings = rawLocal !== null ? JSON.parse(rawLocal) : [];
+          } catch {
+            holdings = [];
+          }
+
+          const tombstones = getStockTombstones();
+          const activeTickers = new Set<string>();
+          const activePayloads = holdings
+            .map((h) => {
+              const ticker = String(h?.ticker || '').trim().toUpperCase();
+              if (!ticker) return null;
+              activeTickers.add(ticker);
+              delete tombstones[ticker];
+              return {
+                user_id: userId,
+                ticker,
+                name: String(h?.name || ticker).trim() || ticker,
+                shares: Number.isFinite(Number(h?.shares)) && Number(h.shares) >= 0 ? Number(h.shares) : 0,
+                cost_basis: Number.isFinite(Number(h?.costBasis)) && Number(h.costBasis) >= 0 ? Number(h.costBasis) : 0,
+                avg_cost: Number.isFinite(Number(h?.avgCost)) && Number(h.avgCost) >= 0 ? Number(h.avgCost) : 0,
+                current_price: Number.isFinite(Number(h?.currentPrice)) && Number(h.currentPrice) >= 0 ? Number(h.currentPrice) : 0,
+                target_pct: Number.isFinite(Number(h?.targetPct)) && Number(h.targetPct) >= 0 ? Math.min(100, Number(h.targetPct)) : 0,
+                currency: String(h?.currency || 'USD').trim() || 'USD',
+                deleted_at: null,
+                updated_at: String(h?.updatedAt || nowIso)
+              };
+            })
+            .filter(Boolean);
+
+          if (options.replaceAll) {
+            const { data: existingRemote } = await client
+              .from('stock_holdings')
+              .select('ticker')
+              .eq('user_id', userId)
+              .is('deleted_at', null);
+            if (Array.isArray(existingRemote)) {
+              for (const row of existingRemote) {
+                const upper = String(row?.ticker || '').trim().toUpperCase();
+                if (upper && !activeTickers.has(upper)) {
+                  tombstones[upper] = nowIso;
+                }
+              }
+            }
+          }
+
+          if (activePayloads.length > 0) {
+            const { error: upsertErr } = await client
+              .from('stock_holdings')
+              .upsert(activePayloads, { onConflict: 'user_id,ticker' });
+            if (upsertErr) return;
+          }
+
+          const deletedPayloads = Object.entries(tombstones)
+            .filter(([ticker]) => !activeTickers.has(ticker))
+            .map(([ticker, deletedAt]) => ({
+              user_id: userId,
+              ticker,
+              deleted_at: deletedAt || nowIso,
+              updated_at: deletedAt || nowIso
+            }));
+
+          if (deletedPayloads.length > 0) {
+            const { error: deleteErr } = await client
+              .from('stock_holdings')
+              .upsert(deletedPayloads, { onConflict: 'user_id,ticker' });
+            if (!deleteErr) {
+              for (const item of deletedPayloads) delete tombstones[item.ticker];
+            }
+          }
+
+          saveStockTombstones(tombstones);
+          localStorage.setItem(STOCK_CLOUD_SYNCED_PREFIX + userId, '1');
+        } catch {}
+        finally {
+          stockSyncInFlight = false;
+        }
+      }
+
       function getStockTransactionsFromStorage(): StockTransaction[] {
         try {
           const raw = localStorage.getItem(STOCK_TRANSACTIONS_KEY);
@@ -5068,8 +5342,10 @@ interface DashboardMetrics {
       // DIME Portfolio Screenshot Importer & Trade Slip Engine (TASK-SLIPSENSE-V4-020)
       function calculateDimeHoldingMetrics(raw: any) {
         const ticker = String(raw.ticker || '').toUpperCase().trim();
+        const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : ticker;
         const numeric = (v: any) => (typeof v === 'number' || typeof v === 'string') && String(v).trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
         const marketValue = numeric(raw.marketValue);
+        const rawAvgCost = numeric(raw.avgCost);
         let unrealizedPL = numeric(raw.unrealizedPL);
         let unrealizedPLPct = numeric(raw.unrealizedPLPct);
 
@@ -5081,26 +5357,37 @@ interface DashboardMetrics {
           }
         }
 
-        const costBasis = raw.costBasis == null ? (marketValue !== null && unrealizedPL !== null ? marketValue - unrealizedPL : null) : numeric(raw.costBasis);
-        unrealizedPL = marketValue !== null && costBasis !== null ? marketValue - costBasis : null;
-        unrealizedPLPct = costBasis > 0 && unrealizedPL !== null ? unrealizedPL / costBasis * 100 : null;
         let shares = numeric(raw.shares);
+        const hasPositiveShares = shares !== null && shares > 0;
+        const derivedCostBasisFromAvg = hasPositiveShares && rawAvgCost !== null && rawAvgCost >= 0 ? (shares as number) * rawAvgCost : null;
+        const costBasis = raw.costBasis == null
+          ? (marketValue !== null && unrealizedPL !== null ? marketValue - unrealizedPL : derivedCostBasisFromAvg)
+          : numeric(raw.costBasis);
+        unrealizedPL = marketValue !== null && costBasis !== null ? marketValue - costBasis : unrealizedPL;
+        unrealizedPLPct = costBasis > 0 && unrealizedPL !== null ? unrealizedPL / costBasis * 100 : unrealizedPLPct;
         let currentPrice = numeric(raw.currentPrice);
 
         const missingShares = raw.shares == null || (typeof raw.shares === 'string' && raw.shares.trim() === '');
-        if ((missingShares || (shares !== null && shares <= 0)) && marketValue > 0 && costBasis > 0) {
-          shares = 1;
-        } else if (!(shares > 0)) {
-          shares = null;
+        if (!hasPositiveShares) {
+          if ((missingShares || (shares !== null && shares <= 0)) && marketValue > 0 && costBasis > 0) {
+            shares = 1;
+          } else {
+            shares = null;
+          }
         }
 
-        const avgCost = shares > 0 && costBasis !== null ? (costBasis / shares) : null;
+        const avgCost = raw.costBasis == null && rawAvgCost !== null && rawAvgCost > 0
+          ? rawAvgCost
+          : (shares > 0 && costBasis !== null ? (costBasis / shares) : null);
         if (shares > 0 && marketValue !== null) {
           currentPrice = marketValue / shares;
-        } else currentPrice = null;
+        } else if (!(currentPrice !== null && currentPrice > 0)) {
+          currentPrice = null;
+        }
 
         const result = {
           ticker,
+          name,
           marketValue,
           unrealizedPL,
           unrealizedPLPct,
@@ -5123,6 +5410,7 @@ interface DashboardMetrics {
           if (!t) return;
           const existing = holdings.find(h => h.ticker.toUpperCase() === t);
           if (existing) {
+            if (typeof nh.name === 'string' && nh.name.trim()) existing.name = nh.name.trim();
             existing.shares = nh.shares;
             existing.costBasis = nh.costBasis;
             existing.avgCost = nh.avgCost;
@@ -5135,7 +5423,7 @@ interface DashboardMetrics {
               ...(latest.find(h => h.ticker === t) || {}),
               id: latest.find(h => h.ticker === t)?.id || 'stock-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
               ticker: t,
-              name: latest.find(h => h.ticker === t)?.name || t,
+              name: (typeof nh.name === 'string' && nh.name.trim()) ? nh.name.trim() : (latest.find(h => h.ticker === t)?.name || t),
               shares: nh.shares,
               costBasis: nh.costBasis,
               avgCost: nh.avgCost,
@@ -5150,6 +5438,7 @@ interface DashboardMetrics {
         localStorage.setItem(STOCK_HOLDINGS_KEY, JSON.stringify(holdings));
         // Rendering cannot undo a committed atomic storage write.
         try { renderStockPortfolioUI(); } catch (_) {}
+        syncStockHoldingsToCloud({ replaceAll }).catch(() => {});
       }
 
       let stagedDimeHoldings: any[] = [];
@@ -5174,7 +5463,7 @@ interface DashboardMetrics {
         if (response?.ok !== true || data?.currency !== 'USD' || !Array.isArray(data.holdings) || !data.holdings.length) throw new Error("ไม่พบหุ้น หรือผลลัพธ์ AI ไม่ถูกต้อง กรุณาเลือกภาพใหม่");
         for (const raw of data.holdings) {
           if (!raw || typeof raw.ticker !== 'string' || !/^[A-Z0-9][A-Z0-9.-]*$/.test(raw.ticker.trim().toUpperCase()) || (raw.currency && raw.currency !== 'USD')) throw new Error("รูปแบบชื่อหุ้นหรือสกุลเงินไม่ถูกต้อง");
-          for (const key of ['marketValue', 'unrealizedPL', 'unrealizedPLPct', 'shares', 'currentPrice']) if (raw[key] != null && (typeof raw[key] !== 'number' || !Number.isFinite(raw[key]))) throw new Error("ผลลัพธ์ AI มีตัวเลขไม่ถูกต้อง");
+          for (const key of ['marketValue', 'unrealizedPL', 'unrealizedPLPct', 'shares', 'avgCost', 'currentPrice']) if (raw[key] != null && (typeof raw[key] !== 'number' || !Number.isFinite(raw[key]))) throw new Error("ผลลัพธ์ AI มีตัวเลขไม่ถูกต้อง");
           const item = { ...calculateDimeHoldingMetrics(raw), conflict: false };
           const previous = merged.get(item.ticker);
           if (!previous) merged.set(item.ticker, item);
@@ -5742,12 +6031,15 @@ interface DashboardMetrics {
         const holdings = getStockHoldingsFromStorage().filter(h => h.ticker.toUpperCase() !== upper);
         saveStockHoldingsToStorage(holdings);
         renderStockPortfolioUI();
+        if (upper) syncStockHoldingsToCloud({ deletedTickers: [upper] }).catch(() => {});
         return holdings;
       }
 
       function clearAllPortfolioHoldings() {
+        const prevTickers = getStockHoldingsFromStorage().map(h => h.ticker.toUpperCase()).filter(Boolean);
         saveStockHoldingsToStorage([]);
         renderStockPortfolioUI();
+        syncStockHoldingsToCloud({ deletedTickers: prevTickers, replaceAll: true }).catch(() => {});
         return [];
       }
 
@@ -6018,15 +6310,18 @@ interface DashboardMetrics {
 
       function saveTargetAllocations() {
         const holdings = getStockHoldingsFromStorage();
+        const nowIso = new Date().toISOString();
         holdings.forEach(h => {
           if (targetAllocDraftMap[h.ticker] !== undefined) {
             h.targetPct = targetAllocDraftMap[h.ticker];
+            h.updatedAt = nowIso;
           }
         });
         saveStockHoldingsToStorage(holdings);
         showToast("บันทึกเป้าหมายสัดส่วนพอร์ตสำเร็จ", "success");
         closeTargetAllocationModal();
         renderStockPortfolioUI();
+        syncStockHoldingsToCloud().catch(() => {});
       }
 
       function openStockTradeModal(presetTicker = "", defaultAction = "buy", suggestedShares: number | string = "", suggestedAmount: number | string = "") {
@@ -6636,6 +6931,7 @@ interface DashboardMetrics {
           }
 
           saveStockHoldingsToStorage(holdings);
+          syncStockHoldingsToCloud().catch(() => {});
 
           // Record stock transaction history
           const txs = getStockTransactionsFromStorage();
@@ -6673,6 +6969,7 @@ interface DashboardMetrics {
             }
           });
           saveStockHoldingsToStorage(holdings);
+          syncStockHoldingsToCloud().catch(() => {});
           const m = document.getElementById('stockPriceModal');
           if (m) m.hidden = true;
           renderStockPortfolioUI();
@@ -6725,6 +7022,8 @@ interface DashboardMetrics {
         rolloverMonthlySurplusToEmergency,
         syncPendingTransactions,
         pullCloudTransactionsAndMerge,
+        pullCloudStockHoldingsAndMerge,
+        syncStockHoldingsToCloud,
         validateAndImportBackup,
         exportBackupJson,
         exportBackupCsv

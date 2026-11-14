@@ -491,8 +491,11 @@ Deno.serve(async (req: Request) => {
    - marketValueThb: มูลค่าเทียบเท่าเงินบาทใต้ตัวเลข USD (เช่น 13018.16 จาก "≈ 13,018.16 THB")
    - unrealizedPLPct: เปอร์เซ็นต์กำไร/ขาดทุนฝั่งขวา พร้อมเครื่องหมายบวก/ลบ (เช่น -1.32, -14.88, 1.33, 16.39, 41.96, 27.18)
    - unrealizedPL: ตัวเลขกำไร/ขาดทุนหน่วย USD ในวงเล็บฝั่งขวา พร้อมเครื่องหมายบวก/ลบ (เช่น -5.22 จาก "(-5.22 USD)", -65.24 จาก "(-65.24 USD)", 4.80 จาก "(+4.80 USD)")
-   - shares: จำนวนหุ้นถ้ามีแสดงในภาพ หากไม่แสดงให้ส่ง 0
-   - currentPrice: ราคาตลาดต่อหุ้นถ้ามีแสดงในภาพ หากไม่แสดงให้ส่ง 0`;
+   - shares: จำนวนหุ้นถ้ามีแสดงในภาพ (รองรับทศนิยมละเอียด 7 ตำแหน่งในตาราง Desktop) หากไม่แสดงให้ส่ง 0
+   - currentPrice: ราคาตลาดต่อหุ้นถ้ามีแสดงในภาพ หากไม่แสดงให้ส่ง 0
+   - avgCost: ต้นทุนเฉลี่ยต่อหุ้น (Avg Cost) ถ้ามีแสดงในตาราง Desktop หากไม่แสดงให้ส่ง 0
+   - name: ชื่อบริษัทหรือชื่อเต็มของหุ้นถ้ามีแสดงในภาพ หากไม่แสดงให้ส่ง null
+3. สำหรับหน้าจอตารางพอร์ต Desktop แบบ 8 คอลัมน์ (เช่น Ticker, Name, Shares, Avg Cost, Current Price, Market Value, Unrealized P/L, Weight %) ให้อ่านค่าครบทุกคอลัมน์ตามตัวเลขจริงที่ปรากฏ`;
 
   const portfolioResponseSchema = {
     type: 'OBJECT',
@@ -504,12 +507,14 @@ Deno.serve(async (req: Request) => {
           type: 'OBJECT',
           properties: {
             ticker: { type: 'STRING', description: 'สัญลักษณ์หุ้น เช่น AMZN, NVDA, META, GOOG, LLY, MSFT' },
+            name: { type: 'STRING', nullable: true, description: 'ชื่อบริษัทหรือชื่อเต็มของหุ้น หากแสดงในภาพ' },
             marketValue: { type: 'NUMBER', description: 'มูลค่าสินทรัพย์ปัจจุบันในหน่วย USD เช่น 388.95' },
             marketValueThb: { type: 'NUMBER', nullable: true, description: 'มูลค่าประมาณการหน่วย THB เช่น 13018.16' },
             unrealizedPL: { type: 'NUMBER', description: 'กำไร/ขาดทุนรวมในหน่วย USD (ติดลบเมื่อขาดทุน) เช่น -5.22 หรือ 4.80' },
             unrealizedPLPct: { type: 'NUMBER', description: 'เปอร์เซ็นต์กำไร/ขาดทุน (ติดลบเมื่อขาดทุน) เช่น -1.32 หรือ 1.33' },
             portfolioWeightPct: { type: 'NUMBER', nullable: true, description: 'สัดส่วนในพอร์ตเป็น % เช่น 10.41' },
             shares: { type: 'NUMBER', nullable: true, description: 'จำนวนหุ้น หากไม่แสดงในภาพให้เป็น 0' },
+            avgCost: { type: 'NUMBER', nullable: true, description: 'ต้นทุนเฉลี่ยต่อหุ้น (Avg Cost) หากไม่แสดงในภาพให้เป็น 0' },
             currentPrice: { type: 'NUMBER', nullable: true, description: 'ราคาต่อหุ้น หากไม่แสดงในภาพให้เป็น 0' }
           },
           required: ['ticker', 'marketValue', 'unrealizedPL', 'unrealizedPLPct']
@@ -789,22 +794,26 @@ Deno.serve(async (req: Request) => {
       const holdings = rawHoldings
         .map((item: any) => {
           const ticker = String(item?.ticker || '').trim().toUpperCase().replace(/[^A-Z0-9.-]/g, '');
+          const name = typeof item?.name === 'string' ? item.name.trim() : '';
           const marketValue = Number(item?.marketValue);
           const marketValueThb = Number(item?.marketValueThb);
           const unrealizedPL = Number(item?.unrealizedPL);
           const unrealizedPLPct = Number(item?.unrealizedPLPct);
           const portfolioWeightPct = Number(item?.portfolioWeightPct);
           const shares = Number(item?.shares);
+          const avgCost = Number(item?.avgCost);
           const currentPrice = Number(item?.currentPrice);
           if (!ticker || !Number.isFinite(marketValue) || marketValue < 0) return null;
           return {
             ticker,
+            ...(name ? { name } : {}),
             marketValue: Math.round(marketValue * 100) / 100,
             marketValueThb: Number.isFinite(marketValueThb) && marketValueThb > 0 ? Math.round(marketValueThb * 100) / 100 : 0,
             unrealizedPL: Number.isFinite(unrealizedPL) ? Math.round(unrealizedPL * 100) / 100 : 0,
             unrealizedPLPct: Number.isFinite(unrealizedPLPct) ? Math.round(unrealizedPLPct * 100) / 100 : 0,
             portfolioWeightPct: Number.isFinite(portfolioWeightPct) ? Math.round(portfolioWeightPct * 100) / 100 : 0,
             shares: Number.isFinite(shares) && shares > 0 ? shares : 0,
+            ...(Number.isFinite(avgCost) && avgCost > 0 ? { avgCost } : {}),
             currentPrice: Number.isFinite(currentPrice) && currentPrice > 0 ? currentPrice : 0,
             currency: 'USD'
           };

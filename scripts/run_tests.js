@@ -746,6 +746,19 @@ async function main() {
     assert(sqlContent.includes('REVOKE ALL ON TABLE public.transactions FROM anon;'), 'ต้อง REVOKE สิทธิ์จาก anon');
   });
 
+  await runTest('Suite 3', '3.4 ตรวจสอบตาราง public.stock_holdings พร้อม RLS, Trigger และ Realtime Publication', () => {
+    assert(sqlContent.includes('CREATE TABLE IF NOT EXISTS public.stock_holdings'), 'ต้องสร้างตาราง public.stock_holdings แบบ Idempotent');
+    assert(sqlContent.includes('shares NUMERIC(18,7)'), 'ต้องรองรับทศนิยม 7 ตำแหน่งสำหรับ shares');
+    assert(sqlContent.includes('ALTER TABLE public.stock_holdings ENABLE ROW LEVEL SECURITY;'), 'ต้องเปิด ENABLE ROW LEVEL SECURITY บน stock_holdings');
+    assert(sqlContent.includes('ALTER TABLE public.stock_holdings FORCE ROW LEVEL SECURITY;'), 'ต้องเปิด FORCE ROW LEVEL SECURITY บน stock_holdings');
+    assert(sqlContent.includes('CREATE POLICY stock_holdings_select ON public.stock_holdings'), 'ต้องมี Policy SELECT ของ stock_holdings');
+    assert(sqlContent.includes('CREATE POLICY stock_holdings_insert ON public.stock_holdings'), 'ต้องมี Policy INSERT ของ stock_holdings');
+    assert(sqlContent.includes('CREATE POLICY stock_holdings_update ON public.stock_holdings'), 'ต้องมี Policy UPDATE ของ stock_holdings');
+    assert(sqlContent.includes('CREATE POLICY stock_holdings_delete ON public.stock_holdings'), 'ต้องมี Policy DELETE ของ stock_holdings');
+    assert(sqlContent.includes('CREATE TRIGGER stock_holdings_updated_at'), 'ต้องมี Trigger stock_holdings_updated_at');
+    assert(sqlContent.includes("tablename = 'stock_holdings'"), 'ต้องเพิ่ม public.stock_holdings เข้า supabase_realtime publication');
+  });
+
   // =========================================================================
   // SUITE 4: Edge Function Security & Contract Audit
   // =========================================================================
@@ -776,6 +789,13 @@ async function main() {
     assert(edgeContent.includes("uncertainSet.add('date')"), 'ต้องทำเครื่องหมาย date ใน uncertain_fields เมื่อไม่พบวันที่');
     assert(edgeContent.includes("uncertainSet.add('amount')"), 'ต้องทำเครื่องหมาย amount ใน uncertain_fields เมื่อไม่พบยอดเงิน');
     assert(edgeContent.includes("uncertainSet.add('type')"), 'ต้องทำเครื่องหมาย type ใน uncertain_fields เมื่อทิศทางเงินเป็น unknown');
+  });
+
+  await runTest('Suite 4', '4.4 ตรวจสอบ Portfolio Schema และ Response Mapping สำหรับตารางหุ้น Desktop 8 คอลัมน์ (name, avgCost, shares)', () => {
+    assert(edgeContent.includes("avgCost: { type: 'NUMBER'"), 'portfolioResponseSchema ต้องรองรับ avgCost');
+    assert(edgeContent.includes("name: { type: 'STRING'"), 'portfolioResponseSchema ต้องรองรับ name');
+    assert(edgeContent.includes('...(name ? { name } : {})'), 'Edge response mapping ต้องส่งออก name เมื่อตรวจพบ');
+    assert(edgeContent.includes('...(Number.isFinite(avgCost) && avgCost > 0 ? { avgCost } : {})'), 'Edge response mapping ต้องส่งออก avgCost เมื่อ > 0');
   });
 
   // =========================================================================

@@ -445,7 +445,7 @@ async function runServiceWorkerRegression() {
   const origin = 'http://127.0.0.1:' + server.address().port;
   try {
     for (const variant of ['source', 'built']) {
-      const old = 'slipsense-app-shell-v4-3d-cute-3-dime-v10', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v11';
+      const old = 'slipsense-app-shell-v4-3d-cute-3-dime-v11', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v12';
       const cache = new Map([[old, new Map()], ['another-app', new Map()]]), events = {};
       let skipped = 0, claimed = 0, failed = true;
       const context = {
@@ -476,7 +476,8 @@ async function runServiceWorkerRegression() {
 }
 
 async function runDimeImporterRegression() {
-  const fs = require('fs'), vm = require('vm');
+  const fs = require('fs'), path = require('path'), vm = require('vm');
+  const rootDir = path.resolve(__dirname, '..');
   const { stripTypeScriptTypes } = require('node:module');
   const { createBrowserSandbox } = require('../scripts/run_tests');
   const key = 'slipsense_stock_holdings_v1';
@@ -485,8 +486,8 @@ async function runDimeImporterRegression() {
   for (const variant of ['source', 'built']) {
     function load() {
       const c = createBrowserSandbox(); c.document.readyState = 'loading';
-      const html = fs.readFileSync('dist/index.html', 'utf8');
-      const code = variant === 'source' ? stripTypeScriptTypes(fs.readFileSync('src/app.ts', 'utf8')) : [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('SlipSenseApp'));
+      const html = fs.readFileSync(path.join(rootDir, 'dist', 'index.html'), 'utf8');
+      const code = variant === 'source' ? stripTypeScriptTypes(fs.readFileSync(path.join(rootDir, 'src', 'app.ts'), 'utf8')) : [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('SlipSenseApp'));
       vm.runInContext(code, c);
       const api = c.SlipSenseApp, state = api.getState(), el = id => c.document.getElementById(id);
       state.currentUser = { id: 'owner' }; state.settings.supabaseUrl = 'https://example.supabase.co'; state.settings.supabaseAnonKey = 'public';
@@ -726,6 +727,103 @@ async function runDimeImporterRegression() {
       fresh.c.location.reload = () => { throw Error('first install must not reload'); };
       fresh.c.document.querySelector = () => null;
       await fresh.api.registerServiceWorkerSafe(); controllerChange();
+    }
+    {
+      const h = load();
+      const metrics = h.api.calculateDimeHoldingMetrics({
+        ticker: 'PLTR',
+        name: 'Palantir Technologies Inc',
+        avgCost: 112.5,
+        shares: 0.0892412,
+        currentPrice: 145.2,
+        marketValue: 12.96,
+        unrealizedPL: 2.92,
+        unrealizedPLPct: 29.08
+      });
+      assert.equal(metrics.ticker, 'PLTR');
+      assert.equal(metrics.name, 'Palantir Technologies Inc');
+      assert.equal(metrics.shares, 0.0892412, 'fractional 7-decimal shares must never be overwritten with 1');
+      assert.equal(metrics.avgCost, 112.5, variant + ':metrics.avgCost');
+      assert(Math.abs(metrics.costBasis - 10.04) < 0.001);
+
+      const mergedMap = new Map();
+      h.api.mergeDimePortfolioResponse(mergedMap, {
+        ok: true,
+        data: {
+          currency: 'USD',
+          holdings: [{
+            ticker: 'PLTR',
+            name: 'Palantir Technologies Inc',
+            avgCost: 112.5,
+            shares: 0.0892412,
+            currentPrice: 145.2,
+            marketValue: 12.96,
+            unrealizedPL: 2.92,
+            unrealizedPLPct: 29.08
+          }]
+        }
+      });
+      const pltr = mergedMap.get('PLTR');
+      assert(pltr && pltr.shares === 0.0892412 && pltr.avgCost === 112.5 && pltr.name === 'Palantir Technologies Inc');
+      h.api.upsertPortfolioHoldings([pltr], true);
+      const saved = JSON.parse(h.c.localStorage.getItem(key));
+      assert.equal(saved.length, 1);
+      assert.equal(saved[0].shares, 0.0892412);
+      assert.equal(saved[0].name, 'Palantir Technologies Inc');
+      assert(Math.abs(saved[0].avgCost - 112.5) < 0.01, variant + ':saved.avgCost');
+    }
+    {
+      const h = load();
+      const remoteRows = [
+        {
+          id: 'cloud-1',
+          user_id: 'u-sync',
+          ticker: 'VOO',
+          name: 'Vanguard S&P 500 ETF',
+          shares: 1.254321,
+          cost_basis: 600,
+          avg_cost: 478.346,
+          current_price: 540.1,
+          target_pct: 50,
+          currency: 'USD',
+          deleted_at: null,
+          updated_at: '2026-11-14T10:00:00.000Z'
+        }
+      ];
+      const upserts = [];
+      const mockClient = {
+        from(table) {
+          assert.equal(table, 'stock_holdings');
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    is() { return Promise.resolve({ data: remoteRows.filter(r => !r.deleted_at), error: null }); },
+                    then(resolve) { return Promise.resolve({ data: remoteRows, error: null }).then(resolve); }
+                  };
+                }
+              };
+            },
+            upsert(payload, opts) {
+              upserts.push({ payload, opts });
+              return Promise.resolve({ error: null });
+            }
+          };
+        }
+      };
+      h.state.supabaseClient = mockClient;
+      h.state.currentUser = { id: 'u-sync' };
+      h.c.navigator.onLine = true;
+      await h.api.pullCloudStockHoldingsAndMerge();
+      const adopted = JSON.parse(h.c.localStorage.getItem(key));
+      assert.equal(adopted.length, 1, 'fresh device must adopt cloud portfolio instead of sample defaults');
+      assert.equal(adopted[0].ticker, 'VOO');
+      assert.equal(adopted[0].shares, 1.254321);
+
+      h.api.deletePortfolioHolding('VOO');
+      await new Promise(resolve => setImmediate(resolve));
+      assert(upserts.some(u => Array.isArray(u.payload) && u.payload.some(r => r.ticker === 'VOO' && typeof r.deleted_at === 'string')), 'deletePortfolioHolding must sync tombstone to cloud');
     }
     console.log('  [PASS] DIME importer ' + variant + ': payload, 23 holdings, review, atomic storage, cancellation, 12 failure paths and safe PWA updates');
   }
