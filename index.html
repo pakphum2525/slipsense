@@ -1203,6 +1203,7 @@ currentUser:null,
 realtimeChannel:null,
 aiStatus:'unconfigured',
 aiStatusMessage:'ยังไม่ได้ตั้งค่า AI',
+aiModel:'',
 transactions:[],
 usingMemoryFallback:false,
 memoryStore:new Map(),
@@ -2226,7 +2227,7 @@ _0x1c1(`เชื่อมต่อ Supabase ไม่สำเร็จ: ${err.
 return{connected:false,reason:err.message||'connection_error'};
 }
 }
-async function _0x1b2(payload,timeoutMs=28000){
+async function _0x1b2(payload,timeoutMs=45000){
 if(!_0x1a7.supabaseClient||!_0x1a7.settings.supabaseUrl||!_0x1a7.settings.supabaseAnonKey){
 throw new Error('กรุณาตั้งค่า Supabase URL และ Publishable Key ในหน้าตั้งค่าก่อนใช้งาน AI');
 }
@@ -2263,18 +2264,45 @@ jsonBody=await response.json();
 throw new Error('ผลลัพธ์จาก Edge Function ไม่ใช่รูปแบบ JSON ที่ถูกต้อง');
 }
 if(!response.ok){
+const serverMessage=jsonBody&&typeof jsonBody.error==='string'&&/[ก-๙]/.test(jsonBody.error)
+?jsonBody.error.trim()
+:'';
+const serverCode=jsonBody&&typeof jsonBody.code==='string'
+?jsonBody.code.trim()
+:'';
 if(response.status===429){
 _0x1a7.aiStatus='rate_limited';
 _0x1a7.aiStatusMessage='ถึงขีดจำกัดการใช้งาน';
-}else if(response.status===503||jsonBody.code==='AI_NOT_CONFIGURED'){
+}else if(response.status===503||serverCode==='AI_NOT_CONFIGURED'){
 _0x1a7.aiStatus='unconfigured';
 _0x1a7.aiStatusMessage='ยังไม่ได้ตั้งค่า AI';
+}else if(response.status===401||response.status===403){
+_0x1a7.aiStatus='unconfigured';
+_0x1a7.aiStatusMessage='เข้าสู่ระบบเพื่อใช้งาน AI';
+}else if(response.status===422){
+_0x1a7.aiStatus='ready';
+_0x1a7.aiStatusMessage='AI พร้อมใช้งาน';
+}else if(response.status===504||serverCode==='AI_TIMEOUT'){
+_0x1a7.aiStatus='error';
+_0x1a7.aiStatusMessage='AI ตอบสนองช้า (Timeout)';
 }else{
 _0x1a7.aiStatus='error';
-_0x1a7.aiStatusMessage='เกิดข้อผิดพลาดจาก AI';
+_0x1a7.aiStatusMessage=serverCode==='GEMINI_CONFIG_ERROR'
+?'ตั้งค่าโมเดล AI ไม่ถูกต้อง'
+:'บริการ AI ขัดข้องชั่วคราว';
 }
 _0x1b8();
-throw new Error(response.status===401||response.status===403?'กรุณาเข้าสู่ระบบใหม่ หรือบัญชีนี้ไม่มีสิทธิ์ใช้งาน AI':response.status===429?'ถึงขีดจำกัดการใช้งาน AI กรุณารอสักครู่แล้วลองใหม่':response.status>=500?'บริการ AI ขัดข้องชั่วคราว กรุณาลองใหม่ภายหลัง':'ไม่สามารถวิเคราะห์ภาพได้ กรุณาตรวจภาพแล้วลองใหม่');
+const fallbackMsg=response.status===401||response.status===403
+?'กรุณาเข้าสู่ระบบใหม่ หรือบัญชีนี้ไม่มีสิทธิ์ใช้งาน AI'
+:response.status===429
+?'ถึงขีดจำกัดการใช้งาน AI กรุณารอสักครู่แล้วลองใหม่'
+:response.status>=500
+?'บริการ AI ขัดข้องชั่วคราว กรุณาลองใหม่ภายหลัง'
+:'ไม่สามารถวิเคราะห์ภาพได้ กรุณาตรวจภาพแล้วลองใหม่';
+throw new Error(serverMessage||fallbackMsg);
+}
+if(jsonBody&&typeof jsonBody.model==='string'&&jsonBody.model.trim()){
+_0x1a7.aiModel=jsonBody.model.trim();
 }
 _0x1a7.aiStatus='ready';
 _0x1a7.aiStatusMessage='AI พร้อมใช้งาน';
@@ -2295,6 +2323,7 @@ async function checkAiEdgeHealthSilent(){
 try{
 const res=await _0x1b2({action:'health'},10000);
 if(res&&res.ready){
+if(res.model)_0x1a7.aiModel=String(res.model).trim();
 _0x1a7.aiStatus='ready';
 _0x1a7.aiStatusMessage='AI พร้อมใช้งาน';
 }else{
@@ -3895,7 +3924,7 @@ _0x1a7.aiStatus==='unconfigured'?'amber':'red'
 );
 }
 if(geminiBox){
-geminiBox.textContent=`สถานะ AI: ${_0x1a7.aiStatusMessage}`;
+geminiBox.textContent=`สถานะ AI: ${_0x1a7.aiStatusMessage}${_0x1a7.aiModel?` (${_0x1a7.aiModel})`:''}`;
 }
 if(authLabel&&authDot){
 if(_0x1a7.supabaseConnected&&_0x1a7.currentUser){

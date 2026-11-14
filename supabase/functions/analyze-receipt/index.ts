@@ -14,8 +14,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 const MAX_BODY_CHARS = 5_500_000; // ~4 MB Base64 payload
 const MAX_IMAGE_BYTES = 3_800_000; // ~3.8 MB binary image size
-const GEMINI_TIMEOUT_MS = 25_000;
+const GEMINI_TIMEOUT_MS = 35_000;
 const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+const RETRYABLE_FALLBACK_STATUSES = new Set([400, 404, 408, 500, 502, 503, 504]);
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const ALLOWED_TYPES = new Set(['expense', 'income', 'unknown']);
@@ -621,10 +622,41 @@ Deno.serve(async (req: Request) => {
     ]
   };
 
+  function buildGenerationConfig(model: string, schema: Record<string, unknown>): Record<string, unknown> {
+    const base: Record<string, unknown> = {
+      responseMimeType: 'application/json',
+      responseSchema: schema
+    };
+    if (/^gemini-2\.5-pro/i.test(model)) {
+      return {
+        ...base,
+        temperature: 0.1,
+        thinkingConfig: { thinkingBudget: 128 }
+      };
+    }
+    if (/^gemini-2\.5/i.test(model)) {
+      return {
+        ...base,
+        temperature: 0.1,
+        thinkingConfig: { thinkingBudget: 0 }
+      };
+    }
+    if (/^gemini-3/i.test(model)) {
+      return {
+        ...base,
+        thinkingConfig: { thinkingLevel: 'low' }
+      };
+    }
+    return {
+      ...base,
+      temperature: 0.1
+    };
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
-  const candidates = [...new Set([geminiModel, DEFAULT_GEMINI_MODEL, 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'])];
+  const candidates = [...new Set([geminiModel, DEFAULT_GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-3.5-flash-lite'])];
   try {
     for (const model of candidates) {
     controller.signal.throwIfAborted();
@@ -661,17 +693,16 @@ Deno.serve(async (req: Request) => {
             ]
           }
         ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: 'application/json',
-          responseSchema: isPortfolioMode ? portfolioResponseSchema : responseSchema
-        }
+        generationConfig: buildGenerationConfig(
+          model,
+          isPortfolioMode ? portfolioResponseSchema : responseSchema
+        )
       })
     });
 
-    if ([404, 503, 504, 408].includes(geminiRes.status) && model !== candidates[candidates.length - 1]) {
+    if (RETRYABLE_FALLBACK_STATUSES.has(geminiRes.status) && model !== candidates[candidates.length - 1]) {
       await geminiRes.body?.cancel();
-      if (geminiRes.status !== 404) {
+      if (geminiRes.status !== 404 && geminiRes.status !== 400) {
         controller.signal.throwIfAborted();
         let delayId: ReturnType<typeof setTimeout> | undefined;
         let onAbort: (() => void) | undefined;

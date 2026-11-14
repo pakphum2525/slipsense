@@ -445,7 +445,7 @@ async function runServiceWorkerRegression() {
   const origin = 'http://127.0.0.1:' + server.address().port;
   try {
     for (const variant of ['source', 'built']) {
-      const old = 'slipsense-app-shell-v4-3d-cute-3-dime-v9', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v10';
+      const old = 'slipsense-app-shell-v4-3d-cute-3-dime-v10', version = 'slipsense-app-shell-v4-3d-cute-3-dime-v11';
       const cache = new Map([[old, new Map()], ['another-app', new Map()]]), events = {};
       let skipped = 0, claimed = 0, failed = true;
       const context = {

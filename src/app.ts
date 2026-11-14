@@ -451,6 +451,7 @@ interface DashboardMetrics {
         realtimeChannel: null,
         aiStatus: 'unconfigured', // 'ready' | 'unconfigured' | 'unreachable' | 'rate_limited' | 'error'
         aiStatusMessage: 'ยังไม่ได้ตั้งค่า AI',
+        aiModel: '',
         transactions: [],
         usingMemoryFallback: false,
         memoryStore: new Map(),
@@ -1623,7 +1624,7 @@ interface DashboardMetrics {
       // =====================================================================
       // AI EDGE FUNCTION HEALTH & RECEIPT ANALYSIS
       // =====================================================================
-      async function callAnalyzeReceiptEdgeFunction(payload, timeoutMs = 28000) {
+      async function callAnalyzeReceiptEdgeFunction(payload, timeoutMs = 45000) {
         if (!appState.supabaseClient || !appState.settings.supabaseUrl || !appState.settings.supabaseAnonKey) {
           throw new Error('กรุณาตั้งค่า Supabase URL และ Publishable Key ในหน้าตั้งค่าก่อนใช้งาน AI');
         }
@@ -1657,7 +1658,7 @@ interface DashboardMetrics {
           });
           clearTimeout(timer);
 
-          let jsonBody = {};
+          let jsonBody: any = {};
           try {
             jsonBody = await response.json();
           } catch (_e) {
@@ -1665,20 +1666,48 @@ interface DashboardMetrics {
           }
 
           if (!response.ok) {
+            const serverMessage = jsonBody && typeof jsonBody.error === 'string' && /[ก-๙]/.test(jsonBody.error)
+              ? jsonBody.error.trim()
+              : '';
+            const serverCode = jsonBody && typeof jsonBody.code === 'string'
+              ? jsonBody.code.trim()
+              : '';
+
             if (response.status === 429) {
               appState.aiStatus = 'rate_limited';
               appState.aiStatusMessage = 'ถึงขีดจำกัดการใช้งาน';
-            } else if (response.status === 503 || jsonBody.code === 'AI_NOT_CONFIGURED') {
+            } else if (response.status === 503 || serverCode === 'AI_NOT_CONFIGURED') {
               appState.aiStatus = 'unconfigured';
               appState.aiStatusMessage = 'ยังไม่ได้ตั้งค่า AI';
+            } else if (response.status === 401 || response.status === 403) {
+              appState.aiStatus = 'unconfigured';
+              appState.aiStatusMessage = 'เข้าสู่ระบบเพื่อใช้งาน AI';
+            } else if (response.status === 422) {
+              appState.aiStatus = 'ready';
+              appState.aiStatusMessage = 'AI พร้อมใช้งาน';
+            } else if (response.status === 504 || serverCode === 'AI_TIMEOUT') {
+              appState.aiStatus = 'error';
+              appState.aiStatusMessage = 'AI ตอบสนองช้า (Timeout)';
             } else {
               appState.aiStatus = 'error';
-              appState.aiStatusMessage = 'เกิดข้อผิดพลาดจาก AI';
+              appState.aiStatusMessage = serverCode === 'GEMINI_CONFIG_ERROR'
+                ? 'ตั้งค่าโมเดล AI ไม่ถูกต้อง'
+                : 'บริการ AI ขัดข้องชั่วคราว';
             }
             updateStatusBannersAndPills();
-            throw new Error(response.status === 401 || response.status === 403 ? 'กรุณาเข้าสู่ระบบใหม่ หรือบัญชีนี้ไม่มีสิทธิ์ใช้งาน AI' : response.status === 429 ? 'ถึงขีดจำกัดการใช้งาน AI กรุณารอสักครู่แล้วลองใหม่' : response.status >= 500 ? 'บริการ AI ขัดข้องชั่วคราว กรุณาลองใหม่ภายหลัง' : 'ไม่สามารถวิเคราะห์ภาพได้ กรุณาตรวจภาพแล้วลองใหม่');
+            const fallbackMsg = response.status === 401 || response.status === 403
+              ? 'กรุณาเข้าสู่ระบบใหม่ หรือบัญชีนี้ไม่มีสิทธิ์ใช้งาน AI'
+              : response.status === 429
+                ? 'ถึงขีดจำกัดการใช้งาน AI กรุณารอสักครู่แล้วลองใหม่'
+                : response.status >= 500
+                  ? 'บริการ AI ขัดข้องชั่วคราว กรุณาลองใหม่ภายหลัง'
+                  : 'ไม่สามารถวิเคราะห์ภาพได้ กรุณาตรวจภาพแล้วลองใหม่';
+            throw new Error(serverMessage || fallbackMsg);
           }
 
+          if (jsonBody && typeof jsonBody.model === 'string' && jsonBody.model.trim()) {
+            appState.aiModel = jsonBody.model.trim();
+          }
           appState.aiStatus = 'ready';
           appState.aiStatusMessage = 'AI พร้อมใช้งาน';
           updateStatusBannersAndPills();
@@ -1699,6 +1728,7 @@ interface DashboardMetrics {
         try {
           const res = await callAnalyzeReceiptEdgeFunction({ action: 'health' }, 10000);
           if (res && res.ready) {
+            if (res.model) appState.aiModel = String(res.model).trim();
             appState.aiStatus = 'ready';
             appState.aiStatusMessage = 'AI พร้อมใช้งาน';
           } else {
@@ -3505,7 +3535,7 @@ interface DashboardMetrics {
           );
         }
         if (geminiBox) {
-          geminiBox.textContent = `สถานะ AI: ${appState.aiStatusMessage}`;
+          geminiBox.textContent = `สถานะ AI: ${appState.aiStatusMessage}${appState.aiModel ? ` (${appState.aiModel})` : ''}`;
         }
 
         // สถานะ Auth & Supabase

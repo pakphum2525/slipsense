@@ -795,7 +795,7 @@ async function main() {
         signal.removeEventListener = (...args) => { listeners--; return remove(...args); };
       }
     }
-    const expire = () => scheduled.find(timer => timer.ms === 25000).fn();
+    const expire = () => scheduled.find(timer => timer.ms === 35000).fn();
     const env = { SUPABASE_URL: 'https://example.invalid', SUPABASE_ANON_KEY: 'public', GEMINI_API_KEY: 'test-server-key', GEMINI_MODEL: options.model ?? '' };
     const context = vm.createContext({ Request, Response, Headers, AbortController: TrackedAbortController, Error, Date, Set, Map, Number, JSON,
       Deno: { env: { get: key => env[key] }, serve: fn => handler = fn },
@@ -843,10 +843,15 @@ async function main() {
     assertEqual(listeners, 0, 'ล้าง abort listener ทุกเส้นทาง');
     if (calls.length) {
       assertEqual(rpc, 1, 'จอง atomic quota ครั้งเดียว');
-      assertEqual(scheduled.filter(timer => timer.ms === 25000).length, 1, 'deadline เดียว');
+      assertEqual(scheduled.filter(timer => timer.ms === 35000).length, 1, 'deadline เดียว');
+      const firstBody = JSON.parse(calls[0].init.body);
       for (const call of calls) {
         assertEqual(call.init.signal, calls[0].init.signal, 'signal เดียว');
-        assertEqual(call.init.body, calls[0].init.body, 'payload เดิม');
+        const parsedBody = JSON.parse(call.init.body);
+        assertEqual(JSON.stringify(parsedBody.contents), JSON.stringify(firstBody.contents), 'contents เดิม');
+        assertEqual(JSON.stringify(parsedBody.systemInstruction), JSON.stringify(firstBody.systemInstruction), 'systemInstruction เดิม');
+        const tc = parsedBody.generationConfig?.thinkingConfig;
+        if (tc) assert(!(tc.thinkingBudget !== undefined && tc.thinkingLevel !== undefined), 'ห้ามส่ง thinkingBudget และ thinkingLevel พร้อมกัน');
         assertEqual(call.init.headers['x-goog-api-key'], 'test-server-key');
         assert(!call.url.includes('test-server-key'), 'key อยู่ใน header เท่านั้น');
       }
@@ -854,17 +859,17 @@ async function main() {
     return { response, body, calls, rpc, cancelled, scheduled, events };
   }
 
-  for (const status of [503, 504, 408]) {
+  for (const status of [500, 502, 503, 504, 408]) {
     await runTest('Suite 4', `4.4 HTTP ${status}: ยกเลิก body รอ 300ms แล้วใช้โมเดลถัดไป`, async () => {
       const r = await executeEdge([status, 200]);
       assertEqual(r.response.status, 200);
-      assertEqual(r.body.model, 'gemini-3.6-flash');
+      assertEqual(r.body.model, 'gemini-2.5-flash');
       assertEqual(r.calls.length, 2);
       assert(r.calls[0].url.includes('/gemini-3.8-flash:generateContent'));
-      assert(r.calls[1].url.includes('/gemini-3.6-flash:generateContent'));
+      assert(r.calls[1].url.includes('/gemini-2.5-flash:generateContent'));
       assertEqual(r.cancelled.join(','), '0');
       assertEqual(r.calls[1].at - r.calls[0].at, 300);
-      assertEqual(r.events.join(','), 'timer:25000,fetch:0,cancel:0,timer:300,fire:300,fetch:1');
+      assertEqual(r.events.join(','), 'timer:35000,fetch:0,cancel:0,timer:300,fire:300,fetch:1');
     });
   }
 
@@ -873,24 +878,46 @@ async function main() {
     const models=r=>r.calls.map(c=>decodeURIComponent(c.url.split('/models/')[1].split(':')[0]));
     let r=await execute([200]);assertEqual(r.body.model,'gemini-3.8-flash','default');assertEqual(r.calls.length,1);
     r=await execute([404,200],{model:' custom-model '});assertEqual(models(r).join(','),'custom-model,gemini-3.8-flash');assertEqual(r.body.model,'gemini-3.8-flash');assertEqual(r.cancelled.length,1);assertEqual(r.calls[1].at,0,'404 ไม่รอ');assertEqual(r.scheduled.length,1);
-    r=await execute([404,404,404,200]);assertEqual(models(r).join(','),'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-2.5-flash');assertEqual(r.body.model,'gemini-2.5-flash');assert(r.body.data.uncertain_fields.includes('date')&&r.body.data.uncertain_fields.includes('amount'),'no guessing');
-    r=await execute([404,404,404,404,404],{model:'custom'});assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,5);
-    r=await execute([404,404,404,404],{model:'gemini-3.6-flash'});assertEqual(new Set(models(r)).size,4,'deduplicated');
-    for(const status of [400,401,403,429,500]){r=await execute([status,200]);assertEqual(r.calls.length,1,'no retry for '+status);assertEqual(r.response.status,status===429?429:502);assertEqual(r.body.code,status===429?'GEMINI_RATE_LIMIT':[400,403].includes(status)?'GEMINI_CONFIG_ERROR':'GEMINI_UPSTREAM_ERROR');assertEqual(r.cancelled.length,0);assertEqual(r.scheduled.length,1);}
+    r=await execute([400,200],{model:'gemini-2.5-flash'});assertEqual(models(r).join(','),'gemini-2.5-flash,gemini-3.8-flash');assertEqual(r.body.model,'gemini-3.8-flash');assertEqual(r.calls[1].at,0,'400 fallback ทันทีเมื่อมีโมเดลถัดไป');
+    r=await execute([404,404,200]);assertEqual(models(r).join(','),'gemini-3.8-flash,gemini-2.5-flash,gemini-3.5-flash-lite');assertEqual(r.body.model,'gemini-3.5-flash-lite');assert(r.body.data.uncertain_fields.includes('date')&&r.body.data.uncertain_fields.includes('amount'),'no guessing');
+    r=await execute([404,404,404,404],{model:'custom'});assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,4);
+    r=await execute([400,400,400]);assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_CONFIG_ERROR');assertEqual(r.calls.length,3);
+    r=await execute([404,404,404],{model:'gemini-2.5-flash'});assertEqual(new Set(models(r)).size,3,'deduplicated');
+    for(const status of [401,403,429]){r=await execute([status,200]);assertEqual(r.calls.length,1,'no retry for '+status);assertEqual(r.response.status,status===429?429:502);assertEqual(r.body.code,status===429?'GEMINI_RATE_LIMIT':status===403?'GEMINI_CONFIG_ERROR':'GEMINI_UPSTREAM_ERROR');assertEqual(r.cancelled.length,0);assertEqual(r.scheduled.length,1);}
     for(const options of [{network:true},{timeoutAt:0},{bodyTimeout:true},{invalidSchema:true}]){r=await execute([200,200],options);assertEqual(r.calls.length,1);assertEqual(r.response.status,options.network?500:options.invalidSchema?422:504);}
-    for (const status of [404,503,504,408]) {
+    for (const status of [400,404,500,502,503,504,408]) {
       r=await execute([status,200],{abortAfterCancel:true});assertEqual(r.response.status,504);assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,1,'no candidate after deadline');
       r=await execute([status,200],{cancelError:true});assertEqual(r.response.status,500);assertEqual(r.body.code,'INTERNAL_EDGE_ERROR');assertEqual(r.calls.length,1);
-      r=await execute([status,status,status,status]);assertEqual(r.response.status,502);assertEqual(r.body.code,'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,4);assertEqual(r.cancelled.join(','),'0,1,2','ไม่ยกเลิก body สุดท้าย');assertEqual(r.scheduled.filter(t=>t.ms===300).length,status===404?0:3);
+      r=await execute([status,status,status]);assertEqual(r.response.status,502);assertEqual(r.body.code,status===400?'GEMINI_CONFIG_ERROR':'GEMINI_UPSTREAM_ERROR');assertEqual(r.calls.length,3);assertEqual(r.cancelled.join(','),'0,1','ไม่ยกเลิก body สุดท้าย');assertEqual(r.scheduled.filter(t=>t.ms===300).length,(status===404||status===400)?0:2);
     }
-    for (const status of [503,504,408]) {
-      r=await execute([status,200],{elapsed:24900});assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,1,'timeout ระหว่างรอ 300ms');assert(r.events.includes('fire:25000'));assert(!r.events.includes('fire:300'));
+    for (const status of [500,502,503,504,408]) {
+      r=await execute([status,200],{elapsed:34900});assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,1,'timeout ระหว่างรอ 300ms');assert(r.events.includes('fire:35000'));assert(!r.events.includes('fire:300'));
       r=await execute([status,200],{timeoutAt:1});assertEqual(r.body.code,'AI_TIMEOUT');assertEqual(r.calls.length,2,'timeout ระหว่าง attempt ถัดไป');
     }
-    r=await execute([503,504,408,404,200],{model:'custom'});assertEqual(r.response.status,200);assertEqual(r.calls[4].at,900,'delay รวมโดยไม่มี delay สำหรับ 404');
+    r=await execute([503,504,404,200],{model:'custom'});assertEqual(r.response.status,200);assertEqual(r.calls[3].at,600,'delay รวมโดยไม่มี delay สำหรับ 404');
     for(const options of [{quotaError:true},{denied:true},{invalidJwt:true},{payload:{mimeType:'bad'}}]){r=await execute([],options);assertEqual(r.calls.length,0,'fail closed before Gemini');}
     r=await execute([],{model:' configured ',payload:{action:'health'}});assertEqual(r.body.model,'configured');assertEqual(r.rpc,0);assertEqual(r.calls.length,0);
     r=await execute([200],{model:'   '});assertEqual(r.body.model,'gemini-3.8-flash');
+  });
+
+  await runTest('Suite 4', '4.6 ตรวจสอบ thinkingConfig แยกตามรุ่นโมเดล และการรักษาข้อความ error ภาษาไทยฝั่ง Frontend', async () => {
+    const r25 = await executeEdge([200], { model: 'gemini-2.5-flash' });
+    const cfg25 = JSON.parse(r25.calls[0].init.body).generationConfig;
+    assertEqual(cfg25.thinkingConfig.thinkingBudget, 0, 'gemini-2.5-flash ต้องปิด thinkingBudget=0');
+    assertEqual(cfg25.thinkingConfig.thinkingLevel, undefined, 'gemini-2.5-flash ต้องไม่ส่ง thinkingLevel');
+    const r3 = await executeEdge([200], { model: 'gemini-3.8-flash' });
+    const cfg3 = JSON.parse(r3.calls[0].init.body).generationConfig;
+    assertEqual(cfg3.thinkingConfig.thinkingLevel, 'low', 'gemini-3.8-flash ต้องใช้ thinkingLevel=low');
+    assertEqual(cfg3.thinkingConfig.thinkingBudget, undefined, 'gemini-3.8-flash ต้องไม่ส่ง thinkingBudget');
+    const rPro = await executeEdge([200], { model: 'gemini-2.5-pro' });
+    const cfgPro = JSON.parse(rPro.calls[0].init.body).generationConfig;
+    assertEqual(cfgPro.thinkingConfig.thinkingBudget, 128, 'gemini-2.5-pro ต้องใช้ thinkingBudget >= 128');
+
+    const appSource = fs.readFileSync(path.join(PROJECT_ROOT, 'src/app.ts'), 'utf8');
+    assert(appSource.includes('timeoutMs = 45000'), 'Frontend ต้องขยาย Timeout วิเคราะห์ภาพเป็น 45000ms');
+    assert(appSource.includes('throw new Error(serverMessage || fallbackMsg);'), 'Frontend ต้องแสดงข้อความสาเหตุภาษาไทยจากเซิร์ฟเวอร์');
+    assert(appSource.includes("response.status === 422") && appSource.includes("appState.aiStatus = 'ready';"), '422 ภาพอ่านไม่ได้ต้องไม่ทำให้สถานะระบบ AI กลายเป็น error');
+    assert(appSource.includes("appState.aiStatusMessage = 'AI ตอบสนองช้า (Timeout)';"), 'Frontend ต้องแยกสถานะ Timeout ชัดเจน');
   });
 
   // SUITE 5: Frontend Logic, DOM, Financial Calculation, Offline Sync & Backup Tests

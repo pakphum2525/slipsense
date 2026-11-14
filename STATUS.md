@@ -1,8 +1,23 @@
 # รายงานสถานะโปรเจกต์ (STATUS.md) — SlipSense (`slipsense-expense-tracker`)
 
-**วันที่อัปเดตล่าสุด:** 10 พฤศจิกายน 2026
+**วันที่อัปเดตล่าสุด:** 14 พฤศจิกายน 2026
 **สภาพแวดล้อม:** Personal PC Edition (`LAPTOP-C8VOI2RL`) — System Node.js `v24.16.0` (`http://127.0.0.1:8080`)  
-**สถานะโดยรวม:** TASK-SLIPSENSE-V4-032 แก้โค้ดและสร้าง production artifacts ใน isolated worktree แล้ว; self-test ผ่าน 43/43 รายการ (exit code 0) แต่การส่งต่อเป็น BLOCKED เพราะ Runner ที่เรียกงานนี้ไม่มี `--failover` จึงยังยืนยันการหยุดที่ Gate 12 ไม่ได้
+**สถานะโดยรวม:** TASK-SLIPSENSE-V4-033 ผ่านการอนุมัติ Release แล้ว (`RELEASE_APPROVED` — Single-Agent ชั่วคราวตาม `AGENTS.md`); Deploy Supabase Edge Function `analyze-receipt` **version 12** สำเร็จ พร้อม Push ขึ้น GitHub Pages (`main`)
+
+## ผลงาน TASK-SLIPSENSE-V4-033 — แก้ไข Gemini ThinkingConfig/Timeout และการแสดง Error AI ให้ตรงสาเหตุ (Single-Agent ชั่วคราว)
+
+- **ฝั่ง Backend (`supabase/functions/analyze-receipt/index.ts`):**
+  - เพิ่มฟังก์ชัน `buildGenerationConfig(model, schema)` ปรับ `thinkingConfig` ให้ตรงรุ่นโมเดล: `gemini-2.5-flash` / `gemini-2.5-flash-lite` ส่ง `{ thinkingBudget: 0 }` พร้อม `temperature: 0.1` เพื่อลดเวลาประมวลผลจาก 17–26+ วินาทีลงเหลือหลักวินาที; `gemini-2.5-pro` ส่ง `{ thinkingBudget: 128 }`; `gemini-3*` (`gemini-3.8-flash`, `gemini-3.5-flash-lite`) ส่ง `{ thinkingLevel: 'low' }` โดยไม่ส่ง `thinkingBudget` และ `temperature` ปนกัน
+  - ปรับลำดับ Fallback เป็น `[geminiModel, DEFAULT_GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-3.5-flash-lite']` (นำ `'gemini-3.6-flash'` ออก), เพิ่ม `GEMINI_TIMEOUT_MS` จาก `25_000` เป็น `35_000` ms, และเพิ่ม Fallback สำหรับ `RETRYABLE_FALLBACK_STATUSES` (`400, 404, 408, 500, 502, 503, 504`) เมื่อยังมีโมเดลสำรอง โดยยังคง Fail Fast สำหรับ `401, 403, 429`
+- **ฝั่ง Frontend (`src/app.ts`, `src/sw.ts`):**
+  - ขยาย `timeoutMs` เริ่มต้นของ `callAnalyzeReceiptEdgeFunction` จาก `28000` เป็น `45000` ms (ส่วน `{ action: 'health' }` คง `10000` ms)
+  - รักษาข้อความสาเหตุภาษาไทยจากเซิร์ฟเวอร์ (`jsonBody.error`) แทนการเขียนทับทุก HTTP `>= 500` ด้วย `"บริการ AI ขัดข้องชั่วคราว"` พร้อมแยกสถานะ `aiStatus` ให้ถูกต้อง (`422` ภาพอ่านไม่ได้คง `ready` ไม่เปลี่ยนจุดเป็นสีแดง, `504` แสดง `AI ตอบสนองช้า (Timeout)`)
+  - เก็บ `appState.aiModel` จากผล `health` และ `analyze` มาแสดงใน `#geminiSettingsStatusBox` และอัปเดต Service Worker Cache เป็น `slipsense-app-shell-v4-3d-cute-3-dime-v11`
+- **การทดสอบและ Build (`scripts/run_tests.js`, `tests/portfolio_engine.test.js`, `dist/**`):**
+  - `npm run build` ผ่าน exit code 0 สร้าง `dist/**`, `index.html`, `sw.js` (44 mangled symbols, 10 deployable files in `dist/`)
+  - `npm test` ผ่าน **46/46 รายการ** (ล้มเหลว 0, exit code 0) รวมเคส `thinkingConfig` แยกตามรุ่นโมเดล, Fallback `400/500/502/503/504/408/404`, `35000ms` deadline และ SW cache `v10 -> v11` (หมายเหตุ: `Integration RLS/concurrent delete` ไม่ได้รันเนื่องจากไม่มี Test Database ในเครื่องตามเดิม)
+- **การส่งมอบ (Release):** Deploy Edge Function `analyze-receipt` (`version: 12`, `ACTIVE`) บน Supabase (`bpvljxgohgecfcikhnwm`) และ Push กิ่ง `main` ขึ้น GitHub Pages (`https://pakphum2525.github.io/slipsense/`) เรียบร้อยแล้ว
+- **หมายเหตุเพิ่มเติม:** เนื่องจาก Supabase Secret `GEMINI_MODEL` ยังคงตั้งไว้ได้ทั้ง `gemini-2.5-flash` (ซึ่งตอนนี้ปิด Thinking อัตโนมัติด้วย `thinkingBudget: 0` แล้ว) หรือสามารถสลับ/ลบ Secret เพื่อใช้ค่าเริ่มต้น `gemini-3.8-flash` ใน Supabase Dashboard ได้ตามต้องการ
 
 ## ผลงาน TASK-SLIPSENSE-V4-032 — DIME shares เริ่มต้น 1 และ Cache v10
 
